@@ -10,10 +10,18 @@ const Navbar = () => {
           <h1 className="text-3xl font-bold text-primary font-mono tracking-tight">
             CeylonLeaf
           </h1>
-          <Link to="/create" className="btn btn-primary">
-            <PlusIcon className="size-5" />
-            <span>New Note</span>
-          </Link>
+          <div className="flex gap-2">
+            <Link to="/" className="btn btn-ghost">Notes</Link>
+            <Link to="/tools" className="btn btn-ghost">Tools</Link>
+            <Link to="/create" className="btn btn-primary">
+              <PlusIcon className="size-5" />
+              <span>New Note</span>
+            </Link>
+            <Link to="/tools/create" className="btn btn-secondary">
+              <PlusIcon className="size-5" />
+              <span>New Tool</span>
+            </Link>
+          </div>
         </div>
       </div>
     </header>

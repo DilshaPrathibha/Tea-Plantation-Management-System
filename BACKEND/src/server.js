@@ -3,6 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const connectdb = require("../config/db");
 const notesroutes = require("./routes/notesroutes");
+const toolsRoutes = require("./routes/toolsRoutes");
 const ratelimit = require("./middleware/ratelimiter");
 
 dotenv.config();
@@ -23,6 +24,7 @@ app.use(ratelimit);
 
 // Routes
 app.use("/api/notes", notesroutes);
+app.use("/api/tools", toolsRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
