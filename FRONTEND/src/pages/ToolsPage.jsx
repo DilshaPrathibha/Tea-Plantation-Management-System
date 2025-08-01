@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
-import ToolCard from '@/components/ToolCard';
 import RateLimitedUI from '@/components/RateLimitedUI';
 import toast from 'react-hot-toast';
 import axios from 'axios';
@@ -73,18 +72,50 @@ const ToolsPage = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <ToolCard
-              isNewTool
-              onClick={() => navigate('/tools/create')}
-            />
-            {tools.map(tool => (
-              <ToolCard
-                key={tool._id}
-                tool={tool}
-                onDelete={deleteTool}
-              />
-            ))}
+          <div className="overflow-x-auto">
+            <div className="flex justify-end mb-4">
+              <button
+                className="btn btn-primary"
+                onClick={() => navigate('/tools/create')}
+              >
+                Add Tool
+              </button>
+            </div>
+            <table className="table w-full">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Quantity</th>
+                  <th>Description</th>
+                  <th className="w-32">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tools.map(tool => (
+                  <tr key={tool._id}>
+                    <td>{tool.name}</td>
+                    <td>{tool.quantity}</td>
+                    <td>{tool.description}</td>
+                    <td>
+                      <div className="flex gap-2">
+                        <button
+                          className="btn btn-sm btn-warning"
+                          onClick={() => navigate(`/tool/${tool._id}`)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-sm btn-error"
+                          onClick={() => deleteTool(tool._id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

@@ -41,7 +41,11 @@ const ToolDetailPage = () => {
       navigate('/tools');
     } catch (error) {
       console.error("Update error:", error);
-      toast.error("Failed to update tool");
+      if (error.response?.status === 429) {
+        toast.error("Rate limit reached. Try again later.");
+      } else {
+        toast.error("Failed to update tool");
+      }
     }
   };
 
@@ -52,7 +56,11 @@ const ToolDetailPage = () => {
       navigate('/tools');
     } catch (error) {
       console.error("Delete error:", error);
-      toast.error("Failed to delete tool");
+      if (error.response?.status === 429) {
+        toast.error("Rate limit reached. Try again later.");
+      } else {
+        toast.error("Failed to delete tool");
+      }
     }
   };
 
