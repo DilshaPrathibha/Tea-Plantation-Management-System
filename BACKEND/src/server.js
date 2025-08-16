@@ -1,38 +1,49 @@
-const express = require("express");
-const cors = require("cors");
-const dotenv = require("dotenv");
-const connectdb = require("../config/db");
-const notesroutes = require("./routes/notesroutes");
-const ratelimit = require("./middleware/ratelimiter");
+// BACKEND/src/server.js
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+dotenv.config(); // MUST be first, before reading env
 
-dotenv.config();
+const connectdb = require('../config/db');
+const ratelimit = require('./middleware/ratelimiter');
+
+// 1) connect DB
+connectdb();
+
+// (optional: log which DB)
+const mongoose = require('mongoose');
+mongoose.connection.on('connected', () => {
+  console.log('[DB] host:', mongoose.connection.host, 'db:', mongoose.connection.name);
+});
 
 const app = express();
 const port = process.env.PORT || 5001;
 
-// Connect to MongoDB
-connectdb();
-
-// Middleware
+// 2) middleware
 app.use(express.json());
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   credentials: true
 }));
 app.use(ratelimit);
 
-// Routes
-app.use("/api/notes", notesroutes);
+// 3) routes
+const authRoutes = require('./routes/authroutes');
+const adminRoutes = require('./routes/adminroutes'); // ✅ add
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);                  // ✅ add
 
-// Error handling middleware
+// 4) health
+app.get('/health', (req, res) => res.json({ ok: true }));
+
+// 5) 404 + error
+app.use((req, res) => res.status(404).send('Not found'));
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
+  console.error('[ERR]', err);
+  res.status(500).json({ message: 'Something broke!' });
 });
 
-// Start server
+// 6) start
 app.listen(port, () => {
   console.log(`🚀 Server started on PORT ${port}`);
-}).on('error', (err) => {
-  console.error('Server failed to start:', err);
 });

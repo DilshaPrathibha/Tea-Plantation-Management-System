@@ -1,19 +1,40 @@
 import React from 'react';
-import { PlusIcon } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
+import { Leaf, User, BarChart2, Home } from 'lucide-react';
 
 const Navbar = () => {
   return (
     <header className="bg-base-300 border-b border-base-content/10">
       <div className="mx-auto max-w-6xl p-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-primary font-mono tracking-tight">
-            CeylonLeaf
-          </h1>
-          <Link to="/create" className="btn btn-primary">
-            <PlusIcon className="size-5" />
-            <span>New Note</span>
+          <Link to="/" className="flex items-center gap-2">
+            <Leaf className="size-7 text-green-700" />
+            <span className="text-3xl font-bold text-primary font-mono tracking-tight">
+              CeylonLeaf
+            </span>
           </Link>
+          <nav className="flex gap-4">
+            <NavLink to="/" className="btn btn-ghost flex items-center gap-1">
+              <Home size={18} />
+              Dashboard
+            </NavLink>
+            <NavLink to="/fields" className="btn btn-ghost flex items-center gap-1">
+              <Leaf size={18} />
+              Fields
+            </NavLink>
+            <NavLink to="/workers" className="btn btn-ghost flex items-center gap-1">
+              <User size={18} />
+              Workers
+            </NavLink>
+            <NavLink to="/harvests" className="btn btn-ghost flex items-center gap-1">
+              <Leaf size={18} />
+              Harvests
+            </NavLink>
+            <NavLink to="/reports" className="btn btn-ghost flex items-center gap-1">
+              <BarChart2 size={18} />
+              Reports
+            </NavLink>
+          </nav>
         </div>
       </div>
     </header>
