@@ -26,9 +26,9 @@ const CreatePage = () => {
     }
 
     try {
-      await api.post('/notes', { title, content });
-      toast.success('Note created successfully');
-      navigate('/');
+  await api.post('/pestnutrients', { title, content });
+  toast.success('Pest/Nutrient created successfully');
+  navigate('/FNI');
     } catch (error) {
       console.error("Create failed:", error);
       toast.error('Failed to create note');

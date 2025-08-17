@@ -28,10 +28,18 @@ app.use(cors({
 app.use(ratelimit);
 
 // 3) routes
+
+
 const authRoutes = require('./routes/authroutes');
 const adminRoutes = require('./routes/adminroutes'); // ✅ add
+const toolsRoutes = require('./routes/toolsroutes'); // ✅ add for tools CRUD
+const pestNutrientRoutes = require('./routes/pestNutrientRoutes'); // ✅ add for FNI CRUD
+
+
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);                  // ✅ add
+app.use('/api/tools', toolsRoutes);                  // ✅ add for tools CRUD
+app.use('/api/pestnutrients', pestNutrientRoutes);   // ✅ add for FNI CRUD
 
 // 4) health
 app.get('/health', (req, res) => res.json({ ok: true }));
