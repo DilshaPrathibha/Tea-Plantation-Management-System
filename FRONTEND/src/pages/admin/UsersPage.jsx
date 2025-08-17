@@ -43,7 +43,7 @@ const UsersPage = () => {
   const [error, setError] = useState("");
 
   // Edit modal state
-  const [editing, setEditing] = useState(null); // holds the user object being edited
+  const [editing, setEditing] = useState(null);
   const [editData, setEditData] = useState({
     name: "",
     email: "",
@@ -51,7 +51,7 @@ const UsersPage = () => {
     phone: "",
     estate: "",
     department: "",
-    password: "" // optional to change
+    password: ""
   });
   const [saving, setSaving] = useState(false);
 
@@ -132,7 +132,7 @@ const UsersPage = () => {
       phone: u.phone || "",
       estate: u.estate || "",
       department: u.department || "",
-      password: "" // leave blank to keep current password
+      password: ""
     });
   };
 
@@ -204,61 +204,19 @@ const UsersPage = () => {
             <h2 className="text-lg font-semibold">Create New User</h2>
           </div>
           <form onSubmit={onCreate} className="grid md:grid-cols-4 gap-4">
-            <input
-              type="text"
-              className="input input-bordered"
-              placeholder="Full name"
-              value={form.name}
-              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-              required
-            />
-            <input
-              type="email"
-              className="input input-bordered"
-              placeholder="Email (unique)"
-              value={form.email}
-              onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-              required
-            />
-            <select
-              className="select select-bordered"
-              value={form.role}
-              onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
-            >
+            <input className="input input-bordered" placeholder="Full name" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required />
+            <input className="input input-bordered" type="email" placeholder="Email (unique)" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} required />
+            <select className="select select-bordered" value={form.role} onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}>
               <option value="worker">Worker</option>
               <option value="production_manager">Production Manager</option>
               <option value="inventory_manager">Inventory Manager</option>
               <option value="field_supervisor">Field Supervisor</option>
               <option value="admin">Admin</option>
             </select>
-            <input
-              type="text"
-              className="input input-bordered"
-              placeholder="Password (or leave blank to auto-generate)"
-              value={form.password}
-              onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-            />
-            <input
-              type="text"
-              className="input input-bordered"
-              placeholder="Phone"
-              value={form.phone}
-              onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-            />
-            <input
-              type="text"
-              className="input input-bordered"
-              placeholder="Estate"
-              value={form.estate}
-              onChange={(e) => setForm((p) => ({ ...p, estate: e.target.value }))}
-            />
-            <input
-              type="text"
-              className="input input-bordered"
-              placeholder="Department"
-              value={form.department}
-              onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))}
-            />
+            <input className="input input-bordered" placeholder="Password (or leave blank to auto-generate)" value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} />
+            <input className="input input-bordered" placeholder="Phone" value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} />
+            <input className="input input-bordered" placeholder="Estate" value={form.estate} onChange={(e) => setForm((p) => ({ ...p, estate: e.target.value }))} />
+            <input className="input input-bordered" placeholder="Department" value={form.department} onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))} />
             <div className="md:col-span-4">
               <button className={`btn btn-primary ${creating ? "btn-disabled" : ""}`} type="submit">
                 {creating && <span className="loading loading-spinner loading-sm mr-2" />}
@@ -269,14 +227,8 @@ const UsersPage = () => {
 
           {tempPw && (
             <div className="alert alert-success mt-4 items-center">
-              <span>
-                Temporary password:&nbsp;
-                <code className="px-2 py-1 rounded bg-base-200">{tempPw}</code>
-              </span>
-              <button className="btn btn-sm" onClick={copyTemp}>
-                {justCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {justCopied ? "Copied" : "Copy"}
-              </button>
+              <span>Temporary password:&nbsp;<code className="px-2 py-1 rounded bg-base-200">{tempPw}</code></span>
+              <button className="btn btn-sm" onClick={copyTemp}>{justCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}{justCopied ? "Copied" : "Copy"}</button>
             </div>
           )}
         </div>
@@ -287,14 +239,7 @@ const UsersPage = () => {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Phone</th>
-                  <th>Estate</th>
-                  <th>Department</th>
-                  <th>Created</th>
-                  <th className="text-right">Actions</th>
+                  <th>Name</th><th>Email</th><th>Role</th><th>Phone</th><th>Estate</th><th>Department</th><th>Created</th><th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -309,27 +254,15 @@ const UsersPage = () => {
                     <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                     <td>
                       <div className="flex justify-end gap-2">
-                        <button className="btn btn-sm" onClick={() => resetPassword(u._id || u.id)}>
-                          Reset PW
-                        </button>
-                        <button className="btn btn-sm" onClick={() => openEdit(u)}>
-                          <Edit3 className="w-4 h-4 mr-1" />
-                          Edit
-                        </button>
-                        <button className="btn btn-sm btn-error" onClick={() => deleteUser(u._id || u.id)}>
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Delete
-                        </button>
+                        <button className="btn btn-sm" onClick={() => resetPassword(u._id || u.id)}>Reset PW</button>
+                        <button className="btn btn-sm" onClick={() => openEdit(u)}><Edit3 className="w-4 h-4 mr-1" />Edit</button>
+                        <button className="btn btn-sm btn-error" onClick={() => deleteUser(u._id || u.id)}><Trash2 className="w-4 h-4 mr-1" />Delete</button>
                       </div>
                     </td>
                   </tr>
                 ))}
                 {users.length === 0 && !listLoading && (
-                  <tr>
-                    <td colSpan={8} className="text-center text-base-content/60">
-                      No users found
-                    </td>
-                  </tr>
+                  <tr><td colSpan={8} className="text-center text-base-content/60">No users found</td></tr>
                 )}
               </tbody>
             </table>
@@ -337,20 +270,10 @@ const UsersPage = () => {
 
           {/* Pagination */}
           <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-base-content/70">
-              Page {page} of {totalPages} • {total} total
-            </div>
+            <div className="text-sm text-base-content/70">Page {page} of {totalPages} • {total} total</div>
             <div className="join">
-              <button className="btn join-item" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                « Prev
-              </button>
-              <button
-                className="btn join-item"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                Next »
-              </button>
+              <button className="btn join-item" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>« Prev</button>
+              <button className="btn join-item" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next »</button>
             </div>
           </div>
         </div>
@@ -362,73 +285,23 @@ const UsersPage = () => {
           <div className="bg-base-100 rounded-2xl p-6 w-full max-w-2xl border border-base-300 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-semibold">Edit User</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setEditing(null)}>
-                <X className="w-4 h-4" />
-              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setEditing(null)}><X className="w-4 h-4" /></button>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4">
-              <input
-                type="text"
-                className="input input-bordered"
-                placeholder="Full name"
-                value={editData.name}
-                onChange={(e) => setEditData((p) => ({ ...p, name: e.target.value }))}
-              />
-              <input
-                type="email"
-                className="input input-bordered"
-                placeholder="Email"
-                value={editData.email}
-                onChange={(e) => setEditData((p) => ({ ...p, email: e.target.value.toLowerCase() }))}
-              />
-              <select
-                className="select select-bordered"
-                value={editData.role}
-                onChange={(e) => setEditData((p) => ({ ...p, role: e.target.value }))}
-              >
-                <option value="worker">Worker</option>
-                <option value="production_manager">Production Manager</option>
-                <option value="inventory_manager">Inventory Manager</option>
-                <option value="field_supervisor">Field Supervisor</option>
-                <option value="admin">Admin</option>
+              <input className="input input-bordered" placeholder="Full name" value={editData.name} onChange={(e) => setEditData((p) => ({ ...p, name: e.target.value }))} />
+              <input className="input input-bordered" type="email" placeholder="Email" value={editData.email} onChange={(e) => setEditData((p) => ({ ...p, email: e.target.value.toLowerCase() }))} />
+              <select className="select select-bordered" value={editData.role} onChange={(e) => setEditData((p) => ({ ...p, role: e.target.value }))}>
+                <option value="worker">Worker</option><option value="production_manager">Production Manager</option><option value="inventory_manager">Inventory Manager</option><option value="field_supervisor">Field Supervisor</option><option value="admin">Admin</option>
               </select>
-
-              <input
-                type="text"
-                className="input input-bordered"
-                placeholder="Phone"
-                value={editData.phone}
-                onChange={(e) => setEditData((p) => ({ ...p, phone: e.target.value }))}
-              />
-              <input
-                type="text"
-                className="input input-bordered"
-                placeholder="Estate"
-                value={editData.estate}
-                onChange={(e) => setEditData((p) => ({ ...p, estate: e.target.value }))}
-              />
-              <input
-                type="text"
-                className="input input-bordered"
-                placeholder="Department"
-                value={editData.department}
-                onChange={(e) => setEditData((p) => ({ ...p, department: e.target.value }))}
-              />
-
-              <input
-                type="text"
-                className="input input-bordered md:col-span-3"
-                placeholder="New password (optional)"
-                value={editData.password}
-                onChange={(e) => setEditData((p) => ({ ...p, password: e.target.value }))}
-              />
+              <input className="input input-bordered" placeholder="Phone" value={editData.phone} onChange={(e) => setEditData((p) => ({ ...p, phone: e.target.value }))} />
+              <input className="input input-bordered" placeholder="Estate" value={editData.estate} onChange={(e) => setEditData((p) => ({ ...p, estate: e.target.value }))} />
+              <input className="input input-bordered" placeholder="Department" value={editData.department} onChange={(e) => setEditData((p) => ({ ...p, department: e.target.value }))} />
+              <input className="input input-bordered md:col-span-3" placeholder="New password (optional)" value={editData.password} onChange={(e) => setEditData((p) => ({ ...p, password: e.target.value }))} />
             </div>
 
             <div className="flex items-center justify-end gap-2 mt-5">
-              <button className="btn" onClick={() => setEditing(null)}>
-                Cancel
-              </button>
+              <button className="btn" onClick={() => setEditing(null)}>Cancel</button>
               <button className={`btn btn-primary ${saving ? "btn-disabled" : ""}`} onClick={saveEdit}>
                 {saving ? <span className="loading loading-spinner loading-sm mr-2" /> : <Save className="w-4 h-4 mr-1" />}
                 Save changes

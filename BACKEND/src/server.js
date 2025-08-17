@@ -30,8 +30,14 @@ app.use(ratelimit);
 // 3) routes
 const authRoutes = require('./routes/authroutes');
 const adminRoutes = require('./routes/adminroutes'); // ✅ add
+const fieldRoutes = require('./routes/fieldroutes'); 
+
+
 app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);                  // ✅ add
+app.use('/api/admin', adminRoutes);   
+app.use('/api/fields', fieldRoutes);  
+
+            // ✅ add
 
 // 4) health
 app.get('/health', (req, res) => res.json({ ok: true }));

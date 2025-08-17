@@ -1,3 +1,4 @@
+// BACKEND/src/controllers/authcontroller.js
 const jwt = require('jsonwebtoken');
 const User = require('../../models/User');
 
@@ -8,7 +9,6 @@ const signToken = (user) =>
     { expiresIn: '1d' }
   );
 
-// POST /api/auth/login
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body || {};
@@ -26,7 +26,7 @@ exports.login = async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email, role: user.role }
     });
   } catch (e) {
-    console.error(e);
+    console.error('[LOGIN] error:', e);
     return res.status(500).json({ message: 'Server error' });
   }
 };

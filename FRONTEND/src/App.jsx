@@ -6,7 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import RequireAuth from "./components/RequireAuth";
 
 // Admin pages
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import UsersPage from "./pages/admin/UsersPage";
 import FieldsPage from "./pages/admin/FieldsPage";
 
