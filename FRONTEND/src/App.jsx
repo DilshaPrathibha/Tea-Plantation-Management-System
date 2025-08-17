@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 
+
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RequireAuth from "./components/RequireAuth";
@@ -9,6 +10,15 @@ import RequireAuth from "./components/RequireAuth";
 import AdminDashboard from "./pages/AdminDashboard";
 import UsersPage from "./pages/admin/UsersPage";
 import FieldsPage from "./pages/admin/FieldsPage";
+
+// New pages
+import ToolsPage from "./pages/ToolsPage";
+import ToolDetailPage from "./pages/ToolDetailPage";
+import FNIPage from "./pages/FNIPage";
+import CreateToolPage from "./pages/CreateToolPage";
+import CreatePage from "./pages/CreatePage";
+import NoteDetailPage from "./pages/NoteDetailPage";
+import FNIDetailPage from "./pages/FNIDetailPage";
 
 // Simple placeholders (keep or replace later)
 const WorkerDashboard = () => <div className="p-8 text-2xl">Worker Dashboard</div>;
@@ -87,6 +97,14 @@ const App = () => {
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
+    {/* New pages */}
+    <Route path="/tools" element={<ToolsPage />} />
+    <Route path="/tool/:id" element={<ToolDetailPage />} />
+    <Route path="/tools/create" element={<CreateToolPage />} />
+  <Route path="/FNI" element={<FNIPage />} />
+  <Route path="/FNI/create" element={<CreatePage />} />
+  <Route path="/note/:id" element={<NoteDetailPage />} />
+  <Route path="/FNI/:id" element={<FNIDetailPage />} />
       </Routes>
     </div>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Leaf, User, BarChart2, Home } from 'lucide-react';
+import { Leaf, User, BarChart2, Home, Wrench, FlaskConical } from 'lucide-react';
 
 const Navbar = () => {
   return (
@@ -34,6 +34,14 @@ const Navbar = () => {
               <BarChart2 size={18} />
               Reports
             </NavLink>
+              <NavLink to="/tools" className="btn btn-ghost flex items-center gap-1">
+                <Wrench size={18} />
+                Tools
+              </NavLink>
+              <NavLink to="/FNI" className="btn btn-ghost flex items-center gap-1">
+                <FlaskConical size={18} />
+                FNI
+              </NavLink>
           </nav>
         </div>
       </div>

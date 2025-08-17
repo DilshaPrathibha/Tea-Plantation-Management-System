@@ -2,7 +2,7 @@ import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const NoteCard = ({ note, isNewNote = false, onClick, onDelete }) => {
+const NoteCard = ({ note, isNewNote = false, onClick, onDelete, type = "note" }) => {
   const navigate = useNavigate();
 
   if (isNewNote) {
@@ -32,7 +32,7 @@ const NoteCard = ({ note, isNewNote = false, onClick, onDelete }) => {
           </p>
         )}
         <div className="absolute bottom-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={() => navigate(`/note/${note._id}`)}>
+          <button onClick={() => navigate(`/${type}/${note._id}`)}>
             <Pencil size={16} className="text-yellow-500 hover:text-yellow-400" />
           </button>
           <button onClick={() => onDelete(note._id)}>
