@@ -34,11 +34,11 @@ const Navbar = () => {
               <BarChart2 size={18} />
               Reports
             </NavLink>
-              <NavLink to="/tools" className="btn btn-ghost flex items-center gap-1">
+              <NavLink to="/admin/tools" className="btn btn-ghost flex items-center gap-1">
                 <Wrench size={18} />
                 Tools
               </NavLink>
-              <NavLink to="/FNI" className="btn btn-ghost flex items-center gap-1">
+              <NavLink to="/admin/fni" className="btn btn-ghost flex items-center gap-1">
                 <FlaskConical size={18} />
                 FNI
               </NavLink>

@@ -4,6 +4,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 dotenv.config(); // MUST be first, before reading env
 
+const attendanceRoutes = require('./routes/attendanceroutes');
 const connectdb = require('../config/db');
 const ratelimit = require('./middleware/ratelimiter');
 
@@ -32,14 +33,26 @@ app.use(ratelimit);
 
 const authRoutes = require('./routes/authroutes');
 const adminRoutes = require('./routes/adminroutes'); // ✅ add
-const toolsRoutes = require('./routes/toolsroutes'); // ✅ add for tools CRUD
+
+const fieldRoutes = require('./routes/fieldroutes'); 
+
+
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);   
+app.use('/api/fields', fieldRoutes);  
+app.use('/api/attendance', attendanceRoutes);
+
+            // ✅ add
+
+/*const toolsRoutes = require('./routes/toolsroutes'); // ✅ add for tools CRUD
 const pestNutrientRoutes = require('./routes/pestNutrientRoutes'); // ✅ add for FNI CRUD
 
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);                  // ✅ add
 app.use('/api/tools', toolsRoutes);                  // ✅ add for tools CRUD
-app.use('/api/pestnutrients', pestNutrientRoutes);   // ✅ add for FNI CRUD
+app.use('/api/pestnutrients', pestNutrientRoutes);   // ✅ add for FNI CRUD*/
+
 
 // 4) health
 app.get('/health', (req, res) => res.json({ ok: true }));

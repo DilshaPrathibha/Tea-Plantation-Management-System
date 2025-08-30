@@ -1,11 +1,12 @@
-// FRONTEND/src/pages/AdminDashboard.jsx
+// FRONTEND/src/pages/admin/AdminUsers.jsx
 import React, { useEffect, useMemo, useState } from 'react';
+import Navbar from "./Navbar";
 import axios from 'axios';
 import { UserPlus, Users, Copy, Check, RefreshCw, Trash2 } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
-const AdminDashboard = () => {
+const AdminUsers = () => {
   const token = localStorage.getItem('token');
   const authHeader = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
 
@@ -90,8 +91,10 @@ const AdminDashboard = () => {
   const totalPages = Math.max(Math.ceil(total / limit), 1);
 
   return (
-    <div className="min-h-screen bg-base-200">
-      <div className="mx-auto max-w-6xl p-6">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-base-200">
+        <div className="mx-auto max-w-6xl p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -229,9 +232,10 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
-export default AdminDashboard;
+export default AdminUsers;

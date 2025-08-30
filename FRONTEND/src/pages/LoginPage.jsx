@@ -5,6 +5,16 @@ import { Mail, Lock, Eye, EyeOff, ChevronRight, Leaf } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
+const roleHome = (role) => {
+  switch (role) {
+    case 'admin': return '/admin';
+    case 'field_supervisor': return '/supervisor';
+    case 'production_manager': return '/production-dashboard';
+    case 'inventory_manager': return '/inventory-dashboard';
+    case 'worker': default: return '/';
+  }
+};
+
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,24 +28,14 @@ const LoginPage = () => {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post(`${API}/api/auth/login`, { email, password }, { withCredentials: true });
+      const payload = { email: email.trim().toLowerCase(), password: password.trim() };
+      const res = await axios.post(`${API}/api/auth/login`, payload, { timeout: 10000 });
+
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      switch (res.data.user.role) {
-        case 'admin':
-          navigate('/admin-dashboard'); break;
-        case 'worker':
-          navigate('/worker-dashboard'); break;
-        case 'production_manager':
-          navigate('/production-dashboard'); break;
-        case 'inventory_manager':
-          navigate('/inventory-dashboard'); break;
-        case 'field_supervisor':
-          navigate('/field-dashboard'); break;
-        default:
-          navigate('/');
-      }
+      // Always go to the right dashboard by role
+      navigate(roleHome(res.data.user.role), { replace: true });
     } catch (err) {
       console.error('Login error:', err?.response?.status, err?.response?.data);
       setError(err?.response?.data?.message || 'Invalid credentials');
@@ -46,16 +46,13 @@ const LoginPage = () => {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-900">
-      {/* subtle background accent */}
       <div className="pointer-events-none absolute inset-0 opacity-20">
         <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-emerald-300 blur-3xl" />
         <div className="absolute -bottom-16 -left-16 w-96 h-96 rounded-full bg-green-500 blur-3xl" />
       </div>
 
-      {/* card */}
       <div className="relative z-10 w-full max-w-md">
         <div className="rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl p-6 sm:p-8">
-          {/* brand */}
           <div className="flex items-center justify-center gap-3 mb-2">
             <img src="/favicon.png" alt="CeylonLeaf" className="w-9 h-9 rounded" />
             <span className="text-white text-2xl font-semibold tracking-tight">CeylonLeaf</span>
@@ -64,16 +61,13 @@ const LoginPage = () => {
             Sign in to manage fields, workers, and factory handovers.
           </p>
 
-          {/* error */}
           {error && (
             <div className="alert alert-error mb-4 py-2 text-sm">
               <span>{error}</span>
             </div>
           )}
 
-          {/* form */}
           <form onSubmit={handleLogin} className="space-y-4">
-            {/* email */}
             <label className="form-control">
               <div className="label">
                 <span className="label-text text-white/90">Email</span>
@@ -95,7 +89,6 @@ const LoginPage = () => {
               </div>
             </label>
 
-            {/* password */}
             <label className="form-control">
               <div className="label">
                 <span className="label-text text-white/90">Password</span>
@@ -124,7 +117,6 @@ const LoginPage = () => {
               </div>
             </label>
 
-            {/* actions */}
             <button
               type="submit"
               disabled={loading}
@@ -143,7 +135,6 @@ const LoginPage = () => {
             </button>
           </form>
 
-          {/* helper footer */}
           <div className="mt-6 text-xs sm:text-sm text-white/80 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Leaf className="w-4 h-4" />
@@ -153,7 +144,6 @@ const LoginPage = () => {
           </div>
         </div>
 
-        {/* small note */}
         <p className="text-center text-white/70 text-xs mt-4">
           Trouble logging in? Contact your administrator for credentials.
         </p>
