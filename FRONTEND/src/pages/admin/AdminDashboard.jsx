@@ -1,4 +1,5 @@
 import React from "react";
+import Navbar from "../../components/Navbar";
 import { useNavigate } from "react-router-dom";
 import {
   Users,
@@ -34,7 +35,9 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-base-200">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-base-200">
       <div className="mx-auto max-w-6xl p-6">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
@@ -95,6 +98,7 @@ const AdminDashboard = () => {
         </div>
       </div>
     </div>
+  </>
   );
 };
 

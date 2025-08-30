@@ -1,5 +1,6 @@
 // FRONTEND/src/pages/admin/FieldsPage.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import Navbar from "../../components/Navbar";
 import axios from "axios";
 import { ArrowLeft, Leaf, MapPin, RefreshCw, Save, Trash2, Edit3, X, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -262,7 +263,9 @@ const FieldsPage = () => {
   const safeResults = Array.isArray(results) ? results : [];
 
   return (
-    <div className="min-h-screen bg-base-200">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-base-200">
       <div className="mx-auto max-w-6xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <button className="btn btn-ghost btn-sm" onClick={() => navigate("/admin-dashboard")}>
@@ -454,7 +457,8 @@ const FieldsPage = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -20,22 +20,8 @@ import RequireAuth from './components/RequireAuth.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';   // tiles landing
 import AdminUsers from './components/AdminUsers.jsx';            // users CRUD
 import FieldsPage from './pages/admin/FieldsPage.jsx';           // fields page
-/*
-// New pages
-import ToolsPage from "./pages/ToolsPage";
-import ToolDetailPage from "./pages/ToolDetailPage";
-import FNIPage from "./pages/FNIPage";
-import CreateToolPage from "./pages/CreateToolPage";
-import CreatePage from "./pages/CreatePage";
-import NoteDetailPage from "./pages/NoteDetailPage";
-import FNIDetailPage from "./pages/FNIDetailPage";
-
-// Simple placeholders (keep or replace later)
-const WorkerDashboard = () => <div className="p-8 text-2xl">Worker Dashboard</div>;
-const ProductionDashboard = () => <div className="p-8 text-2xl">Production Manager Dashboard</div>;
-const InventoryDashboard = () => <div className="p-8 text-2xl">Inventory Manager Dashboard</div>;
-const FieldDashboard = () => <div className="p-8 text-2xl">Field Supervisor Dashboard</div>;
-const NotFound = () => <div className="p-8 text-2xl">Page not found</div>;*/
+import ToolsPage from "./pages/admin/ToolsPage.jsx";
+import FNIPage from "./pages/admin/FNIPage.jsx";
 
 
 // Supervisor
@@ -73,6 +59,22 @@ export default function App() {
         element={
           <RequireAuth role="admin">
             <FieldsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/admin/tools"
+        element={
+          <RequireAuth role="admin">
+            <ToolsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/admin/fni"
+        element={
+          <RequireAuth role="admin">
+            <FNIPage />
           </RequireAuth>
         }
       />
