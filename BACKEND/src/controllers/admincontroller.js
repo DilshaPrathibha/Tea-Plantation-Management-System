@@ -18,8 +18,7 @@ exports.createUser = async (req, res) => {
     const exists = await User.findOne({ email: normalizedEmail });
     if (exists) return res.status(409).json({ message: 'Email already exists' });
 
-    const tempPassword =
-      password && password.trim().length >= 6 ? password : generateTempPassword();
+    const tempPassword = password && password.trim().length >= 6 ? password : generateTempPassword();
 
     const user = new User({
       name,
@@ -73,7 +72,7 @@ exports.listUsers = async (req, res) => {
   }
 };
 
-// PATCH /api/admin/users/:id  ← NEW
+// PATCH /api/admin/users/:id
 exports.updateUser = async (req, res) => {
   try {
     const id = req.params.id;
@@ -87,7 +86,6 @@ exports.updateUser = async (req, res) => {
     if (estate !== undefined) update.estate = estate;
     if (department !== undefined) update.department = department;
 
-    // If changing email, ensure uniqueness
     if (update.email) {
       const exists = await User.findOne({ email: update.email, _id: { $ne: id } });
       if (exists) return res.status(409).json({ message: 'Email already exists' });
@@ -96,10 +94,8 @@ exports.updateUser = async (req, res) => {
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Apply updates
     Object.assign(user, update);
 
-    // Optional: change password
     if (password && password.trim().length >= 6) {
       user.password = password; // will be hashed by pre('save')
     }
@@ -132,7 +128,7 @@ exports.resetPassword = async (req, res) => {
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    user.password = temp; // triggers hash
+    user.password = temp;
     await user.save();
     res.json({ message: 'Password reset', temporaryPassword: temp });
   } catch (e) {

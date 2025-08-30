@@ -24,3 +24,15 @@ exports.requireRole = (role) => (req, res, next) => {
   if (!req.user || req.user.role !== role) return res.status(403).json({ message: 'Forbidden' });
   next();
 };
+
+// Add this helper without touching existing exports
+exports.requireAnyRole = (roles = []) => (req, res, next) => {
+  try {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    next();
+  } catch (e) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+};

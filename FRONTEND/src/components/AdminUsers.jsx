@@ -1,11 +1,11 @@
-// FRONTEND/src/pages/AdminDashboard.jsx
+// FRONTEND/src/pages/admin/AdminUsers.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { UserPlus, Users, Copy, Check, RefreshCw, Trash2 } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
-const AdminDashboard = () => {
+const AdminUsers = () => {
   const token = localStorage.getItem('token');
   const authHeader = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
 
@@ -234,4 +234,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default AdminUsers;
