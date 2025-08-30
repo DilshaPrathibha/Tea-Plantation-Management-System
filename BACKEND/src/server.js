@@ -4,6 +4,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 dotenv.config(); // MUST be first, before reading env
 
+const attendanceRoutes = require('./routes/attendanceroutes');
 const connectdb = require('../config/db');
 const ratelimit = require('./middleware/ratelimiter');
 
@@ -36,6 +37,7 @@ const fieldRoutes = require('./routes/fieldroutes');
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);   
 app.use('/api/fields', fieldRoutes);  
+app.use('/api/attendance', attendanceRoutes);
 
             // ✅ add
 
