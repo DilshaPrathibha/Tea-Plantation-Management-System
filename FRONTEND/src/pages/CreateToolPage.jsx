@@ -15,76 +15,89 @@ const api = axios.create({
   },
 });
 
-const CreateToolPage = () => {
-  const [name, setName] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [description, setDescription] = useState('');
+export default function CreateToolPage() {
+  const [toolType, setToolType] = useState("");
+  const [condition, setCondition] = useState("good");
+  const [note, setNote] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!name || !quantity) {
-      toast.error('Name and quantity are required');
-      return;
-    }
-
+    setError("");
+    setLoading(true);
     try {
-      await api.post('/tools', { name, quantity, description });
-      toast.success('Tool created successfully');
-      navigate('/tools');
-    } catch (error) {
-      console.error("Create failed:", error);
-      toast.error('Failed to create tool');
+      await api.post("/tools", { toolType, condition, note });
+      toast.success("Tool created successfully");
+      navigate("/admin/tools");
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setError("Tool ID already exists. Please try again.");
+      } else {
+        setError(err.response?.data?.message || "Failed to create tool");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-base-200">
       <Navbar />
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Add New Tool</h1>
-
-        <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
+      <div className="max-w-xl mx-auto p-6">
+        <h1 className="text-2xl font-bold mb-6">Create New Tool</h1>
+        {error && <div className="alert alert-error mb-4">{error}</div>}
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
-            <label className="block mb-1 font-semibold">Name</label>
-            <input
-              type="text"
-              className="input input-bordered w-full"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter tool name"
-            />
+            <label className="block mb-1 font-semibold">Tool Type <span className="text-error">*</span></label>
+            <select
+              className="select select-bordered w-full"
+              value={toolType}
+              onChange={e => setToolType(e.target.value)}
+              required
+            >
+              <option value="">Select type...</option>
+              <option value="knife">Knife</option>
+              <option value="sprayer">Sprayer</option>
+              <option value="harvester">Harvester</option>
+              <option value="hoe">Hoe</option>
+              <option value="other">Other</option>
+            </select>
           </div>
-
           <div>
-            <label className="block mb-1 font-semibold">Quantity</label>
-            <input
-              type="number"
-              className="input input-bordered w-full"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              placeholder="Enter quantity"
-            />
+            <label className="block mb-1 font-semibold">Condition</label>
+            <select
+              className="select select-bordered w-full"
+              value={condition}
+              onChange={e => setCondition(e.target.value)}
+            >
+              <option value="new">New</option>
+              <option value="good">Good</option>
+              <option value="needs_repair">Needs Repair</option>
+            </select>
           </div>
-
           <div>
-            <label className="block mb-1 font-semibold">Description</label>
+            <label className="block mb-1 font-semibold">Note</label>
             <textarea
-              className="textarea textarea-bordered w-full h-32"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter description"
+              className="textarea textarea-bordered w-full"
+              rows={3}
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="Optional notes about this tool..."
             />
           </div>
-
-          <button type="submit" className="btn btn-primary">
-            Add Tool
+          <button
+            type="submit"
+            className={`btn btn-primary w-full ${loading ? "btn-disabled" : ""}`}
+            disabled={loading}
+          >
+            {loading ? <span className="loading loading-spinner loading-sm mr-2" /> : null}
+            Create Tool
           </button>
         </form>
       </div>
     </div>
   );
-};
+}
 
-export default CreateToolPage;
