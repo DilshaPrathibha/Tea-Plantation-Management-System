@@ -138,7 +138,7 @@ export default function App() {
         }
       />
 
-        /*
+      {/* 
         <Route path="*" element={<NotFound />} />
    
     <Route path="/tools" element={<ToolsPage />} />
@@ -151,7 +151,7 @@ export default function App() {
       </Routes>
     </div>
   );
-};*/
+}; */}
 
 
       {/* Fallback */}
