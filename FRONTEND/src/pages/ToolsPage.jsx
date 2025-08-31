@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Download, Printer, UserPlus, UserMinus, Edit3, Trash2 } from 'lucide-react';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';            // ⬅️ v3: named export
 import autoTable from 'jspdf-autotable';
 import Navbar from '@/components/Navbar';
 import RateLimitedUI from '@/components/RateLimitedUI';
@@ -11,26 +11,26 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+
+
 const api = axios.create({
   baseURL: 'http://localhost:5001/api',
   timeout: 5000,
-  headers: {
-    'Content-Type': 'application/json',
-  }
+  headers: { 'Content-Type': 'application/json' }
 });
 
 const ToolsPage = () => {
   const [tools, setTools] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRateLimited, setIsRateLimited] = useState(false);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [workers, setWorkers] = useState([]);
   const [assignModal, setAssignModal] = useState({ open: false, tool: null });
-  const [assignWorkerId, setAssignWorkerId] = useState("");
+  const [assignWorkerId, setAssignWorkerId] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
-  const [noteModal, setNoteModal] = useState({ open: false, note: "" });
+  const [noteModal, setNoteModal] = useState({ open: false, note: '' });
   const navigate = useNavigate();
 
   const fetchTools = async () => {
@@ -44,12 +44,12 @@ const ToolsPage = () => {
       setTools(response.data);
       setIsRateLimited(false);
     } catch (error) {
-      console.error("Failed to fetch tools", error);
+      console.error('Failed to fetch tools', error);
       if (error.response?.status === 429) {
         setIsRateLimited(true);
-        toast.error("You are being rate-limited. Please try again shortly.");
+        toast.error('You are being rate-limited. Please try again shortly.');
       } else {
-        toast.error("Could not load tools.");
+        toast.error('Could not load tools.');
       }
     } finally {
       setLoading(false);
@@ -60,8 +60,8 @@ const ToolsPage = () => {
     try {
       const res = await api.get('/workers');
       setWorkers(res.data);
-    } catch (err) {
-      toast.error("Could not load workers");
+    } catch {
+      toast.error('Could not load workers');
     }
   };
 
@@ -72,17 +72,17 @@ const ToolsPage = () => {
   // Export CSV
   const exportCSV = () => {
     const rows = [
-      ["Tool ID", "Type", "Assigned To", "Condition", "Status", "Note"],
+      ['Tool ID', 'Type', 'Assigned To', 'Condition', 'Status', 'Note'],
       ...tools.map(t => [
         t.toolId,
         t.toolType,
-        t.assignedTo?.name || "",
+        t.assignedTo?.name || '',
         t.condition,
         t.status,
         t.note
       ])
     ];
-    const csv = rows.map(r => r.map(x => `"${x}"`).join(",")).join("\n");
+    const csv = rows.map(r => r.map(x => `"${String(x ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -92,110 +92,95 @@ const ToolsPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Export PDF (jsPDF, popup-safe, robust)
+  // Export PDF
   const exportPDF = async () => {
     const win = window.open('', '_blank');
-    console.log('Export PDF clicked');
     try {
       const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
       // Title centered
       doc.setFontSize(18);
       const pageWidth = doc.internal.pageSize.getWidth();
       const title = 'CeylonLeaf - Tool Inventory Report';
       const titleWidth = doc.getTextWidth(title);
       doc.text(title, (pageWidth - titleWidth) / 2, 40);
+
       // Date/time right
       doc.setFontSize(10);
       const dateStr = `Generated on ${new Date().toLocaleString()}`;
       doc.text(dateStr, pageWidth - doc.getTextWidth(dateStr) - 40, 60);
-      // Table rows
-      const rows = Array.isArray(tools) ? tools : [];
-      let body = rows.map(t => [
+
+      // Table
+      const body = (Array.isArray(tools) ? tools : []).map(t => [
         t.toolId || '-',
         t.toolType || '',
         t.assignedTo?.name || 'Unassigned',
         t.condition || '',
         t.status || ''
       ]);
-      if (body.length === 0) {
-        body.push(['-', '-', '-', '-', '-']);
-      }
-      console.log('Table rows count:', body.length);
-      console.log('autoTable exists?', typeof autoTable);
+      if (body.length === 0) body.push(['-', '-', '-', '-', '-']);
+
       autoTable(doc, {
         head: [['Tool ID', 'Type', 'Assigned To', 'Condition', 'Status']],
         body,
         startY: 80,
         styles: { fontSize: 10 },
-        headStyles: { fillColor: [34, 197, 94], textColor: [0,0,0] },
+        headStyles: { fillColor: [34, 197, 94], textColor: [0, 0, 0] },
         alternateRowStyles: { fillColor: [240, 253, 244] },
-        margin: { left: 40, right: 40 },
+        margin: { left: 40, right: 40 }
       });
-      // Open PDF in pre-opened tab if possible
+
       const url = doc.output('bloburl');
-      if (win) {
-        win.location.href = url;
-        console.log('Opened in pre-opened tab');
-      } else {
-        window.open(url, '_blank');
-        console.log('Opened in fallback new tab');
-      }
+      if (win) win.location.href = url;
+      else window.open(url, '_blank');
     } catch (e) {
       console.error(e);
-      if (win) {
-        win.document.body.innerHTML = '<p style="font-family:sans-serif">Failed to generate PDF.</p>';
-      }
+      if (win) win.document.body.innerHTML = '<p style="font-family:sans-serif">Failed to generate PDF.</p>';
     }
   };
 
-  // To re-enable logo in PDF export:
-  // const base = import.meta.env.BASE_URL || '/';
-  // fetch(base + 'logo.png') ... fallback to base + 'logo192.png'
-  // Only addImage if dataURL is valid.
-
-  const deleteTool = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this tool?")) return;
+  const deleteTool = async id => {
+    if (!window.confirm('Are you sure you want to delete this tool?')) return;
     setActionLoading(true);
     try {
       await api.delete(`/tools/${id}`);
-      toast.success("Tool deleted");
+      toast.success('Tool deleted');
       fetchTools();
-    } catch (err) {
-      toast.error("Delete failed");
+    } catch {
+      toast.error('Delete failed');
     } finally {
       setActionLoading(false);
     }
   };
 
   // Assign tool
-  const openAssignModal = (tool) => {
+  const openAssignModal = tool => {
     setAssignModal({ open: true, tool });
-    setAssignWorkerId("");
+    setAssignWorkerId('');
     fetchWorkers();
   };
   const assignTool = async () => {
-    if (!assignWorkerId) return toast.error("Select a worker");
+    if (!assignWorkerId) return toast.error('Select a worker');
     setActionLoading(true);
     try {
       await api.post(`/tools/${assignModal.tool._id}/assign`, { workerId: assignWorkerId });
-      toast.success("Tool assigned");
+      toast.success('Tool assigned');
       setAssignModal({ open: false, tool: null });
       fetchTools();
-    } catch (err) {
-      toast.error("Assign failed");
+    } catch {
+      toast.error('Assign failed');
     } finally {
       setActionLoading(false);
     }
   };
-  // Unassign tool
-  const unassignTool = async (tool) => {
+  const unassignTool = async tool => {
     setActionLoading(true);
     try {
       await api.post(`/tools/${tool._id}/unassign`);
-      toast.success("Tool unassigned");
+      toast.success('Tool unassigned');
       fetchTools();
-    } catch (err) {
-      toast.error("Unassign failed");
+    } catch {
+      toast.error('Unassign failed');
     } finally {
       setActionLoading(false);
     }
@@ -231,6 +216,7 @@ const ToolsPage = () => {
           <button className="btn btn-outline gap-2" onClick={exportPDF}><Printer size={16}/> Export PDF</button>
           <button className="btn btn-primary ml-auto" onClick={() => navigate('/tools/create')}>+ New Tool</button>
         </div>
+
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -245,7 +231,7 @@ const ToolsPage = () => {
                   <th>Assigned To</th>
                   <th>Condition</th>
                   <th>Status</th>
-                  <th className="w-48">Actions / Notes</th>
+                  <th className="w-48">Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -263,20 +249,13 @@ const ToolsPage = () => {
                     <td>{tool.note}</td>
                     <td>
                       <div className="flex gap-2">
-                        <button
-                          className="btn btn-sm btn-neutral"
-                          onClick={() => setNoteModal({ open: true, note: tool.note })}
-                        >
-                          Notes
-                        </button>
-                        {/* Drop-in snippet for Assign/Unassign actions */}
                         {(() => {
                           const isAssigned = !!tool.assignedTo;
                           const isRepair = String(tool.condition).toLowerCase() === 'needs_repair';
                           if (!isAssigned) {
                             return (
                               <button
-                                className={`btn btn-sm ${isRepair ? 'btn-disabled opacity-50 cursor-not-allowed' : ''}`}
+                                className={`btn btn-sm btn-neutral ${isRepair ? 'btn-disabled opacity-50 cursor-not-allowed' : ''}`}
                                 disabled={isRepair}
                                 title={isRepair ? 'Disabled: tool needs repair' : 'Assign this tool'}
                                 onClick={() => {
@@ -311,9 +290,11 @@ const ToolsPage = () => {
                 ))}
               </tbody>
             </table>
-            {/* Notes Modal */}
+
+            {/* Notes Modal / Assign Modal below */}
           </div>
         )}
+
         {noteModal.open && (
           <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
             <div className="bg-base-100 rounded-xl shadow-lg p-6 w-full max-w-md">
@@ -322,13 +303,12 @@ const ToolsPage = () => {
                 {noteModal.note && noteModal.note.trim() ? noteModal.note : <span className="text-base-content/50">No note</span>}
               </div>
               <div className="flex gap-2 justify-end">
-                <button className="btn" onClick={() => setNoteModal({ open: false, note: "" })}>Close</button>
+                <button className="btn" onClick={() => setNoteModal({ open: false, note: '' })}>Close</button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Assign Modal */}
         {assignModal.open && (
           <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
             <div className="bg-base-100 rounded-xl shadow-lg p-6 w-full max-w-md">

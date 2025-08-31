@@ -98,43 +98,26 @@ export default function ToolDetailPage() {
           <Link to="/tools" className="link link-hover">← Tools</Link>
         </div>
         <h1 className="text-2xl font-bold mb-6">Tool Details</h1>
-        <div className="flex justify-end mb-4 gap-2">
-          <button
-            type="button"
-            className={`btn btn-primary ${saving ? "btn-disabled" : ""}`}
-            disabled={saving}
-            onClick={handleSave}
-          >
-            {saving ? <span className="loading loading-spinner loading-sm mr-2" /> : null}
-            Save Changes
-          </button>
-          <button
-            type="button"
-            className="btn btn-error"
-            onClick={handleDelete}
-            disabled={saving}
-          >
-            Delete
-          </button>
-        </div>
         <form className="space-y-6" onSubmit={handleSave}>
-          <div>
-            <label className="block mb-1 font-semibold">Tool ID</label>
-            <input
-              className="input input-bordered w-full"
-              value={tool.toolId}
-              readOnly
-              disabled
-            />
-          </div>
-          <div>
-            <label className="block mb-1 font-semibold">Tool Type</label>
-            <input
-              className="input input-bordered w-full"
-              value={tool.toolType}
-              readOnly
-              disabled
-            />
+          <div className="flex gap-4 mb-6">
+            <div className="flex-1">
+              <label className="block mb-1 font-semibold">Tool ID</label>
+              <input
+                className="input input-bordered w-full"
+                value={tool.toolId}
+                readOnly
+                disabled
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block mb-1 font-semibold">Tool Type</label>
+              <input
+                className="input input-bordered w-full"
+                value={tool.toolType}
+                readOnly
+                disabled
+              />
+            </div>
           </div>
           <div>
             <label className="block mb-1 font-semibold">Condition</label>
@@ -167,6 +150,24 @@ export default function ToolDetailPage() {
               onChange={handleChange}
               placeholder="Optional notes about this tool..."
             />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              type="submit"
+              className={`btn btn-primary ${saving ? "btn-disabled" : ""}`}
+              disabled={saving}
+            >
+              {saving ? <span className="loading loading-spinner loading-sm mr-2" /> : null}
+              Save Changes
+            </button>
+            <button
+              type="button"
+              className="btn btn-error"
+              onClick={handleDelete}
+              disabled={saving}
+            >
+              Delete
+            </button>
           </div>
         </form>
       </div>
