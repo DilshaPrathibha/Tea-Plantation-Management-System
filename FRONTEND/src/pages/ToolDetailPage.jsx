@@ -97,7 +97,18 @@ export default function ToolDetailPage() {
         <div className="mb-2 text-sm text-base-content/70">
           <Link to="/tools" className="link link-hover">← Tools</Link>
         </div>
-        <h1 className="text-2xl font-bold mb-6">Tool Details</h1>
+        <div className="flex items-center mb-6 gap-4">
+          <h1 className="text-2xl font-bold">Tool Details</h1>
+          {tool.condition === "new" || tool.condition === "good" ? (
+            <span className="badge badge-success gap-1 text-base">
+              <span></span> Available
+            </span>
+          ) : tool.condition === "needs_repair" ? (
+            <span className="badge badge-error gap-1 text-base">
+              <span></span> Needs Repair
+            </span>
+          ) : null}
+        </div>
         <form className="space-y-6" onSubmit={handleSave}>
           <div className="flex gap-4 mb-6">
             <div className="flex-1">
@@ -119,27 +130,20 @@ export default function ToolDetailPage() {
               />
             </div>
           </div>
-          <div>
-            <label className="block mb-1 font-semibold">Condition</label>
-            <select
-              className="select select-bordered w-full"
-              name="condition"
-              value={tool.condition}
-              onChange={handleChange}
-              required
-            >
-              <option value="new">New</option>
-              <option value="good">Good</option>
-              <option value="needs_repair">Needs Repair</option>
-            </select>
-            <div className="mt-2">
-              {tool.condition === "new" || tool.condition === "good" ? (
-                <span className="badge badge-success gap-1">✅ Available</span>
-              ) : tool.condition === "needs_repair" ? (
-                <span className="badge badge-error gap-1">🔴 Needs Repair</span>
-              ) : null}
-            </div>
-          </div>
+           <div>
+             <label className="block mb-1 font-semibold">Condition</label>
+             <select
+               className="select select-bordered w-full"
+               name="condition"
+               value={tool.condition}
+               onChange={handleChange}
+               required
+             >
+               <option value="new">New</option>
+               <option value="good">Good</option>
+               <option value="needs_repair">Needs Repair</option>
+             </select>
+           </div>
           <div>
             <label className="block mb-1 font-semibold">Note</label>
             <textarea

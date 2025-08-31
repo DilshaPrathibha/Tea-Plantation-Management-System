@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Download, Printer, UserPlus, UserMinus, Edit3, Trash2 } from 'lucide-react';
-import { jsPDF } from 'jspdf';            // ⬅️ v3: named export
+import { jsPDF } from 'jspdf';            
 import autoTable from 'jspdf-autotable';
 import Navbar from '@/components/Navbar';
 import RateLimitedUI from '@/components/RateLimitedUI';
@@ -72,7 +72,7 @@ const ToolsPage = () => {
   // Export CSV
   const exportCSV = () => {
     const rows = [
-      ['Tool ID', 'Type', 'Assigned To', 'Condition', 'Status', 'Note'],
+      ['Tool ID', 'Type', 'Assigned To', 'Condition', 'Status', 'Notes'],
       ...tools.map(t => [
         t.toolId,
         t.toolType,
@@ -116,12 +116,13 @@ const ToolsPage = () => {
         t.toolType || '',
         t.assignedTo?.name || 'Unassigned',
         t.condition || '',
-        t.status || ''
+        t.status || '',
+        t.note || ''
       ]);
-      if (body.length === 0) body.push(['-', '-', '-', '-', '-']);
+      if (body.length === 0) body.push(['-', '-', '-', '-', '-', '-']);
 
       autoTable(doc, {
-        head: [['Tool ID', 'Type', 'Assigned To', 'Condition', 'Status']],
+        head: [['Tool ID', 'Type', 'Assigned To', 'Condition', 'Status', 'Notes']],
         body,
         startY: 80,
         styles: { fontSize: 10 },
@@ -202,7 +203,6 @@ const ToolsPage = () => {
             <option value="">All Types</option>
             <option value="knife">Knife</option>
             <option value="sprayer">Sprayer</option>
-            <option value="harvester">Harvester</option>
             <option value="hoe">Hoe</option>
             <option value="other">Other</option>
           </select>
@@ -242,9 +242,9 @@ const ToolsPage = () => {
                     <td>{tool.assignedTo ? `${tool.assignedTo.name}` : <span className="text-base-content/50">Unassigned</span>}</td>
                     <td className="capitalize">{tool.condition}</td>
                     <td>
-                      {tool.status === 'available' && <span className="badge badge-success gap-1">✅ Available</span>}
-                      {tool.status === 'assigned' && <span className="badge badge-warning gap-1">🟡 Assigned</span>}
-                      {tool.status === 'needs_repair' && <span className="badge badge-error gap-1">🔴 Needs Repair</span>}
+                      {tool.status === 'available' && <span className="badge badge-success gap-1">Available</span>}
+                      {tool.status === 'assigned' && <span className="badge badge-warning gap-1">Assigned</span>}
+                      {tool.status === 'needs_repair' && <span className="badge badge-error gap-1">Needs Repair</span>}
                     </td>
                     <td>{tool.note}</td>
                     <td>
@@ -263,7 +263,7 @@ const ToolsPage = () => {
                                   openAssignModal(tool);
                                 }}
                               >
-                                Assign
+                                <UserPlus size={16} className="mr-1"/> Assign
                               </button>
                             );
                           } else {
