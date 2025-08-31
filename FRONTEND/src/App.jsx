@@ -13,9 +13,9 @@ import FieldsPage from "./pages/admin/FieldsPage";
 
 // New pages
 import ToolsPage from "./pages/ToolsPage";
-import ToolDetailPage from "./pages/ToolDetailPage";
+import ToolDetailPage from './pages/ToolDetailPage.jsx';
 import FNIPage from "./pages/FNIPage";
-import CreateToolPage from "./pages/CreateToolPage";
+import CreateToolPage from './pages/CreateToolPage.jsx';
 import CreatePage from "./pages/CreatePage";
 import NoteDetailPage from "./pages/NoteDetailPage";
 import FNIDetailPage from "./pages/FNIDetailPage";
@@ -99,7 +99,7 @@ const App = () => {
         <Route path="*" element={<NotFound />} />
     {/* New pages */}
     <Route path="/tools" element={<ToolsPage />} />
-    <Route path="/tool/:id" element={<ToolDetailPage />} />
+  <Route path="/tools/:id" element={<ToolDetailPage />} />
     <Route path="/tools/create" element={<CreateToolPage />} />
   <Route path="/FNI" element={<FNIPage />} />
   <Route path="/FNI/create" element={<CreatePage />} />

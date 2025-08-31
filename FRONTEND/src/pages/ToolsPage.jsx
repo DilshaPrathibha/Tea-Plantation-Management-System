@@ -28,6 +28,7 @@ const ToolsPage = () => {
   const [assignModal, setAssignModal] = useState({ open: false, tool: null });
   const [assignWorkerId, setAssignWorkerId] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [noteModal, setNoteModal] = useState({ open: false, note: "" });
   const navigate = useNavigate();
 
   const fetchTools = async () => {
@@ -186,7 +187,7 @@ const ToolsPage = () => {
                   <th>Assigned To</th>
                   <th>Condition</th>
                   <th>Status</th>
-                  <th className="w-48">Actions</th>
+                  <th className="w-48">Actions / Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -204,6 +205,12 @@ const ToolsPage = () => {
                     <td>{tool.note}</td>
                     <td>
                       <div className="flex gap-2">
+                        <button
+                          className="btn btn-sm btn-neutral"
+                          onClick={() => setNoteModal({ open: true, note: tool.note })}
+                        >
+                          Notes
+                        </button>
                         {tool.status !== 'needs_repair' && (
                           tool.assignedTo ? (
                             <button className="btn btn-sm btn-outline" disabled={actionLoading} onClick={() => unassignTool(tool)}>
@@ -215,8 +222,8 @@ const ToolsPage = () => {
                             </button>
                           )
                         )}
-                        <button className="btn btn-sm btn-warning" onClick={() => navigate(`/tool/${tool._id}`)}>
-                          <Edit3 size={16}/> Edit
+                        <button className="btn btn-sm btn-warning" onClick={() => navigate(`/tools/${tool._id}`)}>
+                          <Edit3 size={16}/> Details
                         </button>
                         <button className="btn btn-sm btn-error" disabled={actionLoading} onClick={() => deleteTool(tool._id)}>
                           <Trash2 size={16}/> Delete
@@ -227,6 +234,20 @@ const ToolsPage = () => {
                 ))}
               </tbody>
             </table>
+            {/* Notes Modal */}
+          </div>
+        )}
+        {noteModal.open && (
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-base-100 rounded-xl shadow-lg p-6 w-full max-w-md">
+              <h2 className="text-xl font-bold mb-4">Tool Note</h2>
+              <div className="mb-4 text-base-content/80">
+                {noteModal.note && noteModal.note.trim() ? noteModal.note : <span className="text-base-content/50">No note</span>}
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button className="btn" onClick={() => setNoteModal({ open: false, note: "" })}>Close</button>
+              </div>
+            </div>
           </div>
         )}
 

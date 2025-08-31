@@ -48,7 +48,7 @@ export default function EditToolPage() {
         note: tool.note,
       });
       toast.success("Tool updated successfully");
-      navigate("/admin/tools");
+      navigate("/tools");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update tool");
     } finally {
