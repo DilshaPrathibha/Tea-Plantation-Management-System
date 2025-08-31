@@ -3,6 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Download, Printer, UserPlus, UserMinus, Edit3, Trash2 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import Navbar from '@/components/Navbar';
 import RateLimitedUI from '@/components/RateLimitedUI';
 import toast from 'react-hot-toast';
@@ -90,10 +92,66 @@ const ToolsPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Export PDF (print)
-  const exportPDF = () => {
-    window.print();
+  // Export PDF (jsPDF, popup-safe, robust)
+  const exportPDF = async () => {
+    const win = window.open('', '_blank');
+    console.log('Export PDF clicked');
+    try {
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      // Title centered
+      doc.setFontSize(18);
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const title = 'CeylonLeaf - Tool Inventory Report';
+      const titleWidth = doc.getTextWidth(title);
+      doc.text(title, (pageWidth - titleWidth) / 2, 40);
+      // Date/time right
+      doc.setFontSize(10);
+      const dateStr = `Generated on ${new Date().toLocaleString()}`;
+      doc.text(dateStr, pageWidth - doc.getTextWidth(dateStr) - 40, 60);
+      // Table rows
+      const rows = Array.isArray(tools) ? tools : [];
+      let body = rows.map(t => [
+        t.toolId || '-',
+        t.toolType || '',
+        t.assignedTo?.name || 'Unassigned',
+        t.condition || '',
+        t.status || ''
+      ]);
+      if (body.length === 0) {
+        body.push(['-', '-', '-', '-', '-']);
+      }
+      console.log('Table rows count:', body.length);
+      console.log('autoTable exists?', typeof autoTable);
+      autoTable(doc, {
+        head: [['Tool ID', 'Type', 'Assigned To', 'Condition', 'Status']],
+        body,
+        startY: 80,
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [34, 197, 94], textColor: [0,0,0] },
+        alternateRowStyles: { fillColor: [240, 253, 244] },
+        margin: { left: 40, right: 40 },
+      });
+      // Open PDF in pre-opened tab if possible
+      const url = doc.output('bloburl');
+      if (win) {
+        win.location.href = url;
+        console.log('Opened in pre-opened tab');
+      } else {
+        window.open(url, '_blank');
+        console.log('Opened in fallback new tab');
+      }
+    } catch (e) {
+      console.error(e);
+      if (win) {
+        win.document.body.innerHTML = '<p style="font-family:sans-serif">Failed to generate PDF.</p>';
+      }
+    }
   };
+
+  // To re-enable logo in PDF export:
+  // const base = import.meta.env.BASE_URL || '/';
+  // fetch(base + 'logo.png') ... fallback to base + 'logo192.png'
+  // Only addImage if dataURL is valid.
 
   const deleteTool = async (id) => {
     if (!window.confirm("Are you sure you want to delete this tool?")) return;
@@ -211,17 +269,36 @@ const ToolsPage = () => {
                         >
                           Notes
                         </button>
-                        {tool.status !== 'needs_repair' && (
-                          tool.assignedTo ? (
-                            <button className="btn btn-sm btn-outline" disabled={actionLoading} onClick={() => unassignTool(tool)}>
-                              <UserMinus size={16}/> Unassign
-                            </button>
-                          ) : (
-                            <button className="btn btn-sm btn-outline" disabled={actionLoading} onClick={() => openAssignModal(tool)}>
-                              <UserPlus size={16}/> Assign
-                            </button>
-                          )
-                        )}
+                        {/* Drop-in snippet for Assign/Unassign actions */}
+                        {(() => {
+                          const isAssigned = !!tool.assignedTo;
+                          const isRepair = String(tool.condition).toLowerCase() === 'needs_repair';
+                          if (!isAssigned) {
+                            return (
+                              <button
+                                className={`btn btn-sm ${isRepair ? 'btn-disabled opacity-50 cursor-not-allowed' : ''}`}
+                                disabled={isRepair}
+                                title={isRepair ? 'Disabled: tool needs repair' : 'Assign this tool'}
+                                onClick={() => {
+                                  if (isRepair) return;
+                                  openAssignModal(tool);
+                                }}
+                              >
+                                Assign
+                              </button>
+                            );
+                          } else {
+                            return (
+                              <button
+                                className="btn btn-sm"
+                                title="Unassign from worker"
+                                onClick={() => unassignTool(tool)}
+                              >
+                                Unassign
+                              </button>
+                            );
+                          }
+                        })()}
                         <button className="btn btn-sm btn-warning" onClick={() => navigate(`/tools/${tool._id}`)}>
                           <Edit3 size={16}/> Details
                         </button>

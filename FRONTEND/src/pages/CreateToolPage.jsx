@@ -28,9 +28,10 @@ export default function CreateToolPage() {
     setError("");
     setLoading(true);
     try {
-      await api.post("/tools", { toolType, condition, note });
-      toast.success("Tool created successfully");
-      navigate("/admin/tools");
+      const res = await api.post("/tools", { toolType, condition, note });
+      const created = res.data;
+      toast.success(`Tool created: ${created.toolId}`);
+      navigate("/tools");
     } catch (err) {
       if (err.response?.status === 409) {
         setError("Tool ID already exists. Please try again.");

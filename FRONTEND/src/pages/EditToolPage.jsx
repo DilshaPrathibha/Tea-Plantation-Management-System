@@ -43,7 +43,6 @@ export default function EditToolPage() {
     setError("");
     try {
       await api.put(`/tools/${id}`, {
-        toolType: tool.toolType,
         condition: tool.condition,
         note: tool.note,
       });
@@ -89,19 +88,12 @@ export default function EditToolPage() {
           </div>
           <div>
             <label className="block mb-1 font-semibold">Tool Type</label>
-            <select
-              className="select select-bordered w-full"
-              name="toolType"
+            <input
+              className="input input-bordered w-full"
               value={tool.toolType}
-              onChange={handleChange}
-              required
-            >
-              <option value="knife">Knife</option>
-              <option value="sprayer">Sprayer</option>
-              <option value="harvester">Harvester</option>
-              <option value="hoe">Hoe</option>
-              <option value="other">Other</option>
-            </select>
+              readOnly
+              disabled
+            />
           </div>
           <div>
             <label className="block mb-1 font-semibold">Condition</label>

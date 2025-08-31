@@ -47,7 +47,6 @@ export default function ToolDetailPage() {
     setError("");
     try {
       await api.put(`/tools/${id}`, {
-        toolType: tool.toolType,
         condition: tool.condition,
         note: tool.note,
       });
@@ -55,6 +54,21 @@ export default function ToolDetailPage() {
       navigate("/tools");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update tool");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this tool?")) return;
+    setSaving(true);
+    setError("");
+    try {
+      await api.delete(`/tools/${id}`);
+      toast.success("Tool deleted successfully");
+      navigate("/tools");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to delete tool");
     } finally {
       setSaving(false);
     }
@@ -84,6 +98,25 @@ export default function ToolDetailPage() {
           <Link to="/tools" className="link link-hover">← Tools</Link>
         </div>
         <h1 className="text-2xl font-bold mb-6">Tool Details</h1>
+        <div className="flex justify-end mb-4 gap-2">
+          <button
+            type="button"
+            className={`btn btn-primary ${saving ? "btn-disabled" : ""}`}
+            disabled={saving}
+            onClick={handleSave}
+          >
+            {saving ? <span className="loading loading-spinner loading-sm mr-2" /> : null}
+            Save Changes
+          </button>
+          <button
+            type="button"
+            className="btn btn-error"
+            onClick={handleDelete}
+            disabled={saving}
+          >
+            Delete
+          </button>
+        </div>
         <form className="space-y-6" onSubmit={handleSave}>
           <div>
             <label className="block mb-1 font-semibold">Tool ID</label>
@@ -96,19 +129,12 @@ export default function ToolDetailPage() {
           </div>
           <div>
             <label className="block mb-1 font-semibold">Tool Type</label>
-            <select
-              className="select select-bordered w-full"
-              name="toolType"
+            <input
+              className="input input-bordered w-full"
               value={tool.toolType}
-              onChange={handleChange}
-              required
-            >
-              <option value="knife">Knife</option>
-              <option value="sprayer">Sprayer</option>
-              <option value="harvester">Harvester</option>
-              <option value="hoe">Hoe</option>
-              <option value="other">Other</option>
-            </select>
+              readOnly
+              disabled
+            />
           </div>
           <div>
             <label className="block mb-1 font-semibold">Condition</label>
@@ -123,6 +149,13 @@ export default function ToolDetailPage() {
               <option value="good">Good</option>
               <option value="needs_repair">Needs Repair</option>
             </select>
+            <div className="mt-2">
+              {tool.condition === "new" || tool.condition === "good" ? (
+                <span className="badge badge-success gap-1">✅ Available</span>
+              ) : tool.condition === "needs_repair" ? (
+                <span className="badge badge-error gap-1">🔴 Needs Repair</span>
+              ) : null}
+            </div>
           </div>
           <div>
             <label className="block mb-1 font-semibold">Note</label>
@@ -135,14 +168,6 @@ export default function ToolDetailPage() {
               placeholder="Optional notes about this tool..."
             />
           </div>
-          <button
-            type="submit"
-            className={`btn btn-primary w-full ${saving ? "btn-disabled" : ""}`}
-            disabled={saving}
-          >
-            {saving ? <span className="loading loading-spinner loading-sm mr-2" /> : null}
-            Save Changes
-          </button>
         </form>
       </div>
     </div>
