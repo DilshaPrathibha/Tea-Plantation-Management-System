@@ -11,13 +11,45 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-
-
 const api = axios.create({
   baseURL: 'http://localhost:5001/api',
   timeout: 5000,
   headers: { 'Content-Type': 'application/json' }
 });
+
+// === helpers: inline SVG -> PNG dataURL (so jsPDF can embed it) ===
+const CEYLONLEAF_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+     fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+  <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+</svg>
+`;
+
+// Convert the inline SVG to a PNG data URL using an offscreen canvas
+const svgToPngDataUrl = (svgMarkup, targetPx = 28) =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => {
+      const scale = targetPx / (img.width || 28);
+      const w = Math.max(1, Math.round((img.width || 28) * scale));
+      const h = Math.max(1, Math.round((img.height || 28) * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      try {
+        resolve(canvas.toDataURL('image/png'));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = reject;
+    const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
+    img.src = svgDataUrl;
+  });
 
 const ToolsPage = () => {
   const [tools, setTools] = useState([]);
@@ -92,23 +124,56 @@ const ToolsPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Export PDF
+  // Export PDF (with logo + brand wordmark)
   const exportPDF = async () => {
     const win = window.open('', '_blank');
     try {
       const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-
-      // Title centered
-      doc.setFontSize(18);
       const pageWidth = doc.internal.pageSize.getWidth();
-      const title = 'CeylonLeaf - Tool Inventory Report';
-      const titleWidth = doc.getTextWidth(title);
-      doc.text(title, (pageWidth - titleWidth) / 2, 40);
+      const left = 40;
+      const right = pageWidth - 40;
 
-      // Date/time right
+      // --- Header: Logo + "CeylonLeaf" on left, date/time on right ---
+      // Align the logo to the same baseline as the brand text
+      const logoPng = await svgToPngDataUrl(CEYLONLEAF_SVG, 18); // 18pt for better baseline alignment
+      const logoW = 20; // pts
+      const logoH = 20; // pts
+      const headerTop = 48; // baseline for brand text
+      const brandBaselineY = headerTop;
+
+      // Draw logo so its vertical center aligns with the text baseline
+      doc.addImage(
+        logoPng,
+        'PNG',
+        left,
+        brandBaselineY - logoH * 0.75, // tweak to visually center with text
+        logoW,
+        logoH
+      );
+
+      // Brand text next to logo
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(34, 197, 94); // #22C55E
+      const brandText = 'CeylonLeaf';
+      doc.text(brandText, left + logoW + 8, brandBaselineY);
+
+      // Reset text color for the rest
+      doc.setTextColor(0, 0, 0);
+
+      // Date/time on the right
       doc.setFontSize(10);
       const dateStr = `Generated on ${new Date().toLocaleString()}`;
-      doc.text(dateStr, pageWidth - doc.getTextWidth(dateStr) - 40, 60);
+      const dateWidth = doc.getTextWidth(dateStr);
+      doc.text(dateStr, right - dateWidth, brandBaselineY - 8);
+
+      // Report Title centered under header
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      const reportTitle = 'Tool Inventory Report';
+      const titleWidth = doc.getTextWidth(reportTitle);
+      const titleY = headerTop + 20;
+      doc.text(reportTitle, (pageWidth - titleWidth) / 2, titleY);
 
       // Table
       const body = (Array.isArray(tools) ? tools : []).map(t => [
@@ -124,7 +189,7 @@ const ToolsPage = () => {
       autoTable(doc, {
         head: [['Tool ID', 'Type', 'Assigned To', 'Condition', 'Status', 'Notes']],
         body,
-        startY: 80,
+        startY: titleY + 16,
         styles: { fontSize: 10 },
         headStyles: { fillColor: [34, 197, 94], textColor: [0, 0, 0] },
         alternateRowStyles: { fillColor: [240, 253, 244] },
