@@ -17,6 +17,7 @@ const api = axios.create({
 export default function ToolDetailPage() {
   const { id } = useParams();
   const [tool, setTool] = useState(null);
+    const [noteCharCount, setNoteCharCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -28,6 +29,7 @@ export default function ToolDetailPage() {
       try {
         const res = await api.get(`/tools/${id}`);
         setTool(res.data);
+          setNoteCharCount(res.data.note ? res.data.note.length : 0);
       } catch (err) {
         setError("Failed to load tool");
       } finally {
@@ -38,7 +40,13 @@ export default function ToolDetailPage() {
   }, [id]);
 
   const handleChange = (e) => {
-    setTool({ ...tool, [e.target.name]: e.target.value });
+      if (e.target.name === "note") {
+        const value = e.target.value.slice(0, 100);
+        setTool({ ...tool, note: value });
+        setNoteCharCount(value.length);
+      } else {
+        setTool({ ...tool, [e.target.name]: e.target.value });
+      }
   };
 
   const handleSave = async (e) => {
@@ -155,6 +163,9 @@ export default function ToolDetailPage() {
               placeholder="Optional notes about this tool..."
             />
           </div>
+              <div className="text-xs text-base-content/70 mt-1 text-right">
+                {noteCharCount}/100 characters
+              </div>
           <div className="flex justify-end gap-2">
             <button
               type="submit"

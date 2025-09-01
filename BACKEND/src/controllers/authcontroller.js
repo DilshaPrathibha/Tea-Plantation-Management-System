@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const User = require('../../models/User');
+import jwt from 'jsonwebtoken';
+import User from '../../models/User.js';
 
 const signToken = (user) =>
   jwt.sign(
@@ -9,7 +9,7 @@ const signToken = (user) =>
   );
 
 // POST /api/auth/login
-exports.login = async (req, res) => {
+export async function login(req, res) {
   try {
     const { email, password } = req.body || {};
     const normalizedEmail = (email || '').toLowerCase().trim();
@@ -29,4 +29,4 @@ exports.login = async (req, res) => {
     console.error(e);
     return res.status(500).json({ message: 'Server error' });
   }
-};
+}

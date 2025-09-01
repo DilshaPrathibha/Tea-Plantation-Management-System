@@ -19,6 +19,7 @@ export default function CreateToolPage() {
   const [toolType, setToolType] = useState("");
   const [condition, setCondition] = useState("good");
   const [note, setNote] = useState("");
+  const [noteCharCount, setNoteCharCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -84,9 +85,17 @@ export default function CreateToolPage() {
               className="textarea textarea-bordered w-full"
               rows={3}
               value={note}
-              onChange={e => setNote(e.target.value)}
+              onChange={e => {
+                const value = e.target.value.slice(0, 100);
+                setNote(value);
+                setNoteCharCount(value.length);
+              }}
               placeholder="Optional notes about this tool..."
+              maxLength={100}
             />
+            <div className="text-xs text-base-content/70 mt-1 text-right">
+              {noteCharCount}/100 characters
+            </div>
           </div>
           <button
             type="submit"

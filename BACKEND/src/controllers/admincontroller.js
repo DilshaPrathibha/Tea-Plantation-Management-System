@@ -1,4 +1,4 @@
-const User = require('../../models/User');
+import User from '../../models/User.js';
 
 function generateTempPassword(len = 12) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
@@ -8,7 +8,7 @@ function generateTempPassword(len = 12) {
 }
 
 // POST /api/admin/users
-exports.createUser = async (req, res) => {
+export async function createUser(req, res) {
   try {
     const { name, email, role, password, phone, estate, department } = req.body || {};
     const normalizedEmail = (email || '').toLowerCase().trim();
@@ -52,7 +52,7 @@ exports.createUser = async (req, res) => {
 };
 
 // GET /api/admin/users
-exports.listUsers = async (req, res) => {
+export async function listUsers(req, res) {
   try {
     const page = Math.max(parseInt(req.query.page || '1', 10), 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit || '10', 10), 1), 50);
@@ -74,7 +74,7 @@ exports.listUsers = async (req, res) => {
 };
 
 // PATCH /api/admin/users/:id  ← NEW
-exports.updateUser = async (req, res) => {
+export async function updateUser(req, res) {
   try {
     const id = req.params.id;
     const { name, email, role, phone, estate, department, password } = req.body || {};
@@ -125,7 +125,7 @@ exports.updateUser = async (req, res) => {
 };
 
 // POST /api/admin/users/:id/reset-password
-exports.resetPassword = async (req, res) => {
+export async function resetPassword(req, res) {
   try {
     const id = req.params.id;
     const temp = generateTempPassword();
@@ -142,7 +142,7 @@ exports.resetPassword = async (req, res) => {
 };
 
 // DELETE /api/admin/users/:id
-exports.deleteUser = async (req, res) => {
+export async function deleteUser(req, res) {
   try {
     const id = req.params.id;
     const del = await User.findByIdAndDelete(id);

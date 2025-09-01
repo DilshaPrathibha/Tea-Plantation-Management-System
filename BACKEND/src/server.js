@@ -1,57 +1,62 @@
 // BACKEND/src/server.js
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-dotenv.config(); // MUST be first, before reading env
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import mongoose from "mongoose";
 
-const connectdb = require('../config/db');
-const ratelimit = require('./middleware/ratelimiter');
+// Routes (make sure ./routes/adminroutes.js does `export default router`)
+import adminRoutes from "./routes/adminroutes.js";
+import authRoutes from "./routes/authroutes.js";
+import toolsRoutes from "./routes/toolsroutes.js";
+import fniRoutes from "./routes/fniroutes.js";
 
-// 1) connect DB
-connectdb();
-
-// (optional: log which DB)
-const mongoose = require('mongoose');
-mongoose.connection.on('connected', () => {
-  console.log('[DB] host:', mongoose.connection.host, 'db:', mongoose.connection.name);
-});
+dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5001;
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
+const MONGO_URI =
+  process.env.MONGO_URI || "mongodb://127.0.0.1:27017/teaplantation";
 
-// 2) middleware
+// --- Middlewares ---
+app.use(
+  cors({
+    origin: CLIENT_ORIGIN,
+    credentials: true,
+  })
+);
 app.use(express.json());
-app.use(cors({
-  origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
-  credentials: true
-}));
-app.use(ratelimit);
 
-// 3) routes
+// --- Health ---
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", uptime: process.uptime() });
+});
 
+// --- Routes ---
+app.use("/api/admin", adminRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/tools", toolsRoutes);
+app.use("/api/fni", fniRoutes);
 
-const authRoutes = require('./routes/authroutes');
-const adminRoutes = require('./routes/adminroutes'); // ✅ add
-const toolsRoutes = require('./routes/toolsroutes'); // ✅ add for tools CRUD
-const pestNutrientRoutes = require('./routes/pestNutrientRoutes'); // ✅ add for FNI CRUD
-
-
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);                  // ✅ add
-app.use('/api/tools', toolsRoutes);                  // ✅ add for tools CRUD
-app.use('/api/pestnutrients', pestNutrientRoutes);   // ✅ add for FNI CRUD
-
-// 4) health
-app.get('/health', (req, res) => res.json({ ok: true }));
-
-// 5) 404 + error
-app.use((req, res) => res.status(404).send('Not found'));
+// --- 404 + Error handler ---
+app.use((req, res) => res.status(404).send("Not found"));
 app.use((err, req, res, next) => {
-  console.error('[ERR]', err);
-  res.status(500).json({ message: 'Something broke!' });
+  console.error("[ERR]", err);
+  res.status(err.status || 500).json({ message: err.message || "Server error" });
 });
 
-// 6) start
-app.listen(port, () => {
-  console.log(`🚀 Server started on PORT ${port}`);
-});
+// --- DB + Start server ---
+try {
+  await mongoose.connect(MONGO_URI);
+  mongoose.connection.on("connected", () => {
+    console.log("[DB] host:", mongoose.connection.host, "db:", mongoose.connection.name);
+  });
+  app.listen(PORT, () => {
+    console.log(`🚀 Server started on PORT ${PORT}`);
+  });
+} catch (err) {
+  console.error("Mongo connect error:", err);
+  process.exit(1);
+}
+
+export default app;

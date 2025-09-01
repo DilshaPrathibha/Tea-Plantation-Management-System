@@ -1,6 +1,6 @@
-const Tool = require("../models/tool");
+import Tool from "../../models/ToolModel.js";
 
-const getAllTools = async (req, res) => {
+export async function getAllTools(req, res) {
   try {
     const { q, type, condition, status } = req.query;
     let filter = {};
@@ -20,9 +20,16 @@ const getAllTools = async (req, res) => {
         filter.assignedTo = null;
       }
     }
-    const tools = await Tool.find(filter)
+    let tools = await Tool.find(filter)
       .populate({ path: 'assignedTo', select: 'name _id' })
       .sort({ createdAt: -1 });
+    // Add status field for frontend compatibility
+    tools = tools.map(tool => {
+      let status = 'available';
+      if (tool.condition === 'needs_repair') status = 'needs_repair';
+      else if (tool.assignedTo) status = 'assigned';
+      return { ...tool.toObject(), status };
+    });
     res.status(200).json(tools);
   } catch (error) {
     console.error("Error in getAllTools controller:", error);
@@ -30,7 +37,7 @@ const getAllTools = async (req, res) => {
   }
 };
 
-const getToolById = async (req, res) => {
+export async function getToolById(req, res) {
   try {
     const { id } = req.params;
     const tool = await Tool.findById(id);
@@ -42,20 +49,27 @@ const getToolById = async (req, res) => {
   }
 };
 
-const createTool = async (req, res) => {
+export async function createTool(req, res) {
   try {
-    // Ignore any toolId sent by client, always auto-generate
-    const { toolType, assignedTo, condition, note, name, quantity, description } = req.body;
-    const newTool = new Tool({ toolType, assignedTo, condition, note, name, quantity, description });
-    await newTool.save();
-    res.status(201).json({ message: "Tool created successfully", tool: newTool });
+  // Ignore any toolId sent by client, always auto-generate
+  const { toolType, assignedTo, condition, note, name, quantity, description } = req.body;
+  // Generate toolId: TL-YYYYMM-DD-rand4
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const rand = Math.floor(1000 + Math.random() * 9000);
+  const toolId = `TL-${yyyy}${mm}-${dd}-${rand}`;
+  const newTool = new Tool({ toolId, toolType, assignedTo, condition, note, name, quantity, description });
+  await newTool.save();
+  res.status(201).json({ message: "Tool created successfully", tool: newTool });
   } catch (error) {
     console.error("Error in createTool controller:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
-const updateTool = async (req, res) => {
+export async function updateTool(req, res) {
   try {
     const { id } = req.params;
     const update = req.body;
@@ -72,7 +86,7 @@ const updateTool = async (req, res) => {
   }
 };
 // Assign tool to worker
-const assignTool = async (req, res) => {
+export async function assignTool(req, res) {
   try {
     const { id } = req.params;
     const { workerId } = req.body;
@@ -89,7 +103,7 @@ const assignTool = async (req, res) => {
 };
 
 // Unassign tool
-const unassignTool = async (req, res) => {
+export async function unassignTool(req, res) {
   try {
     const { id } = req.params;
     const tool = await Tool.findById(id);
@@ -103,7 +117,7 @@ const unassignTool = async (req, res) => {
   }
 };
 
-const deleteTool = async (req, res) => {
+export async function deleteTool(req, res) {
   try {
     const { id } = req.params;
     const deleted = await Tool.findByIdAndDelete(id);
@@ -115,12 +129,4 @@ const deleteTool = async (req, res) => {
   }
 };
 
-module.exports = {
-  getAllTools,
-  getToolById,
-  createTool,
-  updateTool,
-  deleteTool,
-  assignTool,
-  unassignTool,
-};
+

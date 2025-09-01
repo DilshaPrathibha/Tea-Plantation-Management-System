@@ -1,6 +1,6 @@
+// FRONTEND/src/App.jsx
 import React from "react";
-import { Routes, Route } from "react-router-dom";
-
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -11,14 +11,13 @@ import AdminDashboard from "./pages/AdminDashboard";
 import UsersPage from "./pages/admin/UsersPage";
 import FieldsPage from "./pages/admin/FieldsPage";
 
-// New pages
-import ToolsPage from "./pages/ToolsPage";
-import ToolDetailPage from './pages/ToolDetailPage.jsx';
+// FNI pages
 import FNIPage from "./pages/FNIPage";
-import CreateToolPage from './pages/CreateToolPage.jsx';
-import CreatePage from "./pages/CreatePage";
-import NoteDetailPage from "./pages/NoteDetailPage";
-import FNIDetailPage from "./pages/FNIDetailPage";
+import ToolsPage from "./pages/ToolsPage.jsx";
+import CreateToolPage from "./pages/CreateToolPage.jsx";
+import ToolDetailPage from "./pages/ToolDetailPage.jsx";
+import FNICreate from "./pages/FNICreate.jsx";
+import FNIEditPage from "./pages/FNIEditPage.jsx";
 
 // Simple placeholders (keep or replace later)
 const WorkerDashboard = () => <div className="p-8 text-2xl">Worker Dashboard</div>;
@@ -60,6 +59,14 @@ const App = () => {
             </RequireAuth>
           }
         />
+        <Route
+          path="/admin/fni"
+          element={
+            <RequireAuth role="admin">
+              <FNIPage />
+            </RequireAuth>
+          }
+        />
 
         {/* Other roles */}
         <Route
@@ -95,16 +102,17 @@ const App = () => {
           }
         />
 
-        {/* 404 */}
-        <Route path="*" element={<NotFound />} />
-    {/* New pages */}
-    <Route path="/tools" element={<ToolsPage />} />
+  {/* FNI routes */}
+  <Route path="/fni" element={<FNIPage />} />
+  <Route path="/tools" element={<ToolsPage />} />
+  <Route path="/tools/create" element={<CreateToolPage />} />
   <Route path="/tools/:id" element={<ToolDetailPage />} />
-    <Route path="/tools/create" element={<CreateToolPage />} />
-  <Route path="/FNI" element={<FNIPage />} />
-  <Route path="/FNI/create" element={<CreatePage />} />
-  <Route path="/note/:id" element={<NoteDetailPage />} />
-  <Route path="/FNI/:id" element={<FNIDetailPage />} />
+  <Route path="/FNI" element={<Navigate to="/fni" replace />} />
+  <Route path="/fni/create" element={<FNICreate />} />
+  <Route path="/fni/:id/edit" element={<FNIEditPage />} />
+
+        {/* 404 (keep last) */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
   );
