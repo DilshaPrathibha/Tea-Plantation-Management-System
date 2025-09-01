@@ -10,4 +10,16 @@ export default defineConfig({
     },
   },
   assetsInclude: [], // 🚫 disable wasm
+
+  // hosting
+  server: {
+    host: true, // bind to all interfaces (LAN)
+    port: 5173,
+    strictPort: true, // fail if port is taken
+  },
+  preview: {
+    host: true,
+    port: 5173,
+    strictPort: true,
+  },
 });
