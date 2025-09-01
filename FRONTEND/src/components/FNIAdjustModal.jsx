@@ -15,7 +15,34 @@ export default function FNIAdjustModal({ open, onClose, item, onDone }) {
     const delta = kind === 'increase' ? amt : -amt;
     setLoading(true);
     try {
+      // Save previous low status
+      const wasLow = Number(item.qtyOnHand) < Number(item.minQty);
+      const prevQty = Number(item.qtyOnHand);
+      const prevMin = Number(item.minQty);
       await adjustStock(item._id, { delta, reason, note });
+      // Calculate new qty
+      const newQty = prevQty + delta;
+      const isNowLow = newQty < prevMin;
+      if (!wasLow && isNowLow && 'Notification' in window) {
+        const showNotification = () => {
+          const notif = new window.Notification(`Low stock alert`, {
+            body: `${item.name} (${item.category}) is now below minimum quantity (${newQty} < ${prevMin})`,
+            icon: '/favicon.png'
+          });
+          notif.onclick = () => {
+            window.open('http://localhost:5173/FNI', '_self');  // Link of notifications
+          };
+        };
+        if (Notification.permission === 'granted') {
+          showNotification();
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              showNotification();
+            }
+          });
+        }
+      }
       toast.success('Stock adjusted');
       onDone && onDone();
       onClose && onClose();

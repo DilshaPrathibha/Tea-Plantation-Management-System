@@ -50,7 +50,12 @@ export default function FNICreate() {
       toast.success('Item created');
       navigate('/fni');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create item');
+      const rawMsg = err.response?.data?.message || '';
+      if (rawMsg.includes('E11000') && rawMsg.includes('name_1_category_1')) {
+        setError(` ${form.category} "${form.name}" already exists.`);
+      } else {
+        setError(rawMsg || 'Failed to create item');
+      }
     } finally {
       setLoading(false);
     }
