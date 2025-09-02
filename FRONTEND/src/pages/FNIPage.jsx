@@ -74,7 +74,7 @@ export default function FNIPage() {
 
   const handleDelete = async (item) => {
     if (item.qtyOnHand > 0) {
-      return toast.error('Cannot delete: qtyOnHand > 0');
+      return toast.error('You cannot delete this item while there is stock remaining.');
     }
     if (!window.confirm('Delete this item?')) return;
     try {
