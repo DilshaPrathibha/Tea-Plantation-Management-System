@@ -31,11 +31,15 @@ app.use(ratelimit);
 const authRoutes = require('./routes/authroutes');
 const adminRoutes = require('./routes/adminroutes'); // ✅ add
 const fieldRoutes = require('./routes/fieldroutes'); 
+const weatherRoutes = require('./routes/weatherRoutes');
+const taskAssignmentRoutes = require('./routes/taskAssignmentRoutes');
 
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);   
 app.use('/api/fields', fieldRoutes);  
+app.use('/api/weather', weatherRoutes);
+app.use('/api/tasks', taskAssignmentRoutes);
 
             // ✅ add
 
@@ -53,3 +57,5 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
   console.log(`🚀 Server started on PORT ${port}`);
 });
+
+

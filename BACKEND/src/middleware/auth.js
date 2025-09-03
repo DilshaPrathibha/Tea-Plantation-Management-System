@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const User = require('../../models/User');
+const User = require('../../models/user'); 
+
 
 // Verify JWT and load req.user
 exports.verifyToken = async (req, res, next) => {
@@ -24,3 +25,7 @@ exports.requireRole = (role) => (req, res, next) => {
   if (!req.user || req.user.role !== role) return res.status(403).json({ message: 'Forbidden' });
   next();
 };
+
+
+
+

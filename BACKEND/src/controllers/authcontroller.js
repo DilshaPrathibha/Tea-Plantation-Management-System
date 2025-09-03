@@ -1,6 +1,6 @@
 // BACKEND/src/controllers/authcontroller.js
 const jwt = require('jsonwebtoken');
-const User = require('../../models/User');
+const User = require('../../models/user');
 
 const signToken = (user) =>
   jwt.sign(
@@ -28,5 +28,17 @@ exports.login = async (req, res) => {
   } catch (e) {
     console.error('[LOGIN] error:', e);
     return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getUsers = async (req, res) => {
+  try {
+    const { role } = req.query;
+    const query = role ? { role } : {};
+    const users = await User.find(query).select('-password'); // Exclude password
+    res.json(users);
+  } catch (error) {
+    console.error('[GET_USERS] error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };

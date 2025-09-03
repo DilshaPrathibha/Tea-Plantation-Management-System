@@ -10,11 +10,16 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UsersPage from "./pages/admin/UsersPage";
 import FieldsPage from "./pages/admin/FieldsPage";
 
+// Field-Supervisor pages
+import FieldDashboard from "./pages/field_supervisor/FieldDashboard";
+import AssignTask from "./pages/field_supervisor/AssignTask";
+import WeatherAlerts from "./pages/field_supervisor/WeatherAlerts";
+import AssignedTasks from "./pages/field_supervisor/AssignedTasks";
+
 // Simple placeholders (keep or replace later)
 const WorkerDashboard = () => <div className="p-8 text-2xl">Worker Dashboard</div>;
 const ProductionDashboard = () => <div className="p-8 text-2xl">Production Manager Dashboard</div>;
 const InventoryDashboard = () => <div className="p-8 text-2xl">Inventory Manager Dashboard</div>;
-const FieldDashboard = () => <div className="p-8 text-2xl">Field Supervisor Dashboard</div>;
 const NotFound = () => <div className="p-8 text-2xl">Page not found</div>;
 
 const App = () => {
@@ -76,6 +81,7 @@ const App = () => {
             </RequireAuth>
           }
         />
+        {/* Field Supervisor */}
         <Route
           path="/field-dashboard"
           element={
@@ -84,6 +90,32 @@ const App = () => {
             </RequireAuth>
           }
         />
+        <Route
+          path="/field/assign-task"
+          element={
+            <RequireAuth role="field_supervisor">
+              <AssignTask />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/field/weather"
+          element={
+            <RequireAuth roles="field_supervisor">
+              <WeatherAlerts />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/field/tasks"
+          element={
+            <RequireAuth role="field_supervisor">
+              <AssignedTasks />
+            </RequireAuth>
+          }
+        />
+
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />

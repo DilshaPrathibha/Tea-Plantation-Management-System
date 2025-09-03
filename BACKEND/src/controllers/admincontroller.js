@@ -1,4 +1,4 @@
-const User = require('../../models/User');
+const User = require('../../models/user');
 
 function generateTempPassword(len = 12) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
@@ -146,6 +146,19 @@ exports.deleteUser = async (req, res) => {
     res.json({ message: 'User deleted' });
   } catch (e) {
     console.error('[ADMIN deleteUser]', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getWorkers = async (req, res) => {
+  try {
+    const { role } = req.query;
+    if (role !== 'worker') {
+      return res.status(400).json({ message: 'Invalid role query' });
+    }
+    const workers = await User.find({ role: 'worker' }).select('_id name estate');
+    res.json(workers);
+  } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };
