@@ -1,3 +1,4 @@
+import AddIncidencePage from "./pages/AddIncidencePage";
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 
@@ -10,22 +11,102 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import UsersPage from "./pages/admin/UsersPage";
 import FieldsPage from "./pages/admin/FieldsPage";
 
+import SupervisorDashboard from "./pages/SupervisorDashboard";
+import IncidencePage from "./pages/IncidencePage";
+
+// Incidence pages
+import IncidenceDetailPage from "./pages/IncidenceDetailPage";
+import UpdateIncidencePage from "./pages/UpdateIncidencePage";
+
+//Pest and Diseases pages
+import PestDiseasePage from "./pages/pestdisease/PestDiseasePage";
+import AddPestDiseasePage from "./pages/pestdisease/AddPestDiseasePage";
+import PestDiseaseDetailPage from "./pages/pestdisease/PestDiseaseDetailPage";
+import UpdatePestDiseasePage from "./pages/pestdisease/UpdatePestDiseasePage";
+
 // Simple placeholders (keep or replace later)
 const WorkerDashboard = () => <div className="p-8 text-2xl">Worker Dashboard</div>;
 const ProductionDashboard = () => <div className="p-8 text-2xl">Production Manager Dashboard</div>;
 const InventoryDashboard = () => <div className="p-8 text-2xl">Inventory Manager Dashboard</div>;
-const FieldDashboard = () => <div className="p-8 text-2xl">Field Supervisor Dashboard</div>;
 const NotFound = () => <div className="p-8 text-2xl">Page not found</div>;
 
 const App = () => {
   return (
     <div data-theme="forest">
       <Routes>
-        {/* Public */}
+        {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Admin only */}
+        {/* Incidence Routes */}
+        <Route
+          path="/incidence"
+          element={
+            <RequireAuth role="field_supervisor">
+              <IncidencePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/incidence/new"
+          element={
+            <RequireAuth role="field_supervisor">
+              <AddIncidencePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/incidence/:id"
+          element={
+            <RequireAuth role="field_supervisor">
+              <IncidenceDetailPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/incidence/edit/:id"
+          element={
+            <RequireAuth role="field_supervisor">
+              <UpdateIncidencePage />
+            </RequireAuth>
+          }
+        />
+
+      {/* pest Routes */}
+        <Route
+          path="/pest-diseases"
+          element={
+            <RequireAuth role="field_supervisor">
+              <PestDiseasePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/pest-diseases/new"
+          element={
+            <RequireAuth role="field_supervisor">
+              <AddPestDiseasePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/pest-diseases/:id"
+          element={
+            <RequireAuth role="field_supervisor">
+              <PestDiseaseDetailPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/pest-diseases/edit/:id"
+          element={
+            <RequireAuth role="field_supervisor">
+              <UpdatePestDiseasePage />
+            </RequireAuth>
+          }
+        />
+
+        {/* Admin Routes */}
         <Route
           path="/admin-dashboard"
           element={
@@ -51,7 +132,7 @@ const App = () => {
           }
         />
 
-        {/* Other roles */}
+        {/* Other Role Routes */}
         <Route
           path="/worker-dashboard"
           element={
@@ -80,12 +161,12 @@ const App = () => {
           path="/field-dashboard"
           element={
             <RequireAuth role="field_supervisor">
-              <FieldDashboard />
+              <SupervisorDashboard />
             </RequireAuth>
           }
         />
 
-        {/* 404 */}
+        {/* 404 Route - Must be last */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
