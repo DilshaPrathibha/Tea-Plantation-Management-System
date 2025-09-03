@@ -7,6 +7,8 @@ dotenv.config(); // MUST be first, before reading env
 const connectdb = require('../config/db');
 const ratelimit = require('./middleware/ratelimiter');
 
+
+
 // 1) connect DB
 connectdb();
 
@@ -35,11 +37,19 @@ const adminRoutes = require('./routes/adminroutes'); // ✅ add
 const toolsRoutes = require('./routes/toolsroutes'); // ✅ add for tools CRUD
 const pestNutrientRoutes = require('./routes/pestNutrientRoutes'); // ✅ add for FNI CRUD
 
+// Add these after the existing route imports
+const productionBatchRoutes = require('../routes/productionBatchRoutes');
+const transportRoutes = require('../routes/transportRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);                  // ✅ add
 app.use('/api/tools', toolsRoutes);                  // ✅ add for tools CRUD
 app.use('/api/pestnutrients', pestNutrientRoutes);   // ✅ add for FNI CRUD
+
+
+// Add these after the existing app.use routes
+app.use('/api/production-batches', productionBatchRoutes);
+app.use('/api/transports', transportRoutes);
 
 // 4) health
 app.get('/health', (req, res) => res.json({ ok: true }));
@@ -55,3 +65,8 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
   console.log(`🚀 Server started on PORT ${port}`);
 });
+
+
+
+
+

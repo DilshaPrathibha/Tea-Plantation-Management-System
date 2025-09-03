@@ -20,9 +20,22 @@ import CreatePage from "./pages/CreatePage";
 import NoteDetailPage from "./pages/NoteDetailPage";
 import FNIDetailPage from "./pages/FNIDetailPage";
 
-// Simple placeholders (keep or replace later)
+
+import ProductionBatchPage from './pages/ProductionBatchPage';
+import TransportPage from './pages/TransportPage';
+
+import CreateProductionBatch from './pages/CreateProductionBatch';
+import CreateTransport from './pages/CreateTransport';
+
+import EditProductionBatch from './pages/EditProductionBatch';
+import EditTransport from './pages/EditTransport';
+
+import ProductionDashboard from './pages/ProductionDashboard';
+import ProfilePage from './pages/ProfilePage';
+
+
 const WorkerDashboard = () => <div className="p-8 text-2xl">Worker Dashboard</div>;
-const ProductionDashboard = () => <div className="p-8 text-2xl">Production Manager Dashboard</div>;
+//const ProductionDashboard = () => <div className="p-8 text-2xl">Production Manager Dashboard</div>;
 const InventoryDashboard = () => <div className="p-8 text-2xl">Inventory Manager Dashboard</div>;
 const FieldDashboard = () => <div className="p-8 text-2xl">Field Supervisor Dashboard</div>;
 const NotFound = () => <div className="p-8 text-2xl">Page not found</div>;
@@ -95,19 +108,47 @@ const App = () => {
           }
         />
 
+       
+        <Route path="/production-batches" element={
+          <RequireAuth role="production_manager">
+            <ProductionBatchPage />
+          </RequireAuth>
+        } />
+        <Route path="/transports" element={
+         <RequireAuth role="production_manager">
+            <TransportPage />
+          </RequireAuth>
+        } />
+
+          
+        <Route path="/create-production-batch" element={<CreateProductionBatch />} />
+        <Route path="/create-transport" element={<CreateTransport />} />
+
+       
+        <Route path="/edit-production-batch/:id" element={<EditProductionBatch />} />
+        <Route path="/edit-transport/:id" element={<EditTransport />} />
+
+    
+        <Route path="/profile" element={<ProfilePage />} />
+    
+        
+
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
     {/* New pages */}
     <Route path="/tools" element={<ToolsPage />} />
     <Route path="/tool/:id" element={<ToolDetailPage />} />
     <Route path="/tools/create" element={<CreateToolPage />} />
-  <Route path="/FNI" element={<FNIPage />} />
-  <Route path="/FNI/create" element={<CreatePage />} />
-  <Route path="/note/:id" element={<NoteDetailPage />} />
-  <Route path="/FNI/:id" element={<FNIDetailPage />} />
-      </Routes>
+    <Route path="/FNI" element={<FNIPage />} />
+    <Route path="/FNI/create" element={<CreatePage />} />
+    <Route path="/note/:id" element={<NoteDetailPage />} />
+    <Route path="/FNI/:id" element={<FNIDetailPage />} />
+    </Routes>
     </div>
+    
   );
+
+  
 };
 
 export default App;

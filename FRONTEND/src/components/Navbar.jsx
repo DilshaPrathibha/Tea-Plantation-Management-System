@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Leaf, User, BarChart2, Home, Wrench, FlaskConical } from 'lucide-react';
+// Add these imports
+import { Factory, Truck } from 'lucide-react';
 
 const Navbar = () => {
   return (
@@ -42,6 +44,25 @@ const Navbar = () => {
                 <FlaskConical size={18} />
                 FNI
               </NavLink>
+
+
+              {/* ADD PRODUCTION DASHBOARD WITH DIFFERENT LABEL */}
+              <NavLink to="/production-dashboard" className="btn btn-ghost flex items-center gap-1">
+                <Factory size={18} />
+                Production Dashboard
+              </NavLink>
+             { /* <NavLink to="/production-batches" className="btn btn-ghost flex items-center gap-1">
+                <Factory size={18} />
+              Production
+              </NavLink>
+              <NavLink to="/transports" className="btn btn-ghost flex items-center gap-1">
+                <Truck size={18} />
+              Transport 
+              </NavLink> 
+              <NavLink to="/profile" className="btn btn-ghost flex items-center gap-1">
+              <User size={18} />
+              Profile
+            </NavLink> */}
           </nav>
         </div>
       </div>

@@ -11,6 +11,9 @@ import {
   Settings,
 } from "lucide-react";
 
+// Add these imports at the top
+import { Factory as FactoryIcon, Truck as TruckIcon } from 'lucide-react';
+
 const Tile = ({ icon, title, desc, onClick }) => (
   <button
     onClick={onClick}
@@ -55,6 +58,21 @@ const AdminDashboard = () => {
             desc="Add, update, and archive tea fields & plots."
             onClick={() => navigate("/admin/fields")}
           />
+
+          {/* Add these new tiles */}
+          <Tile 
+            icon={<FactoryIcon className="w-6 h-6" />} 
+            title="Production Batches" 
+            desc="Manage tea production batches and quality records."
+            onClick={() => navigate("/production-batches")} 
+          />
+          <Tile 
+            icon={<TruckIcon className="w-6 h-6" />} 
+            title="Transport Management" 
+            desc="Schedule and track tea transport to factories."
+            onClick={() => navigate("/transports")} 
+          />
+
           <Tile
             icon={<Users className="w-6 h-6" />}
             title="Workers"
