@@ -180,7 +180,7 @@ const ToolsPage = () => {
         t.toolId || '-',
         t.toolType || '',
         t.assignedTo?.name || 'Unassigned',
-        t.condition || '',
+        t.condition === 'needs_repair' ? 'needs repair' : (t.condition || ''),
         t.status || '',
         t.note || ''
       ]);
@@ -193,7 +193,16 @@ const ToolsPage = () => {
         styles: { fontSize: 10 },
         headStyles: { fillColor: [34, 197, 94], textColor: [0, 0, 0] },
         alternateRowStyles: { fillColor: [240, 253, 244] },
-        margin: { left: 40, right: 40 }
+        margin: { left: 40, right: 40 },
+        didParseCell: function (data) {
+          // Condition column index is 3
+          if (data.section === 'body' && data.column.index === 3) {
+            if (data.cell.raw === 'needs repair') {
+              data.cell.styles.textColor = [220, 38, 38]; // Tailwind red-600
+              data.cell.styles.fontStyle = 'bold';
+            }
+          }
+        }
       });
 
       const url = doc.output('bloburl');
