@@ -3,7 +3,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { Download, Printer } from 'lucide-react';
+import { Download, Printer, CandlestickChart, Pencil, Trash } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Navbar from '@/components/Navbar';
@@ -271,9 +271,15 @@ export default function FNIPage() {
                     </details>
                   )}
                   <div className="flex gap-2">
-                    <button className="btn btn-sm btn-neutral" onClick={() => { setAdjustItem(item); setAdjustOpen(true); }}>Adjust</button>
-                    <button className="btn btn-sm btn-warning" onClick={() => navigate(`/fni/${item._id}/edit`)}>Edit</button>
-                    <button className="btn btn-sm btn-error" onClick={() => handleDelete(item)}>Delete</button>
+                    <button className="btn btn-sm btn-neutral" onClick={() => { setAdjustItem(item); setAdjustOpen(true); }}>
+                      <CandlestickChart size={16} className="mr-1" /> Adjust
+                    </button>
+                    <button className="btn btn-sm btn-warning" onClick={() => navigate(`/fni/${item._id}/edit`)}>
+                      <Pencil size={16} className="mr-1" /> Edit
+                    </button>
+                    <button className="btn btn-sm btn-error" onClick={() => handleDelete(item)}>
+                      <Trash size={16} className="mr-1" /> Delete
+                    </button>
                   </div>
                 </div>
               );
