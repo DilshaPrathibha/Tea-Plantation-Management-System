@@ -1,15 +1,19 @@
+
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { adjustStock } from '@/api/fni';
+import { adjustStock } from '../api/fni';
 
 export default function FNIAdjustModal({ open, onClose, item, onDone }) {
   const [kind, setKind] = useState('increase');
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('correction');
   const [note, setNote] = useState('');
+  const [cost, setCost] = useState('');
   const [loading, setLoading] = useState(false);
+
   const handleSubmit = async e => {
     e.preventDefault();
+    console.log('handleSubmit called');
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error('Amount must be > 0');
     const delta = kind === 'increase' ? amt : -amt;
@@ -19,7 +23,15 @@ export default function FNIAdjustModal({ open, onClose, item, onDone }) {
       const wasLow = Number(item.qtyOnHand) < Number(item.minQty);
       const prevQty = Number(item.qtyOnHand);
       const prevMin = Number(item.minQty);
-      await adjustStock(item._id, { delta, reason, note });
+      const payload = { delta, reason, note };
+      if (kind === 'increase' && reason === 'purchase') {
+        if (cost === '' || Number(cost) < 0) {
+          setLoading(false);
+          return toast.error('Cost is required for purchase');
+        }
+        payload.cost = Number(cost);
+      }
+      await adjustStock(item._id, payload);
       // Calculate new qty
       const newQty = prevQty + delta;
       const isNowLow = newQty < prevMin;
@@ -89,6 +101,22 @@ export default function FNIAdjustModal({ open, onClose, item, onDone }) {
                 <option value="correction">Correction</option>
               </select>
             </div>
+            {kind === 'increase' && reason === 'purchase' && (
+              <div>
+                <label className="block mb-1 font-semibold">Cost per Unit <span className="text-error">*</span></label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="input input-bordered w-full"
+                  name="cost"
+                  value={cost}
+                  onChange={e => setCost(e.target.value)}
+                  required
+                  placeholder="Enter cost for this purchase"
+                />
+              </div>
+            )}
             <div>
               <label className="block mb-1 font-semibold">Note</label>
               <textarea

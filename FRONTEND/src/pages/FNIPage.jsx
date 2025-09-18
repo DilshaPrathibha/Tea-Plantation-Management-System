@@ -217,6 +217,13 @@ export default function FNIPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.map(item => {
               const isLow = Number(item.qtyOnHand) < Number(item.minQty);
+              // Calculate average cost and total value from batches
+              let avgCost = 0, totalValue = 0, totalQty = 0;
+              if (Array.isArray(item.batches) && item.batches.length > 0) {
+                totalValue = item.batches.reduce((sum, b) => sum + (b.qty * b.unitCost), 0);
+                totalQty = item.batches.reduce((sum, b) => sum + b.qty, 0);
+                avgCost = totalQty > 0 ? (totalValue / totalQty) : 0;
+              }
               return (
                 <div
                   key={item._id}
@@ -230,7 +237,19 @@ export default function FNIPage() {
                   {item.minQty > 0 && (
                     <div className="mb-1">Min Qty: <span className="font-semibold">{item.minQty}</span></div>
                   )}
+                  <div className="mb-1">Avg Cost: <span className="font-semibold">{avgCost.toFixed(2)}</span></div>
+                  <div className="mb-1">Total Value: <span className="font-semibold">{totalValue.toFixed(2)}</span></div>
                   <div className="mb-2 text-sm text-base-content/70">{item.note}</div>
+                  {Array.isArray(item.batches) && item.batches.length > 0 && (
+                    <details className="mb-2">
+                      <summary className="cursor-pointer text-xs text-base-content/60">Batch History</summary>
+                      <ul className="text-xs mt-1">
+                        {item.batches.map((b, idx) => (
+                          <li key={idx} className="mb-0.5">Qty: {b.qty}, Cost: {b.unitCost}, Date: {b.date ? new Date(b.date).toLocaleDateString() : ''}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
                   <div className="flex gap-2">
                     <button className="btn btn-sm btn-neutral" onClick={() => { setAdjustItem(item); setAdjustOpen(true); }}>Adjust</button>
                     <button className="btn btn-sm btn-warning" onClick={() => navigate(`/fni/${item._id}/edit`)}>Edit</button>

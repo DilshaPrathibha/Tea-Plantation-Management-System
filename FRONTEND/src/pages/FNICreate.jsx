@@ -11,7 +11,8 @@ export default function FNICreate() {
     unit: '',
     openingQty: '',
     minQty: '',
-    note: ''
+    note: '',
+    cost: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,6 +29,7 @@ export default function FNICreate() {
     if (!form.unit) return 'Unit is required';
     if (form.openingQty === '' || Number(form.openingQty) < 0) return 'Opening Qty must be ≥ 0';
     if (form.minQty !== '' && Number(form.minQty) < 0) return 'Min Qty must be ≥ 0';
+    if (form.openingQty > 0 && (form.cost === '' || Number(form.cost) < 0)) return 'Cost is required for opening stock';
     return null;
   };
 
@@ -44,7 +46,8 @@ export default function FNICreate() {
         unit: form.unit,
         openingQty: Number(form.openingQty),
         minQty: form.minQty === '' ? 0 : Number(form.minQty),
-        note: form.note?.trim() || ''
+        note: form.note?.trim() || '',
+        cost: form.openingQty > 0 ? Number(form.cost) : 0
       };
       await createItem(data);
       toast.success('Item created');
@@ -129,6 +132,20 @@ export default function FNICreate() {
               name="minQty"
               value={form.minQty}
               onChange={handleChange}
+            />
+          </div>
+          <div>
+            <label className="block mb-1 font-semibold">Cost per Unit {form.openingQty > 0 ? <span className="text-error">*</span> : null}</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              className="input input-bordered w-full"
+              name="cost"
+              value={form.cost}
+              onChange={handleChange}
+              required={form.openingQty > 0}
+              placeholder="Enter cost for opening stock"
             />
           </div>
           <div>

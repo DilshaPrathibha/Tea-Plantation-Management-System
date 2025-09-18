@@ -22,6 +22,8 @@ export function deleteItem(id) {
   return axios.delete(`${base}/items/${id}`);
 }
 
-export function adjustStock(id, { delta, reason, note }) {
-  return axios.post(`${base}/items/${id}/adjust`, { delta, reason, note });
+export function adjustStock(id, { delta, reason, note, cost }) {
+  const payload = { delta, reason, note };
+  if (cost !== undefined) payload.cost = cost;
+  return axios.post(`${base}/items/${id}/adjust`, payload);
 }
