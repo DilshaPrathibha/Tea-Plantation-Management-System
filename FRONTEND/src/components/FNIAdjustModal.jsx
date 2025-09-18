@@ -95,10 +95,10 @@ export default function FNIAdjustModal({ open, onClose, item, onDone }) {
             <div>
               <label className="block mb-1 font-semibold">Reason</label>
               <select className="select select-bordered w-full" value={reason} onChange={e => setReason(e.target.value)}>
-                <option value="purchase">Purchase</option>
-                <option value="usage">Usage</option>
-                <option value="wastage">Wastage</option>
-                <option value="correction">Correction</option>
+                {kind === 'increase' && <option value="purchase">Purchase</option>} // only for increase
+                {kind === 'decrease' && <option value="usage">Usage</option>}     // only for decrease
+                {kind === 'decrease' && <option value="wastage">Wastage</option>}  
+                <option value="correction">Correction</option>               // for both
               </select>
             </div>
             {kind === 'increase' && reason === 'purchase' && (
