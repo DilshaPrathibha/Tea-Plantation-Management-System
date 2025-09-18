@@ -9,6 +9,7 @@ import adminRoutes from "./routes/adminroutes.js";
 import authRoutes from "./routes/authroutes.js";
 import toolsRoutes from "./routes/toolsroutes.js";
 import fniRoutes from "./routes/fniroutes.js";
+import vehicleLocationRoutes from "./routes/vehicleLocationRoutes.js";
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(express.static('public'));
 
 // --- Health ---
 app.get("/api/health", (req, res) => {
@@ -37,6 +39,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/tools", toolsRoutes);
 app.use("/api/fni", fniRoutes);
+app.use("/api", vehicleLocationRoutes);
 
 // --- 404 + Error handler ---
 app.use((req, res) => res.status(404).send("Not found"));

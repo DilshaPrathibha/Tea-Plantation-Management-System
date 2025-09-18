@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vehicle Location Tracker</title>
+</head>
+<body>
+  <h2>Vehicle Location Tracker</h2>
+  <p id="status">Waiting for location...</p>
+  <script>
+    // TODO: Replace with the actual driver/vehicle ID for each driver
+    const driverId = "driver123"; 
+  // Use your ngrok HTTPS URL for backend API requests
+  const backendUrl = "https://e4f7cb4a3216.ngrok-free.app/api/vehicle-location";
+
+    function sendLocation(lat, lng) {
+      fetch(backendUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ driverId, latitude: lat, longitude: lng })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('status').innerText = 'Location sent: ' + lat + ', ' + lng;
+      })
+      .catch(err => {
+        document.getElementById('status').innerText = 'Error sending location';
+      });
+    }
+
+    function trackLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(
+          (position) => {
+            sendLocation(position.coords.latitude, position.coords.longitude);
+          },
+          (error) => {
+            document.getElementById('status').innerText = 'Location error: ' + error.message;
+          },
+          { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+        );
+      } else {
+        document.getElementById('status').innerText = 'Geolocation not supported';
+      }
+    }
+
+    trackLocation();
+  </script>
+</body>
+</html>
