@@ -89,15 +89,25 @@ export default function FNIPage() {
   // Export CSV
   const exportCSV = () => {
     const rows = [
-      ['Name', 'Category', 'Unit', 'Qty On Hand', 'Min Qty', 'Note'],
-      ...items.map(i => [
-        i.name,
-        i.category,
-        i.unit,
-        i.qtyOnHand,
-        i.minQty,
-        i.note
-      ])
+      ['Name', 'Category', 'Unit', 'Qty On Hand', 'Min Qty', 'Avg Cost', 'Total Value', 'Note'],
+      ...items.map(i => {
+        let avgCost = 0, totalValue = 0, totalQty = 0;
+        if (Array.isArray(i.batches) && i.batches.length > 0) {
+          totalValue = i.batches.reduce((sum, b) => sum + (b.qty * b.unitCost), 0);
+          totalQty = i.batches.reduce((sum, b) => sum + b.qty, 0);
+          avgCost = totalQty > 0 ? (totalValue / totalQty) : 0;
+        }
+        return [
+          i.name,
+          i.category,
+          i.unit,
+          i.qtyOnHand,
+          i.minQty,
+          avgCost.toFixed(2),
+          totalValue.toFixed(2),
+          i.note
+        ];
+      })
     ];
     const csv = rows.map(r => r.map(x => `"${String(x ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -149,18 +159,28 @@ export default function FNIPage() {
       doc.text(reportTitle, (pageWidth - titleWidth) / 2, titleY);
 
       // Table
-      const body = (Array.isArray(items) ? items : []).map(i => [
-        i.name || '-',
-        i.category || '-',
-        i.unit || '-',
-        i.qtyOnHand ?? '-',
-        i.minQty ?? '-',
-        i.note || ''
-      ]);
-      if (body.length === 0) body.push(['-', '-', '-', '-', '-', '-']);
+      const body = (Array.isArray(items) ? items : []).map(i => {
+        let avgCost = 0, totalValue = 0, totalQty = 0;
+        if (Array.isArray(i.batches) && i.batches.length > 0) {
+          totalValue = i.batches.reduce((sum, b) => sum + (b.qty * b.unitCost), 0);
+          totalQty = i.batches.reduce((sum, b) => sum + b.qty, 0);
+          avgCost = totalQty > 0 ? (totalValue / totalQty) : 0;
+        }
+        return [
+          i.name || '-',
+          i.category || '-',
+          i.unit || '-',
+          i.qtyOnHand ?? '-',
+          i.minQty ?? '-',
+          avgCost.toFixed(2),
+          totalValue.toFixed(2),
+          i.note || ''
+        ];
+      });
+      if (body.length === 0) body.push(['-', '-', '-', '-', '-', '-', '-', '-']);
 
       autoTable(doc, {
-        head: [['Name', 'Category', 'Unit', 'Qty On Hand', 'Min Qty', 'Note']],
+        head: [['Name', 'Category', 'Unit', 'Qty On Hand', 'Min Qty', 'Avg Cost', 'Total Value', 'Note']],
         body,
         startY: titleY + 16,
         styles: { fontSize: 10 },
