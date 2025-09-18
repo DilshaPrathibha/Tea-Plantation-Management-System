@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Leaf, User, BarChart2, Home, Wrench, FlaskConical } from 'lucide-react';
+import { Leaf, User, BarChart2, Home, Wrench, FlaskConical, Truck } from 'lucide-react';
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -44,6 +44,10 @@ const Navbar = () => {
               <FlaskConical size={18} />
               FNI
             </NavLink>
+            <NavLink to="/vehicle-map" className="btn btn-ghost flex items-center gap-1">
+              <Truck size={18} />
+              Vehicle Map
+            </NavLink>
           </nav>
           {/* Mobile hamburger */}
           <button
@@ -77,6 +81,9 @@ const Navbar = () => {
             </NavLink>
             <NavLink to="/FNI" className="btn btn-ghost flex items-center gap-1" onClick={() => setMenuOpen(false)}>
               <FlaskConical size={18} /> FNI
+            </NavLink>
+            <NavLink to="/vehicle-map" className="btn btn-ghost flex items-center gap-1" onClick={() => setMenuOpen(false)}>
+              <Truck size={18} /> Vehicle Map
             </NavLink>
           </nav>
         )}

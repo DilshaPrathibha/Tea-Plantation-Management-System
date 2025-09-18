@@ -16,8 +16,9 @@ import FNIPage from "./pages/FNIPage";
 import ToolsPage from "./pages/ToolsPage.jsx";
 import CreateToolPage from "./pages/CreateToolPage.jsx";
 import ToolDetailPage from "./pages/ToolDetailPage.jsx";
-import FNICreate from "./pages/FNICreate.jsx";
 import FNIEditPage from "./pages/FNIEditPage.jsx";
+import FNICreate from "./pages/FNICreate.jsx";
+import VehicleMapPage from "./pages/VehicleMapPage.jsx";
 
 // Simple placeholders (keep or replace later)
 const WorkerDashboard = () => <div className="p-8 text-2xl">Worker Dashboard</div>;
@@ -102,14 +103,16 @@ const App = () => {
           }
         />
 
-  {/* FNI routes */}
-  <Route path="/fni" element={<FNIPage />} />
-  <Route path="/tools" element={<ToolsPage />} />
-  <Route path="/tools/create" element={<CreateToolPage />} />
-  <Route path="/tools/:id" element={<ToolDetailPage />} />
-  <Route path="/FNI" element={<Navigate to="/fni" replace />} />
-  <Route path="/fni/create" element={<FNICreate />} />
-  <Route path="/fni/:id/edit" element={<FNIEditPage />} />
+
+    {/* FNI routes */}
+    <Route path="/fni" element={<FNIPage />} />
+    <Route path="/tools" element={<ToolsPage />} />
+    <Route path="/tools/create" element={<CreateToolPage />} />
+    <Route path="/tools/:id" element={<ToolDetailPage />} />
+    <Route path="/FNI" element={<Navigate to="/fni" replace />} />
+    <Route path="/fni/create" element={<FNICreate />} />
+    <Route path="/fni/:id/edit" element={<FNIEditPage />} />
+    <Route path="/vehicle-map" element={<VehicleMapPage />} />
 
         {/* 404 (keep last) */}
         <Route path="*" element={<NotFound />} />
