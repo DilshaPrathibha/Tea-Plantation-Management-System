@@ -227,7 +227,7 @@ export default function FNIPage() {
           </select>
           <button className="btn btn-outline gap-2" onClick={exportCSV}><Download size={16}/> Export CSV</button>
           <button className="btn btn-outline gap-2" onClick={exportPDF}><Printer size={16}/> Export PDF</button>
-          <button className="btn btn-primary ml-auto" onClick={() => navigate('/fni/create')}>+ New</button>
+          <button className="btn btn-primary ml-auto" onClick={() => navigate('/fni/create')}>+ Add Items</button>
         </div>
         {loading ? (
           <div className="flex justify-center items-center h-64">
