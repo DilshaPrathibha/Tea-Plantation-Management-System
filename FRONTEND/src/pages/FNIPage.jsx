@@ -136,6 +136,7 @@ export default function FNIPage() {
   };
 
   // Export PDF
+
   const exportPDF = async () => {
     const win = window.open('', '_blank');
     try {
@@ -174,6 +175,36 @@ export default function FNIPage() {
       const titleY = headerTop + 20;
       doc.text(reportTitle, (pageWidth - titleWidth) / 2, titleY);
 
+      // FNI summary metrics (reuse from component scope)
+      // Render summary as two rows: first row for labels (with colors), second row for values (all black), with minimal row spacing
+      const summaryRows = [
+        [
+          { content: `Total Items:`, styles: { textColor: [30, 41, 59], fontStyle: 'bold' } },
+          { content: `Fertilizer:`, styles: { textColor: [0, 0, 0], fontStyle: 'bold' } },
+          { content: `Insecticide:`, styles: { textColor: [0, 0, 0], fontStyle: 'bold' } },
+          { content: `Low Stock:`, styles: { textColor: [220, 38, 38], fontStyle: 'bold' } },
+          { content: `Total Value:`, styles: { textColor: [0, 0, 0], fontStyle: 'bold' } }
+        ],
+        [
+          { content: `${totalItems}`, styles: { textColor: [0, 0, 0], fontStyle: 'bold' } },
+          { content: `${fertilizerKg} kg, ${fertilizerL} L`, styles: { textColor: [0, 0, 0], fontStyle: 'bold' } },
+          { content: `${insecticideKg} kg, ${insecticideL} L`, styles: { textColor: [0, 0, 0], fontStyle: 'bold' } },
+          { content: `${lowStockCount}`, styles: { textColor: [220, 38, 38], fontStyle: 'bold' } },
+          { content: `${sumTotalValue.toFixed(2)}`, styles: { textColor: [0, 0, 0], fontStyle: 'bold' } }
+        ]
+      ];
+      autoTable(doc, {
+        body: summaryRows,
+        startY: titleY + 12,
+        theme: 'plain',
+        styles: { fontSize: 11, fontStyle: 'bold', cellPadding: { top: 1, bottom: 1, left: 2, right: 2 } },
+        margin: { left: 40, right: 40 },
+        didDrawCell: function (data) {
+          // Remove extra vertical space
+          data.cell.height = 16;
+        }
+      });
+
       // Table
       const body = (Array.isArray(items) ? items : []).map(i => {
         let avgCost = 0, totalValue = 0, totalQty = 0;
@@ -195,17 +226,11 @@ export default function FNIPage() {
       });
       if (body.length === 0) body.push(['-', '-', '-', '-', '-', '-', '-', '-']);
 
-      // Add a summary row for total value
-      body.push([
-        { content: 'Total', colSpan: 6, styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: sumTotalValue.toFixed(2), styles: { fontStyle: 'bold' } },
-        ''
-      ]);
 
       autoTable(doc, {
         head: [['Name', 'Category', 'Unit', 'Qty On Hand', 'Min Qty', 'Avg Cost', 'Total Value', 'Note']],
         body,
-        startY: titleY + 16,
+        startY: doc.lastAutoTable.finalY + 10,
         styles: { fontSize: 10 },
         headStyles: { fillColor: [34, 197, 94], textColor: [0, 0, 0] },
         alternateRowStyles: { fillColor: [240, 253, 244] },
@@ -261,13 +286,11 @@ export default function FNIPage() {
           </div>
           <div className="text-center">
             <div className="text-xs text-base-content/60">Fertilizer Available</div>
-            <div className="font-bold text-lg">{fertilizerKg} kg</div>
-            <div className="font-bold text-lg">{fertilizerL} L</div>
+            <div className="font-bold text-lg">{fertilizerKg} kg, {fertilizerL} L</div>
           </div>
           <div className="text-center">
             <div className="text-xs text-base-content/60">Insecticide Available</div>
-            <div className="font-bold text-lg">{insecticideKg} kg</div>
-            <div className="font-bold text-lg">{insecticideL} L</div>
+            <div className="font-bold text-lg">{insecticideKg} kg, {insecticideL} L</div>
           </div>
           <div className="text-center">
             <div className="text-xs text-base-content/60">Low Stock Items</div>

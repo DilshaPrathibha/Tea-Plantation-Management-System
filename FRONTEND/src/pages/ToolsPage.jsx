@@ -181,6 +181,24 @@ const ToolsPage = () => {
       const titleY = headerTop + 20;
       doc.text(reportTitle, (pageWidth - titleWidth) / 2, titleY);
 
+
+      // Summary metrics (reuse from component scope)
+
+      // Render summary as a table below the title, with custom colors
+      autoTable(doc, {
+        body: [[
+          { content: `Total Tools: ${totalTools}`, styles: { textColor: [30, 41, 59] } },
+          { content: `Available: ${availableTools}`, styles: { textColor: [34, 197, 94] } }, // green
+          { content: `Assigned: ${assignedTools}`, styles: { textColor: [202, 138, 4] } }, // yellow
+          { content: `Needs Repair: ${needsRepairTools}`, styles: { textColor: [220, 38, 38] } }, // red
+          { content: `Tool Types: ${uniqueTypes}`, styles: { textColor: [30, 41, 59] } }
+        ]],
+        startY: titleY + 12,
+        theme: 'plain',
+        styles: { fontSize: 11, fontStyle: 'bold' },
+        margin: { left: 40, right: 40 },
+      });
+
       // Table
       const body = (Array.isArray(tools) ? tools : []).map(t => [
         t.toolId || '-',
@@ -195,7 +213,7 @@ const ToolsPage = () => {
       autoTable(doc, {
         head: [['Tool ID', 'Type', 'Assigned To', 'Condition', 'Status', 'Notes']],
         body,
-        startY: titleY + 16,
+        startY: doc.lastAutoTable.finalY + 10,
         styles: { fontSize: 10 },
         headStyles: { fillColor: [34, 197, 94], textColor: [0, 0, 0] },
         alternateRowStyles: { fillColor: [240, 253, 244] },

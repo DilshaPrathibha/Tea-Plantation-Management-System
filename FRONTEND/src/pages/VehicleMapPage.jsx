@@ -74,7 +74,7 @@ const VehicleMapPage = () => {
 			<Navbar />
 			<div className="max-w-6xl mx-auto px-4 py-8">
 						<h1 className="text-3xl font-bold mb-4 flex items-center gap-2">
-							<Truck size={28} className="text-primary" /> Tea Leaf Delivery Vehicle Location
+							<Truck size={28} className="text-primary" /> Delivery Vehicle Location
 						</h1>
 				<div className="rounded-lg shadow border border-base-content/10 bg-base-100 p-4">
 					<div id="vehicle-map" className="w-full h-[60vh] rounded" />
