@@ -7,7 +7,7 @@ import { Download, Printer, CandlestickChart, Pencil, Trash } from 'lucide-react
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Navbar from '@/components/Navbar';
-import toast from 'react-hot-toast';
+import { Sweet, Toast } from '../utils/sweet';
 import { useNavigate } from 'react-router-dom';
 import { listItems, deleteItem } from '@/api/fni';
 import FNIAdjustModal from '@/components/FNIAdjustModal';
@@ -46,6 +46,21 @@ const svgToPngDataUrl = (svgMarkup, targetPx = 28) =>
 
 export default function FNIPage() {
   const [items, setItems] = useState([]);
+  // Summary metrics (after items is defined)
+  const totalItems = items.length;
+  const lowStockCount = items.filter(i => Number(i.qtyOnHand) < Number(i.minQty)).length;
+  const sumTotalValue = items.reduce((sum, i) => {
+    if (Array.isArray(i.batches) && i.batches.length > 0) {
+      return sum + i.batches.reduce((s, b) => s + (b.qty * b.unitCost), 0);
+    }
+    return sum;
+  }, 0);
+
+  // Calculate fertilizer and insecticide quantities by unit
+  const fertilizerKg = items.filter(i => i.category === 'fertilizer' && i.unit === 'kg').reduce((sum, i) => sum + (Number(i.qtyOnHand) || 0), 0);
+  const fertilizerL = items.filter(i => i.category === 'fertilizer' && i.unit === 'L').reduce((sum, i) => sum + (Number(i.qtyOnHand) || 0), 0);
+  const insecticideKg = items.filter(i => i.category === 'insecticide' && i.unit === 'kg').reduce((sum, i) => sum + (Number(i.qtyOnHand) || 0), 0);
+  const insecticideL = items.filter(i => i.category === 'insecticide' && i.unit === 'L').reduce((sum, i) => sum + (Number(i.qtyOnHand) || 0), 0);
   const [loading, setLoading] = useState(true);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustItem, setAdjustItem] = useState(null);
@@ -62,7 +77,7 @@ export default function FNIPage() {
       const res = await listItems(params);
       setItems(res.data);
     } catch (err) {
-      toast.error('Failed to load items');
+  Toast.error('Failed to load items');
     } finally {
       setLoading(false);
     }
@@ -74,15 +89,16 @@ export default function FNIPage() {
 
   const handleDelete = async (item) => {
     if (item.qtyOnHand > 0) {
-      return toast.error('You cannot delete this item while there is stock remaining.');
+      return Sweet.error('You cannot delete this item while there is stock remaining.');
     }
-    if (!window.confirm('Delete this item?')) return;
+    const ok = await Sweet.confirm('Delete this item?');
+    if (!ok) return;
     try {
       await deleteItem(item._id);
-      toast.success('Item deleted');
+      Toast.success('Item deleted');
       fetchItems();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Delete failed');
+      Toast.error(err.response?.data?.message || 'Delete failed');
     }
   };
 
@@ -179,6 +195,13 @@ export default function FNIPage() {
       });
       if (body.length === 0) body.push(['-', '-', '-', '-', '-', '-', '-', '-']);
 
+      // Add a summary row for total value
+      body.push([
+        { content: 'Total', colSpan: 6, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: sumTotalValue.toFixed(2), styles: { fontStyle: 'bold' } },
+        ''
+      ]);
+
       autoTable(doc, {
         head: [['Name', 'Category', 'Unit', 'Qty On Hand', 'Min Qty', 'Avg Cost', 'Total Value', 'Note']],
         body,
@@ -229,6 +252,33 @@ export default function FNIPage() {
           <button className="btn btn-outline gap-2" onClick={exportPDF}><Printer size={16}/> Export PDF</button>
           <button className="btn btn-primary ml-auto" onClick={() => navigate('/fni/create')}>+ Add Items</button>
         </div>
+
+        {/* FNI Summary Section */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 bg-base-100 rounded-lg shadow p-4 mb-6">
+          <div className="text-center">
+            <div className="text-xs text-base-content/60">Total Items</div>
+            <div className="font-bold text-lg">{totalItems}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-base-content/60">Fertilizer Available</div>
+            <div className="font-bold text-lg">{fertilizerKg} kg</div>
+            <div className="font-bold text-lg">{fertilizerL} L</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-base-content/60">Insecticide Available</div>
+            <div className="font-bold text-lg">{insecticideKg} kg</div>
+            <div className="font-bold text-lg">{insecticideL} L</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-base-content/60">Low Stock Items</div>
+            <div className="font-bold text-lg text-error">{lowStockCount}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-base-content/60">Total Inventory Value</div>
+            <div className="font-bold text-lg text-primary">{sumTotalValue.toFixed(2)}</div>
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>

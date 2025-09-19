@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { Toast } from '../utils/sweet';
 import Navbar from '@/components/Navbar';
 import { createItem } from '@/api/fni';
 
@@ -50,7 +50,7 @@ export default function FNICreate() {
         cost: form.openingQty > 0 ? Number(form.cost) : 0
       };
       await createItem(data);
-      toast.success('Item created');
+  Toast.success('Item created');
       navigate('/fni');
     } catch (err) {
       const rawMsg = err.response?.data?.message || '';

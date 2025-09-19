@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { Toast } from '../utils/sweet';
 import axios from 'axios';
 import Navbar from '@/components/Navbar';
 
@@ -24,7 +24,7 @@ const FNIDetailPage = () => {
         const response = await api.get(`/pestnutrients/${id}`);
         setPestNutrient(response.data);
       } catch (error) {
-        toast.error('Failed to load pest/nutrient');
+  Toast.error('Failed to load pest/nutrient');
       } finally {
         setLoading(false);
       }
@@ -38,20 +38,20 @@ const FNIDetailPage = () => {
         title: pestNutrient.title,
         content: pestNutrient.content,
       });
-      toast.success('Pest/Nutrient updated');
+  Toast.success('Pest/Nutrient updated');
       navigate('/FNI');
     } catch (error) {
-      toast.error('Failed to update pest/nutrient');
+  Toast.error('Failed to update pest/nutrient');
     }
   };
 
   const handleDelete = async () => {
     try {
       await api.delete(`/pestnutrients/${id}`);
-      toast.success('Pest/Nutrient deleted');
+  Toast.success('Pest/Nutrient deleted');
       navigate('/FNI');
     } catch (error) {
-      toast.error('Failed to delete pest/nutrient');
+  Toast.error('Failed to delete pest/nutrient');
     }
   };
 

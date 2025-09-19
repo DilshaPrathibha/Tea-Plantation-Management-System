@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import toast from 'react-hot-toast';
+import { Sweet, Toast } from '../utils/sweet';
 import { adjustStock } from '../api/fni';
 
 export default function FNIAdjustModal({ open, onClose, item, onDone }) {
@@ -15,7 +15,7 @@ export default function FNIAdjustModal({ open, onClose, item, onDone }) {
     e.preventDefault();
     console.log('handleSubmit called');
     const amt = Number(amount);
-    if (!amt || amt <= 0) return toast.error('Amount must be > 0');
+  if (!amt || amt <= 0) return Sweet.error('Amount must be > 0');
     const delta = kind === 'increase' ? amt : -amt;
     setLoading(true);
     try {
@@ -27,7 +27,7 @@ export default function FNIAdjustModal({ open, onClose, item, onDone }) {
       if (kind === 'increase' && reason === 'purchase') {
         if (cost === '' || Number(cost) < 0) {
           setLoading(false);
-          return toast.error('Cost is required for purchase');
+          return Sweet.error('Cost is required for purchase');
         }
         payload.cost = Number(cost);
       }
@@ -55,14 +55,19 @@ export default function FNIAdjustModal({ open, onClose, item, onDone }) {
           });
         }
       }
-      toast.success('Stock adjusted');
+  Toast.success('Stock adjusted');
       onDone && onDone();
       onClose && onClose();
     } catch (err) {
       if (err.response?.status === 409) {
-        toast.error('Insufficient stock');
+        Sweet.error('Insufficient stock');
       } else {
-        toast.error(err.response?.data?.message || 'Adjustment failed');
+        const msg = err.response?.data?.message || 'Adjustment failed';
+        if (/qtyOnHand.*less than minimum allowed value/i.test(msg)) {
+          Sweet.error('You cannot reduce stock below zero.');
+        } else {
+          Sweet.error(msg);
+        }
       }
     } finally {
       setLoading(false);

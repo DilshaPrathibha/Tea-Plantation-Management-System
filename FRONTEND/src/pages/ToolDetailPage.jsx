@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import toast from "react-hot-toast";
+import { Sweet, Toast } from "../utils/sweet";
 import Navbar from "@/components/Navbar";
 import axios from "axios";
 
@@ -58,7 +58,7 @@ export default function ToolDetailPage() {
         condition: tool.condition,
         note: tool.note,
       });
-      toast.success("Tool updated successfully");
+  Toast.success("Tool updated successfully");
       navigate("/tools");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update tool");
@@ -68,12 +68,17 @@ export default function ToolDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this tool?")) return;
+    const ok = await Sweet.confirm(
+      'Are you sure you want to delete this tool?',
+      'Delete Tool',
+      { confirmButtonText: 'Delete', confirmButtonColor: '#d33', icon: 'warning' }
+    );
+    if (!ok) return;
     setSaving(true);
     setError("");
     try {
       await api.delete(`/tools/${id}`);
-      toast.success("Tool deleted successfully");
+      Toast.success("Tool deleted successfully");
       navigate("/tools");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to delete tool");

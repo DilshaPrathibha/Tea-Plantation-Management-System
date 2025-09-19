@@ -46,7 +46,7 @@ const Navbar = () => {
             </NavLink>
             <NavLink to="/vehicle-map" className="btn btn-ghost flex items-center gap-1">
               <Truck size={18} />
-              Vehicle Map
+              Track Vehicle
             </NavLink>
           </nav>
           {/* Mobile hamburger */}

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Sweet } from "../../utils/sweet";
 import axios from "axios";
 import {
   UserPlus,
@@ -105,21 +106,22 @@ const UsersPage = () => {
   const resetPassword = async (id) => {
     try {
       const res = await axios.post(`${API}/api/admin/users/${id}/reset-password`, {}, { headers: authHeader });
-      alert(`New temporary password: ${res.data.temporaryPassword}`);
+      Sweet.info(`New temporary password: ${res.data.temporaryPassword}`);
     } catch (e) {
       console.error(e);
-      alert(e?.response?.data?.message || "Failed to reset password");
+      Sweet.error(e?.response?.data?.message || "Failed to reset password");
     }
   };
 
   const deleteUser = async (id) => {
-    if (!confirm("Delete this user?")) return;
+    const ok = await Sweet.confirm("Delete this user?");
+    if (!ok) return;
     try {
       await axios.delete(`${API}/api/admin/users/${id}`, { headers: authHeader });
       fetchUsers();
     } catch (e) {
       console.error(e);
-      alert(e?.response?.data?.message || "Failed to delete");
+      Sweet.error(e?.response?.data?.message || "Failed to delete");
     }
   };
 
@@ -156,7 +158,7 @@ const UsersPage = () => {
       fetchUsers();
     } catch (e) {
       console.error(e);
-      alert(e?.response?.data?.message || "Failed to update user");
+      Sweet.error(e?.response?.data?.message || "Failed to update user");
     } finally {
       setSaving(false);
     }

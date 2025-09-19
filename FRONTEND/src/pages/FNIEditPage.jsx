@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { Toast } from "../utils/sweet";
 import Navbar from "@/components/Navbar";
 import { getItem, updateItem } from "@/api/fni";
 
@@ -42,7 +42,7 @@ export default function FNIEditPage() {
         minQty: item.minQty,
         note: item.note,
       });
-      toast.success("Item updated successfully");
+  Toast.success("Item updated successfully");
       navigate("/fni");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update item");

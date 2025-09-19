@@ -7,7 +7,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Navbar from '@/components/Navbar';
 import RateLimitedUI from '@/components/RateLimitedUI';
-import toast from 'react-hot-toast';
+import { Sweet, Toast } from '../utils/sweet';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -53,6 +53,12 @@ const svgToPngDataUrl = (svgMarkup, targetPx = 28) =>
 
 const ToolsPage = () => {
   const [tools, setTools] = useState([]);
+  // Summary metrics (after tools is defined)
+  const totalTools = tools.length;
+  const availableTools = tools.filter(t => t.status === 'available').length;
+  const assignedTools = tools.filter(t => t.status === 'assigned').length;
+  const needsRepairTools = tools.filter(t => String(t.condition).toLowerCase() === 'needs_repair').length;
+  const uniqueTypes = Array.from(new Set(tools.map(t => t.toolType))).length;
   const [loading, setLoading] = useState(true);
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [search, setSearch] = useState('');
@@ -79,9 +85,9 @@ const ToolsPage = () => {
       console.error('Failed to fetch tools', error);
       if (error.response?.status === 429) {
         setIsRateLimited(true);
-        toast.error('You are being rate-limited. Please try again shortly.');
+  Toast.error('You are being rate-limited. Please try again shortly.');
       } else {
-        toast.error('Could not load tools.');
+  Toast.error('Could not load tools.');
       }
     } finally {
       setLoading(false);
@@ -93,7 +99,7 @@ const ToolsPage = () => {
       const res = await api.get('/workers');
       setWorkers(res.data);
     } catch {
-      toast.error('Could not load workers');
+  Toast.error('Could not load workers');
     }
   };
 
@@ -215,14 +221,15 @@ const ToolsPage = () => {
   };
 
   const deleteTool = async id => {
-    if (!window.confirm('Are you sure you want to delete this tool?')) return;
+    const ok = await Sweet.confirm('Are you sure you want to delete this tool?');
+    if (!ok) return;
     setActionLoading(true);
     try {
       await api.delete(`/tools/${id}`);
-      toast.success('Tool deleted');
+      Toast.success('Tool deleted');
       fetchTools();
     } catch {
-      toast.error('Delete failed');
+      Toast.error('Delete failed');
     } finally {
       setActionLoading(false);
     }
@@ -235,15 +242,15 @@ const ToolsPage = () => {
     fetchWorkers();
   };
   const assignTool = async () => {
-    if (!assignWorkerId) return toast.error('Select a worker');
+  if (!assignWorkerId) return Toast.error('Select a worker');
     setActionLoading(true);
     try {
       await api.post(`/tools/${assignModal.tool._id}/assign`, { workerId: assignWorkerId });
-      toast.success('Tool assigned');
+  Toast.success('Tool assigned');
       setAssignModal({ open: false, tool: null });
       fetchTools();
     } catch {
-      toast.error('Assign failed');
+  Toast.error('Assign failed');
     } finally {
       setActionLoading(false);
     }
@@ -252,10 +259,10 @@ const ToolsPage = () => {
     setActionLoading(true);
     try {
       await api.post(`/tools/${tool._id}/unassign`);
-      toast.success('Tool unassigned');
+  Toast.success('Tool unassigned');
       fetchTools();
     } catch {
-      toast.error('Unassign failed');
+  Toast.error('Unassign failed');
     } finally {
       setActionLoading(false);
     }
@@ -289,6 +296,30 @@ const ToolsPage = () => {
           <button className="btn btn-outline gap-2" onClick={exportCSV}><Download size={16}/> Export CSV</button>
           <button className="btn btn-outline gap-2" onClick={exportPDF}><Printer size={16}/> Export PDF</button>
           <button className="btn btn-primary ml-auto" onClick={() => navigate('/tools/create')}>+ New Tool</button>
+        </div>
+
+        {/* Tools Summary Section */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 bg-base-100 rounded-lg shadow p-4 mb-6">
+          <div className="text-center">
+            <div className="text-xs text-base-content/60">Total Tools</div>
+            <div className="font-bold text-lg">{totalTools}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-base-content/60">Available</div>
+            <div className="font-bold text-lg text-success">{availableTools}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-base-content/60">Assigned</div>
+            <div className="font-bold text-lg text-warning">{assignedTools}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-base-content/60">Needs Repair</div>
+            <div className="font-bold text-lg text-error">{needsRepairTools}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-base-content/60">Tool Types</div>
+            <div className="font-bold text-lg">{uniqueTypes}</div>
+          </div>
         </div>
 
         {loading ? (

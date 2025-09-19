@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { Toast } from '../utils/sweet';
 import axios from 'axios';
 import Navbar from '@/components/Navbar';
 
@@ -31,7 +31,7 @@ export default function CreateToolPage() {
     try {
       const res = await api.post("/tools", { toolType, condition, note });
       const created = res.data;
-      toast.success(`Tool created: ${created.toolId}`);
+  Toast.success(`Tool created: ${created.toolId}`);
       navigate("/tools");
     } catch (err) {
       if (err.response?.status === 409) {

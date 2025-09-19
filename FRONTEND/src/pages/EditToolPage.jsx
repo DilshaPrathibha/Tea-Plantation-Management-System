@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { Toast } from "../utils/sweet";
 import Navbar from "@/components/Navbar";
 import axios from "axios";
 
@@ -46,7 +46,7 @@ export default function EditToolPage() {
         condition: tool.condition,
         note: tool.note,
       });
-      toast.success("Tool updated successfully");
+  Toast.success("Tool updated successfully");
       navigate("/tools");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update tool");

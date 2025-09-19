@@ -1,4 +1,5 @@
 import React from "react";
+import { Sweet } from "../utils/sweet";
 import { useNavigate } from "react-router-dom";
 import {
   Users,
@@ -59,37 +60,37 @@ const AdminDashboard = () => {
             icon={<Users className="w-6 h-6" />}
             title="Workers"
             desc="(Planned) Assign crews, attendance & performance."
-            onClick={() => alert('Coming soon')}
+            onClick={() => Sweet.info('Coming soon')}
           />
           <Tile
             icon={<Package className="w-6 h-6" />}
             title="Weighing & Bins"
             desc="(Planned) Collection points and leaf weights."
-            onClick={() => alert('Coming soon')}
+            onClick={() => Sweet.info('Coming soon')}
           />
           <Tile
             icon={<Truck className="w-6 h-6" />}
             title="Logistics"
             desc="(Planned) Schedule transport to the factory."
-            onClick={() => alert('Coming soon')}
+            onClick={() => Sweet.info('Coming soon')}
           />
           <Tile
             icon={<Factory className="w-6 h-6" />}
             title="Factory Handover"
             desc="(Planned) Generate handover notes & acknowledgments."
-            onClick={() => alert('Coming soon')}
+            onClick={() => Sweet.info('Coming soon')}
           />
           <Tile
             icon={<BarChart3 className="w-6 h-6" />}
             title="Reports"
             desc="(Planned) Harvest trends and summaries."
-            onClick={() => alert('Coming soon')}
+            onClick={() => Sweet.info('Coming soon')}
           />
           <Tile
             icon={<Settings className="w-6 h-6" />}
             title="Settings"
             desc="(Planned) Roles, permissions, and preferences."
-            onClick={() => alert('Coming soon')}
+            onClick={() => Sweet.info('Coming soon')}
           />
         </div>
       </div>
