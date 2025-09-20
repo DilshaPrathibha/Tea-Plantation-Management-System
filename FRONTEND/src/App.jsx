@@ -19,11 +19,12 @@ import ToolDetailPage from "./pages/ToolDetailPage.jsx";
 import FNIEditPage from "./pages/FNIEditPage.jsx";
 import FNICreate from "./pages/FNICreate.jsx";
 import VehicleMapPage from "./pages/VehicleMapPage.jsx";
+import InventoryManagerDashboard from "./pages/InventoryManagerDashboard.jsx";
 
 // Simple placeholders (keep or replace later)
 const WorkerDashboard = () => <div className="p-8 text-2xl">Worker Dashboard</div>;
 const ProductionDashboard = () => <div className="p-8 text-2xl">Production Manager Dashboard</div>;
-const InventoryDashboard = () => <div className="p-8 text-2xl">Inventory Manager Dashboard</div>;
+// Removed placeholder InventoryDashboard; now using InventoryManagerDashboard.jsx
 const FieldDashboard = () => <div className="p-8 text-2xl">Field Supervisor Dashboard</div>;
 const NotFound = () => <div className="p-8 text-2xl">Page not found</div>;
 
@@ -90,7 +91,7 @@ const App = () => {
           path="/inventory-dashboard"
           element={
             <RequireAuth role="inventory_manager">
-              <InventoryDashboard />
+              <InventoryManagerDashboard />
             </RequireAuth>
           }
         />

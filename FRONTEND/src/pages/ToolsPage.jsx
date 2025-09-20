@@ -218,6 +218,9 @@ const ToolsPage = () => {
         headStyles: { fillColor: [34, 197, 94], textColor: [0, 0, 0] },
         alternateRowStyles: { fillColor: [240, 253, 244] },
         margin: { left: 40, right: 40 },
+        columnStyles: {
+          3: { minCellWidth:  70} //min width for Condition'
+        },
         didParseCell: function (data) {
           // Condition column index is 3
           if (data.section === 'body' && data.column.index === 3) {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Leaf, User, BarChart2, Home, Wrench, FlaskConical, Truck } from 'lucide-react';
+import { Leaf, User, BarChart2, Home, Wrench, FlaskConical, Truck, Boxes } from 'lucide-react';
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -36,13 +36,9 @@ const Navbar = () => {
               <BarChart2 size={18} />
               Reports
             </NavLink>
-            <NavLink to="/tools" className="btn btn-ghost flex items-center gap-1">
-              <Wrench size={18} />
-              Tools
-            </NavLink>
-            <NavLink to="/FNI" className="btn btn-ghost flex items-center gap-1">
-              <FlaskConical size={18} />
-              FNI
+            <NavLink to="/inventory-dashboard" className="btn btn-ghost flex items-center gap-1">
+              <Boxes size={18} />
+              Inventory
             </NavLink>
             <NavLink to="/vehicle-map" className="btn btn-ghost flex items-center gap-1">
               <Truck size={18} />
@@ -76,11 +72,8 @@ const Navbar = () => {
             <NavLink to="/reports" className="btn btn-ghost flex items-center gap-1" onClick={() => setMenuOpen(false)}>
               <BarChart2 size={18} /> Reports
             </NavLink>
-            <NavLink to="/tools" className="btn btn-ghost flex items-center gap-1" onClick={() => setMenuOpen(false)}>
-              <Wrench size={18} /> Tools
-            </NavLink>
-            <NavLink to="/FNI" className="btn btn-ghost flex items-center gap-1" onClick={() => setMenuOpen(false)}>
-              <FlaskConical size={18} /> FNI
+            <NavLink to="/inventory-dashboard" className="btn btn-ghost flex items-center gap-1" onClick={() => setMenuOpen(false)}>
+              <Boxes size={18} /> Inventory
             </NavLink>
             <NavLink to="/vehicle-map" className="btn btn-ghost flex items-center gap-1" onClick={() => setMenuOpen(false)}>
               <Truck size={18} /> Vehicle Map

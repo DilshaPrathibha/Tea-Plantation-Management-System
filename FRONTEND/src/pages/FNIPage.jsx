@@ -345,7 +345,7 @@ export default function FNIPage() {
                   )}
                   <div className="flex gap-2">
                     <button className="btn btn-sm btn-neutral" onClick={() => { setAdjustItem(item); setAdjustOpen(true); }}>
-                      <CandlestickChart size={16} className="mr-1" /> Adjust
+                      <CandlestickChart size={16} className="mr-1" /> Update Stock
                     </button>
                     <button className="btn btn-sm btn-warning" onClick={() => navigate(`/fni/${item._id}/edit`)}>
                       <Pencil size={16} className="mr-1" /> Edit

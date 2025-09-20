@@ -78,7 +78,7 @@ export default function FNIAdjustModal({ open, onClose, item, onDone }) {
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
       <div className="modal modal-open">
         <div className="modal-box">
-          <h3 className="font-bold text-lg mb-2">Adjust Stock for {item?.name}</h3>
+          <h3 className="font-bold text-lg mb-2">Update Stock for {item?.name}</h3>
           <div className="mb-2 text-sm text-base-content/70">Current Qty: <span className="font-semibold">{item?.qtyOnHand}</span></div>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="flex gap-2">
@@ -136,7 +136,7 @@ export default function FNIAdjustModal({ open, onClose, item, onDone }) {
               <button type="button" className="btn" onClick={onClose} disabled={loading}>Cancel</button>
               <button type="submit" className={`btn btn-primary ${loading ? 'btn-disabled' : ''}`} disabled={loading}>
                 {loading ? <span className="loading loading-spinner loading-sm mr-2" /> : null}
-                Adjust
+                Update Stock
               </button>
             </div>
           </form>
