@@ -1,3 +1,4 @@
+// BACKEND/models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -11,10 +12,14 @@ const userSchema = new mongoose.Schema(
       enum: ['admin', 'worker', 'production_manager', 'inventory_manager', 'field_supervisor'],
       default: 'worker'
     },
-    // extra profile fields
+
+    // company-wide employee id, unique
+    empId: { type: String, trim: true, unique: true, sparse: true, index: true },
+
+    // profile fields we KEEP
     phone: { type: String, trim: true, default: '' },
-    estate: { type: String, trim: true, default: '' },
-    department: { type: String, trim: true, default: '' }
+
+    // ⚠️ removed: estate, department (intentionally omitted from schema)
   },
   { timestamps: true }
 );
@@ -29,4 +34,4 @@ userSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.models.User || mongoose.model('User', userSchema);

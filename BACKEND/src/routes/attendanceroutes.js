@@ -8,12 +8,18 @@ const {
   listAttendance,
   getAttendance,
   updateAttendance,
-  deleteAttendance
+  deleteAttendance,
+  checkInAuto,
+  checkOutAuto,
 } = require('../controllers/attendancecontroller');
 
-// Only admins and field supervisors may manage attendance
 router.use(verifyToken, requireAnyRole(['admin', 'field_supervisor']));
 
+// QR endpoints
+router.post('/checkin', checkInAuto);
+router.post('/checkout', checkOutAuto);
+
+// CRUD
 router.post('/', createAttendance);
 router.get('/', listAttendance);
 router.get('/:id', getAttendance);

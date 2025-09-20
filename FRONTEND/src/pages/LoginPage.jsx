@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ChevronRight, Leaf } from 'lucide-react';
+import { Sweet, Toast } from '@/utils/sweet';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -11,7 +12,8 @@ const roleHome = (role) => {
     case 'field_supervisor': return '/supervisor';
     case 'production_manager': return '/production-dashboard';
     case 'inventory_manager': return '/inventory-dashboard';
-    case 'worker': default: return '/';
+    case 'worker': return '/worker'; 
+    default: return '/'; 
   }
 };
 
@@ -34,11 +36,13 @@ const LoginPage = () => {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      // Always go to the right dashboard by role
+      Toast.fire({ icon: 'success', title: 'Signed in successfully' });
       navigate(roleHome(res.data.user.role), { replace: true });
     } catch (err) {
       console.error('Login error:', err?.response?.status, err?.response?.data);
-      setError(err?.response?.data?.message || 'Invalid credentials');
+      const msg = err?.response?.data?.message || 'Invalid credentials';
+      setError(msg);
+      Sweet.fire({ icon: 'error', title: 'Sign in failed', text: msg });
     } finally {
       setLoading(false);
     }

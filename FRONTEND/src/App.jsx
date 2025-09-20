@@ -1,3 +1,4 @@
+// FRONTEND/src/App.jsx
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -5,19 +6,22 @@ import HomePage from './pages/HomePage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import CreatePage from './pages/CreatePage.jsx';
 import NoteDetailPage from './pages/NoteDetailPage.jsx';
+import TaskAssign from './pages/supervisor/TaskAssign.jsx';
 
 import RequireAuth from './components/RequireAuth.jsx';
 
 // Admin
-import AdminDashboard from './pages/admin/AdminDashboard.jsx';   // tiles landing
-import AdminUsers from './components/AdminUsers.jsx';            // users CRUD
-import FieldsPage from './pages/admin/FieldsPage.jsx';           // fields page
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import AdminUsers from './components/AdminUsers.jsx';
+import FieldsPage from './pages/admin/FieldsPage.jsx';
 
 // Supervisor
 import SupervisorDashboard from './pages/supervisor/SupervisorDashboard.jsx';
 import AttendanceList from './pages/supervisor/attendance/AttendanceList.jsx';
 import AttendanceForm from './pages/supervisor/attendance/AttendanceForm.jsx';
 import AttendanceScan from './pages/supervisor/attendance/AttendanceScan.jsx';
+
+import WorkerDashboard from './pages/worker/WorkerDashboard.jsx';
 
 export default function App() {
   return (
@@ -52,7 +56,7 @@ export default function App() {
         }
       />
 
-      {/* Notes */}
+      {/* Notes (practice) */}
       <Route
         path="/notes/create"
         element={
@@ -96,7 +100,26 @@ export default function App() {
         }
       />
       <Route
+       path="/supervisor/tasks"
+       element={
+       <RequireAuth role="field_supervisor">
+       <TaskAssign />
+       </RequireAuth>
+      }
+       />
+
+      {/* Keep your old edit route if you use it anywhere */}
+      <Route
         path="/supervisor/attendance/:id/edit"
+        element={
+          <RequireAuth role="field_supervisor">
+            <AttendanceForm />
+          </RequireAuth>
+        }
+      />
+      {/* NEW: matches Edit link like /supervisor/attendance/66f... */}
+      <Route
+        path="/supervisor/attendance/:id"
         element={
           <RequireAuth role="field_supervisor">
             <AttendanceForm />
@@ -111,6 +134,15 @@ export default function App() {
           </RequireAuth>
         }
       />
+
+      <Route
+  path="/worker"
+  element={
+    <RequireAuth role="worker">
+      <WorkerDashboard />
+    </RequireAuth>
+  }
+/>
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

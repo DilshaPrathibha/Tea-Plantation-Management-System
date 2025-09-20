@@ -1,82 +1,69 @@
 // BACKEND/src/controllers/fieldcontroller.js
+const mongoose = require('mongoose');
 const Field = require('../../models/Field');
 
-// POST /api/fields
-exports.createField = async (req, res) => {
-  try {
-    console.log('[FIELDS create] body:', req.body);
-    const { name, teaType, estimatedRevenue, propertyValue, remarks, status, location } = req.body || {};
-    if (!name) return res.status(400).json({ message: 'name required' });
-
-    const field = await Field.create({
-      name,
-      teaType: teaType || '',
-      estimatedRevenue: Number(estimatedRevenue) || 0,
-      propertyValue: Number(propertyValue) || 0,
-      remarks: remarks || '',
-      status: status || 'active',
-      location: {
-        address: location?.address || '',
-        lat: typeof location?.lat === 'number' ? location.lat : null,
-        lng: typeof location?.lng === 'number' ? location.lng : null,
-      },
-    });
-
-    res.status(201).json({ field });
-  } catch (e) {
-    console.error('[FIELDS create] ERROR:', e);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
+const isId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 // GET /api/fields
 exports.listFields = async (req, res) => {
   try {
-    const page = Math.max(parseInt(req.query.page || '1', 10), 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit || '10', 10), 1), 50);
-    const skip = (page - 1) * limit;
-
-    const filter = {};
-    if (req.query.status) filter.status = req.query.status;
-
-    const [items, total] = await Promise.all([
-      Field.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
-      Field.countDocuments(filter),
-    ]);
-
-    res.json({ items, total, page, limit });
+    const items = await Field.find().sort({ createdAt: -1 }).lean();
+    res.json({ items });
   } catch (e) {
-    console.error('[FIELDS list] ERROR:', e);
+    console.error('[fields list]', e);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// PATCH /api/fields/:id
+// POST /api/fields
+exports.createField = async (req, res) => {
+  try {
+    const { name, teaType, status, revenue, value, address, remarks, lat, lng } = req.body || {};
+    if (!name || !String(name).trim()) return res.status(400).json({ message: 'name required' });
+
+    const doc = await Field.create({
+      name: String(name).trim(),
+      teaType: (teaType || '').trim(),
+      status: status || 'Active',
+      revenue: revenue || '',
+      value: value || '',
+      address: (address || '').trim(),
+      remarks: (remarks || '').trim(),
+      lat: typeof lat === 'number' ? lat : (lat === undefined || lat === '' ? undefined : Number(lat)),
+      lng: typeof lng === 'number' ? lng : (lng === undefined || lng === '' ? undefined : Number(lng)),
+    });
+
+    res.status(201).json({ field: doc });
+  } catch (e) {
+    console.error('[fields create]', e);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// PATCH/PUT /api/fields/:id
 exports.updateField = async (req, res) => {
   try {
-    const id = req.params.id;
-    const { name, teaType, estimatedRevenue, propertyValue, remarks, status, location } = req.body || {};
+    const { id } = req.params;
+    if (!isId(id)) return res.status(400).json({ message: 'invalid id' });
 
-    const field = await Field.findById(id);
-    if (!field) return res.status(404).json({ message: 'Field not found' });
+    const b = req.body || {};
+    const update = {
+      ...(b.name !== undefined ? { name: String(b.name).trim() } : {}),
+      ...(b.teaType !== undefined ? { teaType: String(b.teaType).trim() } : {}),
+      ...(b.status !== undefined ? { status: b.status } : {}),
+      ...(b.revenue !== undefined ? { revenue: b.revenue } : {}),
+      ...(b.value !== undefined ? { value: b.value } : {}),
+      ...(b.address !== undefined ? { address: String(b.address).trim() } : {}),
+      ...(b.remarks !== undefined ? { remarks: String(b.remarks).trim() } : {}),
+    };
+    if (b.lat !== undefined) update.lat = b.lat === '' ? undefined : Number(b.lat);
+    if (b.lng !== undefined) update.lng = b.lng === '' ? undefined : Number(b.lng);
 
-    if (name !== undefined) field.name = name;
-    if (teaType !== undefined) field.teaType = teaType;
-    if (estimatedRevenue !== undefined) field.estimatedRevenue = Number(estimatedRevenue) || 0;
-    if (propertyValue !== undefined) field.propertyValue = Number(propertyValue) || 0;
-    if (remarks !== undefined) field.remarks = remarks;
-    if (status !== undefined) field.status = status;
-
-    if (location !== undefined) {
-      field.location.address = location?.address ?? field.location.address;
-      field.location.lat = typeof location?.lat === 'number' ? location.lat : field.location.lat;
-      field.location.lng = typeof location?.lng === 'number' ? location.lng : field.location.lng;
-    }
-
-    await field.save();
-    res.json({ field });
+    const saved = await Field.findByIdAndUpdate(id, update, { new: true });
+    if (!saved) return res.status(404).json({ message: 'Field not found' });
+    res.json({ field: saved });
   } catch (e) {
-    console.error('[FIELDS update] ERROR:', e);
+    console.error('[fields update]', e);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -84,12 +71,14 @@ exports.updateField = async (req, res) => {
 // DELETE /api/fields/:id
 exports.deleteField = async (req, res) => {
   try {
-    const id = req.params.id;
-    const deleted = await Field.findByIdAndDelete(id);
-    if (!deleted) return res.status(404).json({ message: 'Field not found' });
-    res.json({ message: 'Field deleted' });
+    const { id } = req.params;
+    if (!isId(id)) return res.status(400).json({ message: 'invalid id' });
+
+    const del = await Field.findByIdAndDelete(id);
+    if (!del) return res.status(404).json({ message: 'Field not found' });
+    res.json({ message: 'Deleted' });
   } catch (e) {
-    console.error('[FIELDS delete] ERROR:', e);
+    console.error('[fields delete]', e);
     res.status(500).json({ message: 'Server error' });
   }
 };

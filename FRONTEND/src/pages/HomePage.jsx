@@ -11,6 +11,7 @@ import {
   BarChart3,
   ChevronRight
 } from 'lucide-react';
+import { Sweet, Toast } from '@/utils/sweet';
 
 const VIDEO_DURATION = 4000;
 

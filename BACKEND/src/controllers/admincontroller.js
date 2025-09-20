@@ -1,4 +1,5 @@
-const User = require('../../models/User');
+// BACKEND/src/controllers/admincontroller.js
+const User = require('../../models/user');
 
 function generateTempPassword(len = 12) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
@@ -7,10 +8,49 @@ function generateTempPassword(len = 12) {
   return pw;
 }
 
+// ---- empId generation helpers ----
+const ROLE_PREFIX = {
+  worker: 'W',
+  production_manager: 'PM',
+  inventory_manager: 'IM',
+  field_supervisor: 'FS',
+  admin: 'AD',
+};
+const PAD_WIDTH = (role) => (role === 'worker' ? 3 : 2);
+
+async function nextEmpIdForRole(role) {
+  const prefix = ROLE_PREFIX[role] || 'U';
+  const re = new RegExp('^' + prefix + '(\\d+)$', 'i');
+
+  const doc = await User
+    .find({ role, empId: { $regex: '^' + prefix, $options: 'i' } })
+    .select('empId')
+    .lean();
+
+  let max = 0;
+  for (const r of doc) {
+    const m = r.empId && String(r.empId).match(re);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  }
+
+  const next = max + 1;
+  const pad = PAD_WIDTH(role);
+  return prefix + String(next).padStart(pad, '0');
+}
+
+function isValidEmpIdForRole(empId, role) {
+  const prefix = ROLE_PREFIX[role] || 'U';
+  const pad = PAD_WIDTH(role);
+  const re = new RegExp('^' + prefix + '\\d{' + pad + ',}$', 'i'); // allow >= pad
+  return re.test(empId || '');
+}
+
+// ----------------------------------
+
 // POST /api/admin/users
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, role, password, phone, estate, department } = req.body || {};
+    const { name, email, role, password, phone, empId } = req.body || {};
     const normalizedEmail = (email || '').toLowerCase().trim();
     if (!normalizedEmail) return res.status(400).json({ message: 'email required' });
     if (!name) return res.status(400).json({ message: 'name required' });
@@ -18,16 +58,26 @@ exports.createUser = async (req, res) => {
     const exists = await User.findOne({ email: normalizedEmail });
     if (exists) return res.status(409).json({ message: 'Email already exists' });
 
+    const finalRole = role || 'worker';
+
+    // Determine empId (use provided if valid+unique; otherwise auto-generate)
+    let finalEmpId = (empId || '').trim().toUpperCase();
+    if (!isValidEmpIdForRole(finalEmpId, finalRole)) {
+      finalEmpId = await nextEmpIdForRole(finalRole);
+    } else {
+      const dup = await User.findOne({ empId: finalEmpId });
+      if (dup) finalEmpId = await nextEmpIdForRole(finalRole);
+    }
+
     const tempPassword = password && password.trim().length >= 6 ? password : generateTempPassword();
 
     const user = new User({
       name,
       email: normalizedEmail,
       password: tempPassword, // hashed by pre('save')
-      role: role || 'worker',
+      role: finalRole,
       phone: phone || '',
-      estate: estate || '',
-      department: department || ''
+      empId: finalEmpId
     });
     await user.save();
 
@@ -37,9 +87,8 @@ exports.createUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        empId: user.empId,
         phone: user.phone,
-        estate: user.estate,
-        department: user.department,
         createdAt: user.createdAt
       },
       temporaryPassword: tempPassword
@@ -51,18 +100,40 @@ exports.createUser = async (req, res) => {
 };
 
 // GET /api/admin/users
+// Enhancements: q (search), sortBy, sortDir
 exports.listUsers = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page || '1', 10), 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit || '10', 10), 1), 50);
     const skip = (page - 1) * limit;
 
+    const { q = '', sortBy = 'createdAt', sortDir = 'desc' } = req.query;
+
+    // search filter
+    const filter = {};
+    if (q && String(q).trim()) {
+      const rx = new RegExp(String(q).trim(), 'i');
+      filter.$or = [
+        { name: rx },
+        { email: rx },
+        { role: rx },
+        { empId: rx },
+        { phone: rx },
+      ];
+    }
+
+    // sort whitelist (estate/department removed)
+    const ALLOWED_SORT = new Set(['createdAt', 'name', 'email', 'role', 'empId', 'phone']);
+    const sortField = ALLOWED_SORT.has(String(sortBy)) ? String(sortBy) : 'createdAt';
+    const dir = String(sortDir).toLowerCase() === 'asc' ? 1 : -1;
+    const sort = { [sortField]: dir, _id: -1 };
+
     const [items, total] = await Promise.all([
-      User.find({}, 'name email role phone estate department createdAt')
-        .sort({ createdAt: -1 })
+      User.find(filter, 'name email role empId phone createdAt')
+        .sort(sort)
         .skip(skip)
         .limit(limit),
-      User.countDocuments()
+      User.countDocuments(filter)
     ]);
 
     res.json({ items, total, page, limit });
@@ -76,28 +147,40 @@ exports.listUsers = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const id = req.params.id;
-    const { name, email, role, phone, estate, department, password } = req.body || {};
-
-    const update = {};
-    if (name !== undefined) update.name = name;
-    if (email !== undefined) update.email = (email || '').toLowerCase().trim();
-    if (role !== undefined) update.role = role;
-    if (phone !== undefined) update.phone = phone;
-    if (estate !== undefined) update.estate = estate;
-    if (department !== undefined) update.department = department;
-
-    if (update.email) {
-      const exists = await User.findOne({ email: update.email, _id: { $ne: id } });
-      if (exists) return res.status(409).json({ message: 'Email already exists' });
-    }
+    const { name, email, role, phone, password, empId } = req.body || {};
 
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    Object.assign(user, update);
+    if (email !== undefined) {
+      const normalizedEmail = (email || '').toLowerCase().trim();
+      if (!normalizedEmail) return res.status(400).json({ message: 'invalid email' });
+      const exists = await User.findOne({ email: normalizedEmail, _id: { $ne: id } });
+      if (exists) return res.status(409).json({ message: 'Email already exists' });
+      user.email = normalizedEmail;
+    }
+
+    if (name !== undefined) user.name = name;
+    if (role !== undefined) user.role = role;
+    if (phone !== undefined) user.phone = phone;
+
+    // Optional: allow admin to set empId explicitly (must be valid+unique for the user's role)
+    if (empId !== undefined) {
+      const trimmed = (empId || '').trim().toUpperCase();
+      if (trimmed && !isValidEmpIdForRole(trimmed, user.role)) {
+        return res.status(400).json({ message: 'empId format invalid for role' });
+      }
+      if (trimmed) {
+        const dup = await User.findOne({ empId: trimmed, _id: { $ne: id } });
+        if (dup) return res.status(409).json({ message: 'empId already exists' });
+        user.empId = trimmed;
+      } else {
+        user.empId = await nextEmpIdForRole(user.role);
+      }
+    }
 
     if (password && password.trim().length >= 6) {
-      user.password = password; // will be hashed by pre('save')
+      user.password = password; // hashed by pre('save')
     }
 
     await user.save();
@@ -108,9 +191,8 @@ exports.updateUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        empId: user.empId,
         phone: user.phone,
-        estate: user.estate,
-        department: user.department,
         updatedAt: user.updatedAt
       }
     });

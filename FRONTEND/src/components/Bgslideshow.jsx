@@ -1,5 +1,6 @@
 // BackgroundSlideshow.js
 import React, { useEffect, useState } from 'react';
+import { Sweet, Toast } from '@/utils/sweet';
 
 const images = [
   '/banner-sp-1024x576.jpg',

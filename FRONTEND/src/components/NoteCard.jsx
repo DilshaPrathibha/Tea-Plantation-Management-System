@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Sweet, Toast } from '@/utils/sweet';
 
 const NoteCard = ({ note, isNewNote = false, onClick, onDelete }) => {
   const navigate = useNavigate();

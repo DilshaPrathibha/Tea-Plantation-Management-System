@@ -10,6 +10,7 @@ import {
   Factory,
   Settings,
 } from "lucide-react";
+import { Sweet } from '@/utils/sweet';
 
 const Tile = ({ icon, title, desc, onClick }) => (
   <button
@@ -32,6 +33,8 @@ const Tile = ({ icon, title, desc, onClick }) => (
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+
+  const comingSoon = (name) => Sweet.info(`${name} — coming soon`);
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -60,37 +63,37 @@ const AdminDashboard = () => {
             icon={<Users className="w-6 h-6" />}
             title="Workers"
             desc="(Planned) Assign crews, attendance & performance."
-            onClick={() => alert("Coming soon")}
+            onClick={() => comingSoon('Workers')}
           />
           <Tile
             icon={<Package className="w-6 h-6" />}
             title="Weighing & Bins"
             desc="(Planned) Collection points and leaf weights."
-            onClick={() => alert("Coming soon")}
+            onClick={() => comingSoon('Weighing & Bins')}
           />
           <Tile
             icon={<Truck className="w-6 h-6" />}
             title="Logistics"
             desc="(Planned) Schedule transport to the factory."
-            onClick={() => alert("Coming soon")}
+            onClick={() => comingSoon('Logistics')}
           />
           <Tile
             icon={<Factory className="w-6 h-6" />}
             title="Factory Handover"
             desc="(Planned) Generate handover notes & acknowledgments."
-            onClick={() => alert("Coming soon")}
+            onClick={() => comingSoon('Factory Handover')}
           />
           <Tile
             icon={<BarChart3 className="w-6 h-6" />}
             title="Reports"
             desc="(Planned) Harvest trends and summaries."
-            onClick={() => alert("Coming soon")}
+            onClick={() => comingSoon('Reports')}
           />
           <Tile
             icon={<Settings className="w-6 h-6" />}
             title="Settings"
             desc="(Planned) Roles, permissions, and preferences."
-            onClick={() => alert("Coming soon")}
+            onClick={() => comingSoon('Settings')}
           />
         </div>
       </div>

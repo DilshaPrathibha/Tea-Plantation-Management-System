@@ -1,6 +1,7 @@
 // FRONTEND/src/pages/supervisor/SupervisorDashboard.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Sweet, Toast } from '@/utils/sweet';
 
 export default function SupervisorDashboard() {
   return (
@@ -23,12 +24,20 @@ export default function SupervisorDashboard() {
             </div>
           </Link>
 
+
           <Link to="/supervisor/attendance/new" className="card bg-base-100 shadow hover:shadow-lg transition">
             <div className="card-body">
               <h2 className="card-title">Manual Entry</h2>
               <p>Create a record with the 7-field form.</p>
             </div>
           </Link>
+          <Link to="/supervisor/tasks" className="card bg-base-100 shadow hover:shadow-lg transition">
+  <div className="card-body">
+    <h2 className="card-title">Task Assignment</h2>
+    <p>Assign today’s tasks to attended workers, with due time and priorities.</p>
+  </div>
+</Link>
+          
         </div>
       </div>
     </div>

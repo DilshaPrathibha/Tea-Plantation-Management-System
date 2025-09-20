@@ -1,5 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { Sweet, Toast } from '@/utils/sweet';
 
 const homeForRole = (role) => {
   if (role === 'admin') return '/admin';

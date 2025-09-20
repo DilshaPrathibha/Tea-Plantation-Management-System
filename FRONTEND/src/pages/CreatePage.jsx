@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
 import axios from 'axios';
 import Navbar from '@/components/Navbar';
+import { Sweet, Toast } from '@/utils/sweet';
 
 const api = axios.create({
   baseURL: 'http://localhost:5001/api',
@@ -21,17 +21,17 @@ const CreatePage = () => {
     e.preventDefault();
 
     if (!title || !content) {
-      toast.error('Both title and content are required');
+      Toast.error('Both title and content are required');
       return;
     }
 
     try {
       await api.post('/notes', { title, content });
-      toast.success('Note created successfully');
+      Toast.success('Note created successfully');
       navigate('/');
     } catch (error) {
       console.error("Create failed:", error);
-      toast.error('Failed to create note');
+      Sweet.error({ title: 'Failed to create note', text: error?.response?.data?.message || 'Please try again.' });
     }
   };
 

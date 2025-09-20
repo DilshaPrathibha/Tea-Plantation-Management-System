@@ -1,6 +1,6 @@
 // BACKEND/src/controllers/authcontroller.js
 const jwt = require('jsonwebtoken');
-const User = require('../../models/User');
+const User = require('../../models/user');
 
 const signToken = (user) =>
   jwt.sign(

@@ -32,14 +32,19 @@ app.use(ratelimit);
 const authRoutes = require('./routes/authroutes');
 const adminRoutes = require('./routes/adminroutes'); // ✅ add
 const fieldRoutes = require('./routes/fieldroutes'); 
+const peopleRoutes = require('./routes/peopleroutes');
+const taskRoutes = require('./routes/taskroutes'); 
+const workerRoutes = require('./routes/workerroutes'); 
 
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);   
 app.use('/api/fields', fieldRoutes);  
 app.use('/api/attendance', attendanceRoutes);
-
+app.use('/api/people', peopleRoutes);
+app.use('/api/tasks', taskRoutes);
             // ✅ add
+app.use('/api/worker', workerRoutes);
 
 // 4) health
 app.get('/health', (req, res) => res.json({ ok: true }));

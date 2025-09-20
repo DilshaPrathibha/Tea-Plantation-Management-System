@@ -1,6 +1,7 @@
 
 
 import { ZapIcon } from "lucide-react";
+import { Sweet, Toast } from '@/utils/sweet';
 
 const RateLimitedUI = () => {
   return (

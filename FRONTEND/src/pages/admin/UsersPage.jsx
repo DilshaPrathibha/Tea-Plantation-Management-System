@@ -13,6 +13,7 @@ import {
   X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Sweet } from '@/utils/sweet';
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
@@ -61,9 +62,12 @@ const UsersPage = () => {
       const res = await axios.get(`${API}/api/admin/users?page=${page}&limit=${limit}`, { headers: authHeader });
       setUsers(res.data.items || []);
       setTotal(res.data.total || 0);
+      await Sweet.success("Users list updated");
     } catch (e) {
       console.error(e);
-      setError(e?.response?.data?.message || "Failed to load users");
+      const msg = e?.response?.data?.message || "Failed to load users";
+      setError(msg);
+      await Sweet.error(msg);
     } finally {
       setListLoading(false);
     }
@@ -93,10 +97,13 @@ const UsersPage = () => {
         estate: "",
         department: ""
       });
+      await Sweet.success("User created");
       fetchUsers();
     } catch (e) {
       console.error(e);
-      setError(e?.response?.data?.message || "Failed to create user");
+      const msg = e?.response?.data?.message || "Failed to create user";
+      setError(msg);
+      await Sweet.error(msg);
     } finally {
       setCreating(false);
     }
@@ -105,21 +112,23 @@ const UsersPage = () => {
   const resetPassword = async (id) => {
     try {
       const res = await axios.post(`${API}/api/admin/users/${id}/reset-password`, {}, { headers: authHeader });
-      alert(`New temporary password: ${res.data.temporaryPassword}`);
+      await Sweet.info(`New temporary password: ${res.data.temporaryPassword}`);
     } catch (e) {
       console.error(e);
-      alert(e?.response?.data?.message || "Failed to reset password");
+      await Sweet.error(e?.response?.data?.message || "Failed to reset password");
     }
   };
 
   const deleteUser = async (id) => {
-    if (!confirm("Delete this user?")) return;
+    const ok = await Sweet.confirm("Delete this user?");
+    if (!ok) return;
     try {
       await axios.delete(`${API}/api/admin/users/${id}`, { headers: authHeader });
+      await Sweet.success("User deleted");
       fetchUsers();
     } catch (e) {
       console.error(e);
-      alert(e?.response?.data?.message || "Failed to delete");
+      await Sweet.error(e?.response?.data?.message || "Failed to delete");
     }
   };
 
@@ -153,10 +162,11 @@ const UsersPage = () => {
         department: "",
         password: ""
       });
+      await Sweet.success("User updated");
       fetchUsers();
     } catch (e) {
       console.error(e);
-      alert(e?.response?.data?.message || "Failed to update user");
+      await Sweet.error(e?.response?.data?.message || "Failed to update user");
     } finally {
       setSaving(false);
     }
@@ -167,7 +177,10 @@ const UsersPage = () => {
       await navigator.clipboard.writeText(tempPw);
       setJustCopied(true);
       setTimeout(() => setJustCopied(false), 1200);
-    } catch {}
+      await Sweet.success("Copied to clipboard");
+    } catch {
+      await Sweet.error("Copy failed");
+    }
   };
 
   const totalPages = Math.max(Math.ceil(total / limit), 1);

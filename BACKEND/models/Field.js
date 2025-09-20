@@ -1,26 +1,20 @@
 // BACKEND/models/Field.js
 const mongoose = require('mongoose');
 
-const locationSchema = new mongoose.Schema(
-  {
-    address: { type: String, trim: true, default: '' },
-    lat: { type: Number, default: null },
-    lng: { type: Number, default: null },
-  },
-  { _id: false }
-);
-
 const fieldSchema = new mongoose.Schema(
   {
-    name: { type: String, trim: true, required: true },
-    location: { type: locationSchema, default: () => ({}) },
+    name: { type: String, required: true, trim: true },
     teaType: { type: String, trim: true, default: '' },
-    estimatedRevenue: { type: Number, default: 0 },
-    propertyValue: { type: Number, default: 0 },
+    status: { type: String, enum: ['Active', 'Sold', 'Archived'], default: 'Active' },
+    revenue: { type: String, trim: true, default: '' },
+    value: { type: String, trim: true, default: '' },
+    address: { type: String, trim: true, default: '' },
     remarks: { type: String, trim: true, default: '' },
-    status: { type: String, enum: ['active', 'sold', 'archived'], default: 'active' },
+    lat: { type: Number, default: undefined },
+    lng: { type: Number, default: undefined }
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Field', fieldSchema);
+// Reuse compiled model to avoid OverwriteModelError on hot reload (Windows/Nodemon)
+module.exports = mongoose.models.Field || mongoose.model('Field', fieldSchema);

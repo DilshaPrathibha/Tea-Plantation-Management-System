@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Leaf, User, BarChart2, Home } from 'lucide-react';
+import { Sweet, Toast } from '@/utils/sweet';
 
 const Navbar = () => {
   return (
