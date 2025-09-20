@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "multer": "^2.0.2",
+    "sweetalert2": "^11.23.0"
+  }
+}
