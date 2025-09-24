@@ -15,3 +15,6 @@ FRONTEND/.vite/
 # local binaries & caches
 *.exe
 FRONTEND/.vite/
+
+# allow env template
+!BACKEND/.env.example
