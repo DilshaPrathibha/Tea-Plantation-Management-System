@@ -18,3 +18,7 @@ FRONTEND/.vite/
 
 # allow env template
 !BACKEND/.env.example
+
+# backend runtime
+BACKEND/.env
+BACKEND/node_modules/
