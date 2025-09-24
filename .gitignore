@@ -1,0 +1,17 @@
+﻿node_modules/
+dist/
+build/
+.cache/
+.env
+.env.*
+.vscode/
+.DS_Store
+Thumbs.db
+
+# local binaries & caches
+*.exe
+FRONTEND/.vite/
+
+# local binaries & caches
+*.exe
+FRONTEND/.vite/
