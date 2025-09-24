@@ -22,3 +22,9 @@ FRONTEND/.vite/
 # backend runtime
 BACKEND/.env
 BACKEND/node_modules/
+
+# Backend runtime
+BACKEND/.env
+BACKEND/node_modules/
+# Frontend
+FRONTEND/node_modules/
