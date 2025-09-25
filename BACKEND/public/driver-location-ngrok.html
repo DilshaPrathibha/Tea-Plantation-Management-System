@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vehicle Location Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f8ff; }
+    .container { max-width: 400px; margin: 0 auto; text-align: center; }
+    h2 { color: #2e7d32; }
+    #status { padding: 10px; margin: 20px 0; background: #e3f2fd; border-radius: 5px; }
+    .btn { background: #4caf50; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin: 10px; }
+    .url-info { background: #fff3cd; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📍 Vehicle GPS Tracker (External)</h2>
+    <p>Driver tracking page for mobile devices</p>
+    <div class="url-info">
+      <strong>🌐 Connected to:</strong><br>
+      https://unpredicated-uncomplete-roberto.ngrok-free.app
+    </div>
+    <p id="status">Waiting for location...</p>
+    <button class="btn" onclick="trackLocation()">Start GPS Tracking</button>
+    <button class="btn" onclick="stopTracking()">Stop Tracking</button>
+  </div>
+  
+  <script>
+    // Driver/vehicle ID - can be made dynamic later
+    const driverId = "driver123"; 
+    // Backend URL for location updates via ngrok
+    const backendUrl = "https://unpredicated-uncomplete-roberto.ngrok-free.app/api/vehicle-location";
+    
+    let watchId = null;
+
+    function sendLocation(lat, lng) {
+      fetch(backendUrl, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify({ driverId, latitude: lat, longitude: lng })
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('status').innerHTML = `✅ Location sent:<br>Lat: ${lat.toFixed(6)}<br>Lng: ${lng.toFixed(6)}<br>Time: ${new Date().toLocaleTimeString()}`;
+      })
+      .catch(err => {
+        document.getElementById('status').innerHTML = '❌ Error sending location';
+        console.error('Error:', err);
+      });
+    }
+
+    let retryCount = 0;
+    const maxRetries = 3;
+
+    function trackLocation() {
+      if (navigator.geolocation) {
+        document.getElementById('status').innerText = '🔍 Starting GPS tracking...';
+        watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            retryCount = 0; // Reset retry count on success
+            sendLocation(position.coords.latitude, position.coords.longitude);
+          },
+          (error) => {
+            handleLocationError(error);
+          },
+          { 
+            enableHighAccuracy: true, 
+            maximumAge: 30000, 
+            timeout: 15000 
+          }
+        );
+      } else {
+        document.getElementById('status').innerHTML = '❌ Geolocation not supported by this browser';
+      }
+    }
+
+    function handleLocationError(error) {
+      let errorMessage = '';
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage = "❌ Location access denied. Please enable location permissions.";
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = "❌ Location unavailable. Please check GPS/network.";
+          break;
+        case error.TIMEOUT:
+          errorMessage = `⏰ GPS timeout (attempt ${retryCount + 1}/${maxRetries}). Retrying...`;
+          if (retryCount < maxRetries) {
+            retryCount++;
+            setTimeout(() => {
+              document.getElementById('status').innerHTML = '🔄 Retrying GPS connection...';
+              tryGetLocationOnce();
+            }, 2000);
+            return;
+          } else {
+            errorMessage = "❌ GPS timeout after multiple attempts. Try moving to an open area.";
+          }
+          break;
+        default:
+          errorMessage = "❌ Location error: " + error.message;
+          break;
+      }
+      document.getElementById('status').innerHTML = errorMessage;
+    }
+
+    function tryGetLocationOnce() {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          retryCount = 0;
+          sendLocation(position.coords.latitude, position.coords.longitude);
+          // Restart continuous tracking
+          trackLocation();
+        },
+        (error) => {
+          handleLocationError(error);
+        },
+        { 
+          enableHighAccuracy: false, // Use less accuracy for retry
+          maximumAge: 60000, 
+          timeout: 10000 
+        }
+      );
+    }
+    
+    function stopTracking() {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+        document.getElementById('status').innerText = '⏹️ GPS tracking stopped';
+      }
+    }
+
+    // Auto-start tracking when page loads
+    trackLocation();
+  </script>
+</body>
+</html>

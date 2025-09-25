@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Configuration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+        .test { margin: 10px 0; padding: 10px; background: #333; border-radius: 5px; }
+        .success { border-left: 4px solid #4CAF50; }
+        .error { border-left: 4px solid #f44336; }
+    </style>
+</head>
+<body>
+    <h1>🧪 API Configuration Test</h1>
+    <div id="results"></div>
+    
+    <script type="module">
+        const resultsDiv = document.getElementById('results');
+        
+        // Get current configuration
+        function getApiBaseUrl() {
+            const { protocol, hostname } = window.location;
+            
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return 'http://localhost:5001';
+            }
+            
+            return `${protocol}//${hostname}:5001`;
+        }
+        
+        const apiBaseUrl = getApiBaseUrl();
+        const apiUrl = `${apiBaseUrl}/api`;
+        
+        function addResult(title, content, success = true) {
+            const div = document.createElement('div');
+            div.className = `test ${success ? 'success' : 'error'}`;
+            div.innerHTML = `<strong>${title}:</strong> ${content}`;
+            resultsDiv.appendChild(div);
+        }
+        
+        // Display current configuration
+        addResult('Current Host', window.location.host);
+        addResult('Detected API Base URL', apiBaseUrl);
+        addResult('Full API URL', apiUrl);
+        
+        // Test health endpoint
+        try {
+            const response = await fetch(`${apiBaseUrl}/health`);
+            const data = await response.json();
+            addResult('Backend Health Check', `✅ Status: ${response.status} - Response: ${JSON.stringify(data)}`);
+        } catch (error) {
+            addResult('Backend Health Check', `❌ Error: ${error.message}`, false);
+        }
+        
+        // Test API endpoint with token (if available)
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const response = await fetch(`${apiUrl}/tools`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                addResult('API Tools Endpoint', `✅ Status: ${response.status}`, response.ok);
+            } catch (error) {
+                addResult('API Tools Endpoint', `❌ Error: ${error.message}`, false);
+            }
+        } else {
+            addResult('Authentication', '⚠️ No token found in localStorage');
+        }
+    </script>
+</body>
+</html>

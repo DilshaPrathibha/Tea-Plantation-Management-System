@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark SweetAlert2 Test</title>
+    <style>
+        body {
+            background: #111827;
+            color: #f3f4f6;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #059669;
+        }
+        .btn-red {
+            background: #ef4444;
+        }
+        .btn-red:hover {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌙 Dark Mode SweetAlert2 Test</h1>
+    <p>Test the new dark mode alerts that match your Tea Plantation Management System theme:</p>
+    
+    <button class="btn" onclick="testSuccess()">✅ Success Alert</button>
+    <button class="btn btn-red" onclick="testError()">❌ Error Alert</button>
+    <button class="btn" onclick="testInfo()">ℹ️ Info Alert</button>
+    <button class="btn" onclick="testConfirm()">❓ Confirm Alert</button>
+    <button class="btn" onclick="testToast()">🍞 Toast Alert</button>
+    
+    <p style="margin-top: 20px; font-size: 14px; color: #9ca3af;">
+        These alerts now match your dark theme with:
+        <br>• Dark gray background (#1f2937)
+        <br>• Light text (#f3f4f6) 
+        <br>• Green confirm buttons (#10b981)
+        <br>• Red cancel/error buttons (#ef4444)
+    </p>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Dark theme configuration
+        const darkThemeConfig = {
+            background: '#1f2937',
+            color: '#f3f4f6',
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#ef4444'
+        };
+
+        function testSuccess() {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: 'Operation completed successfully',
+                ...darkThemeConfig
+            });
+        }
+
+        function testError() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: 'Something went wrong',
+                ...darkThemeConfig,
+                confirmButtonColor: '#ef4444'
+            });
+        }
+
+        function testInfo() {
+            Swal.fire({
+                icon: 'info',
+                title: 'Information',
+                text: 'Here is some helpful information',
+                ...darkThemeConfig,
+                confirmButtonColor: '#3b82f6'
+            });
+        }
+
+        function testConfirm() {
+            Swal.fire({
+                icon: 'question',
+                title: 'Are you sure?',
+                text: 'This action cannot be undone',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, do it!',
+                cancelButtonText: 'Cancel',
+                ...darkThemeConfig
+            });
+        }
+
+        function testToast() {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Dark toast notification!',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                ...darkThemeConfig
+            });
+        }
+    </script>
+</body>
+</html>
