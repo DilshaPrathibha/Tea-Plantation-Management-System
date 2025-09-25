@@ -1,0 +1,120 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Toast } from '../utils/sweet';
+import axios from 'axios';
+import { API_URL } from '../config/api.js';
+
+const api = axios.create({
+  baseURL: API_URL,
+  timeout: 5000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+const CreateToolPage = () => {
+  const [toolType, setToolType] = useState("");
+  const [condition, setCondition] = useState("good");
+  const [note, setNote] = useState("");
+  const [noteCharCount, setNoteCharCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await api.post("/tools", { toolType, condition, note });
+      const created = res.data;
+      Toast.success(`Tool created: ${created.tool?.toolId || 'Successfully'}`);
+      navigate("/inventory/tools");
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setError("Tool ID already exists. Please try again.");
+      } else {
+        setError(err.response?.data?.message || "Failed to create tool");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-base-200">
+      <div className="max-w-xl mx-auto p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <button 
+            onClick={() => navigate('/inventory/tools')}
+            className="btn btn-ghost btn-sm"
+          >
+            ← Back to Tools
+          </button>
+          <h1 className="text-2xl font-bold">Create New Tool</h1>
+        </div>
+        
+        {error && <div className="alert alert-error mb-4">{error}</div>}
+        
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div>
+            <label className="block mb-1 font-semibold">Tool Type <span className="text-error">*</span></label>
+            <select
+              className="select select-bordered w-full"
+              value={toolType}
+              onChange={e => setToolType(e.target.value)}
+              required
+            >
+              <option value="">Select type...</option>
+              <option value="knife">Knife</option>
+              <option value="sprayer">Sprayer</option>
+              <option value="harvester">Harvester</option>
+              <option value="hoe">Hoe</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="block mb-1 font-semibold">Condition</label>
+            <select
+              className="select select-bordered w-full"
+              value={condition}
+              onChange={e => setCondition(e.target.value)}
+            >
+              <option value="new">New</option>
+              <option value="good">Good</option>
+              <option value="needs_repair">Needs Repair</option>
+            </select>
+          </div>
+          <div>
+            <label className="block mb-1 font-semibold">Note</label>
+            <textarea
+              className="textarea textarea-bordered w-full"
+              rows={3}
+              value={note}
+              onChange={e => {
+                const value = e.target.value.slice(0, 100);
+                setNote(value);
+                setNoteCharCount(value.length);
+              }}
+              placeholder="Optional notes about this tool..."
+              maxLength={100}
+            />
+            <div className="text-xs text-base-content/70 mt-1 text-right">
+              {noteCharCount}/100 characters
+            </div>
+          </div>
+          <button
+            type="submit"
+            className={`btn btn-primary w-full ${loading ? "btn-disabled" : ""}`}
+            disabled={loading}
+          >
+            {loading ? <span className="loading loading-spinner loading-sm mr-2" /> : null}
+            Create Tool
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default CreateToolPage;

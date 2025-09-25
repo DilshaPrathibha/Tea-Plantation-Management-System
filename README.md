@@ -2,6 +2,29 @@
 
 A web-based management system for tea plantation operations, built as part of our ITP coursework. The system helps manage different aspects of tea plantation operations from field supervision to production and inventory management.
 
+## 🌐 Network Access (NEW!)
+
+This application now supports **LAN hosting** - access from any device on your network!
+
+### Quick Start
+```bash
+# Check your network URLs
+node network-info.js
+
+# Or use the setup script
+setup-lan.bat
+```
+
+### Access from Other Devices
+- **Phones, Tablets, Other PCs** - all supported!
+- Connect to same WiFi network
+- Use the network URLs shown by `network-info.js`
+- Example: `http://192.168.1.100:5173`
+
+📖 **Full Documentation**: See [LAN-HOSTING.md](LAN-HOSTING.md) for complete setup guide.
+
+---
+
 ## What This System Does
 
 This project manages tea plantation operations through different user roles:
@@ -51,14 +74,14 @@ This project manages tea plantation operations through different user roles:
 **Maps**: Leaflet for GPS tracking
 **Authentication**: JWT tokens
 
-## Setup Instructions
+## Development Setup
 
-**Prerequisites**
+### Prerequisites
 - Node.js installed
 - MongoDB running
 - Git
 
-**Installation Steps**
+### Installation Steps
 
 1. Clone this project
 ```bash
@@ -80,17 +103,15 @@ npm run dev
 ```
 
 4. Access the application
-- Main app: http://localhost:5173
-- API server: http://localhost:5001
 
-## Network Access
+### Local Access
+- Frontend: http://localhost:5173
+- Backend: http://localhost:5001
 
-For testing on mobile devices or accessing from other computers:
-
-1. Run `node network-info.js` to see network URLs
-2. Or use `setup-lan.bat` on Windows
-3. Connect devices to same WiFi network
-4. Use the network IP address (e.g., http://192.168.1.100:5173)
+### Network Access
+- Run `node network-info.js` to see all available URLs
+- Perfect for mobile testing and team collaboration
+- Use the network IP address (e.g., http://192.168.1.100:5173)
 
 ## Project Structure
 
