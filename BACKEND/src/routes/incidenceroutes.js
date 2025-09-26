@@ -1,3 +1,4 @@
+// BACKEND/src/routes/incidenceroutes.js
 const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../middleware/auth');
@@ -7,8 +8,10 @@ const {
     getIncidence,
     updateIncidence,
     deleteIncidence
+     
 } = require('../controllers/incidencecontroller');
 
+// Fix the route order to avoid conflicts 
 router.post('/', verifyToken, createIncidence);
 router.get('/', verifyToken, listIncidences);
 router.get('/:id', verifyToken, getIncidence);
