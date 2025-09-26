@@ -816,6 +816,6 @@ const UpdateIncidencePage = () => {
       </div>
     </div>
   );
-};
+};  //Updated
 
 export default UpdateIncidencePage;
