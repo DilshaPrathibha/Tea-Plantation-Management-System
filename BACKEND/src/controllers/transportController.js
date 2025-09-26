@@ -30,11 +30,19 @@ const createTransport = async (req, res) => {
   try {
     // Validate required fields
     const { vehicleId, vehicleType, driverName, batchId, destination } = req.body;
-    
     if (!vehicleId || !vehicleType || !driverName || !batchId || !destination) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-    
+
+    // Prevent assigning driver to multiple active transports
+    const activeTransport = await Transport.findOne({
+      driverName,
+      status: { $ne: 'delivered' }
+    });
+    if (activeTransport) {
+      return res.status(400).json({ message: 'Driver is already assigned to another transport that is not delivered.' });
+    }
+
     const transport = new Transport(req.body);
     const newTransport = await transport.save();
     res.status(201).json(newTransport);

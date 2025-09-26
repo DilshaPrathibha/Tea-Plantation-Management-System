@@ -38,6 +38,12 @@ async function createAttendance(req, res) {
     } = req.body || {};
     if (!workerId) return res.status(400).json({ message: 'workerId is required' });
 
+    // Prevent marking attendance in more than one field for the same date
+    const existing = await Attendance.findOne({ workerId: String(workerId).trim().toUpperCase(), date });
+    if (existing && existing.field && field && existing.field !== field) {
+      return res.status(400).json({ message: 'Attendance already marked for this worker in another field for this date.' });
+    }
+
     const doc = await Attendance.create({
       workerId: String(workerId).trim().toUpperCase(),
       workerName,
@@ -137,9 +143,12 @@ async function updateAttendance(req, res) {
 // DELETE /api/attendance/:id
 async function deleteAttendance(req, res) {
   try {
-    const del = await Attendance.findByIdAndDelete(req.params.id);
-    if (!del) return res.status(404).json({ message: 'Not found' });
-    res.json({ message: 'Deleted' });
+    const attendance = await Attendance.findById(req.params.id);
+    if (!attendance) {
+      return res.status(404).json({ message: 'Not found' });
+    }
+    // Prevent deletion if attendance is marked (record exists)
+    return res.status(403).json({ message: 'Attendance is marked and cannot be deleted.' });
   } catch (e) {
     console.error('[attendance delete]', e);
     res.status(500).json({ message: 'Server error' });

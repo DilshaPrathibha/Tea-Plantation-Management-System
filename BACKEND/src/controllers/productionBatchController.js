@@ -20,13 +20,15 @@ const getBatchById = async (req, res) => {
 };
 
 const createBatch = async (req, res) => {
-	try {
-		const batch = new ProductionBatch(req.body);
-		const newBatch = await batch.save();
-		res.status(201).json(newBatch);
-	} catch (error) {
-		res.status(400).json({ message: error.message });
-	}
+		try {
+			console.log('[ProductionBatch create] Incoming body:', req.body);
+			const batch = new ProductionBatch(req.body);
+			const newBatch = await batch.save();
+			res.status(201).json(newBatch);
+		} catch (error) {
+			console.error('[ProductionBatch create] ERROR:', error.message);
+			res.status(400).json({ message: error.message });
+		}
 };
 
 const updateBatch = async (req, res) => {

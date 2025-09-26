@@ -223,8 +223,7 @@ export default function AttendanceList() {
                   <td>{r.expectedOutTime || '-'}</td>
                   <td className="capitalize">{r.status}</td>
                   <td className="text-right">
-                    <Link className="btn btn-sm mr-2" to={`/supervisor/attendance/${r._id}`}>Edit</Link>
-                    <button className="btn btn-sm btn-error" onClick={() => deleteRow(r._id)}>Delete</button>
+                    <Link className="btn btn-sm mr-2 bg-yellow-400 hover:bg-yellow-500 text-black border-none" to={`/supervisor/attendance/${r._id}`}>Edit</Link>
                   </td>
                 </tr>
               ))}

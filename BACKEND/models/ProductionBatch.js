@@ -2,8 +2,6 @@ const mongoose = require('mongoose');
 
 const productionBatchSchema = new mongoose.Schema({
 	batchId: { type: String, required: true, unique: true },
-	fieldId: { type: String },
-	fieldName: { type: String, required: true },
 	pluckingDate: { type: Date, required: true },
 	teaWeight: { type: Number, required: true },
 	qualityGrade: { type: String, required: true },

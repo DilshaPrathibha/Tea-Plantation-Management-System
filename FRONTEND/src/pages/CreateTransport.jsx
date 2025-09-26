@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getActiveDrivers } from '../utils/activeDrivers';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -29,6 +30,12 @@ const CreateTransport = () => {
     'Kamal Silva',
     'Sunil Rajapaksa'
   ];
+
+  const [activeDrivers, setActiveDrivers] = useState([]);
+
+  useEffect(() => {
+    getActiveDrivers(API_URL).then(setActiveDrivers);
+  }, [API_URL]);
 
   const vehicleTypes = [
     'Van',
@@ -160,8 +167,14 @@ const CreateTransport = () => {
               >
                 <option value="">Select Driver</option>
                 {driverNames.map((name, index) => (
-                  <option key={index} value={name}>
+                  <option
+                    key={index}
+                    value={name}
+                    disabled={activeDrivers.includes(name)}
+                    style={activeDrivers.includes(name) ? { color: '#a3a3a3' } : {}}
+                  >
                     {name}
+                    {activeDrivers.includes(name) ? ' (Unavailable)' : ''}
                   </option>
                 ))}
               </select>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getTodaysPluckingTotal } from '../utils/pluckingTotal';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -7,7 +8,6 @@ import Swal from 'sweetalert2';
 const CreateProductionBatch = () => {
   const [formData, setFormData] = useState({
     batchId: '',
-    fieldId: '',
     pluckingDate: new Date().toISOString().split('T')[0],
     teaWeight: '',
     qualityGrade: 'Premium',
@@ -17,15 +17,20 @@ const CreateProductionBatch = () => {
   });
 
   const [supervisors, setSupervisors] = useState([]);
-  const [fieldNames, setFieldNames] = useState([]);
+  // const [fieldNames, setFieldNames] = useState([]); // No longer needed
   const [loading, setLoading] = useState(false);
+  const [pluckingTotal, setPluckingTotal] = useState(0);
+  const [varianceReason, setVarianceReason] = useState('');
+  const [varianceNote, setVarianceNote] = useState('');
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
   useEffect(() => {
     fetchSupervisors();
-    fetchFieldNames();
     generateBatchId();
+    // Fetch today's plucking total
+    const today = new Date().toISOString().split('T')[0];
+    getTodaysPluckingTotal(API_URL, today).then(setPluckingTotal);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -48,20 +53,7 @@ const CreateProductionBatch = () => {
     }
   };
 
-  const fetchFieldNames = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${API_URL}/api/fields`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      setFieldNames(res.data.items || res.data || []);
-    } catch (error) {
-      console.error('Error fetching field names:', error);
-    }
-  };
+  // const fetchFieldNames = async () => {}; // No longer needed
 
   const generateBatchId = async () => {
     try {
@@ -91,22 +83,28 @@ const CreateProductionBatch = () => {
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // keep if you later show a "Field" select
-  const handleFieldChange = (e) => {
-    const selectedId = e.target.value;
-    const selectedField = fieldNames.find((f) => f._id === selectedId);
-    setFormData((prev) => ({
-      ...prev,
-      fieldName: selectedField ? selectedField.name : '',
-      fieldId: selectedId,
-    }));
-  };
+  // Field selection logic removed
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Check for variance
+    if (Number(formData.teaWeight) !== pluckingTotal) {
+      if (!varianceReason || !varianceNote) {
+        Swal.fire('Error', 'Please provide a reason and note for the variance.', 'error');
+        return;
+      }
+    }
     setLoading(true);
     try {
-      await axios.post(`${API_URL}/api/production-batches`, formData);
+      // Debug: log formData before POST
+      console.log('Submitting batch formData:', formData);
+      await axios.post(`${API_URL}/api/production-batches`, {
+        ...formData,
+        pluckingDate: new Date(formData.pluckingDate),
+        varianceReason: Number(formData.teaWeight) !== pluckingTotal ? varianceReason : undefined,
+        varianceNote: Number(formData.teaWeight) !== pluckingTotal ? varianceNote : undefined,
+        pluckingTotal
+      });
       Swal.fire('Success', 'Batch created successfully', 'success');
       navigate('/production-batches');
     } catch (error) {
@@ -156,11 +154,13 @@ const CreateProductionBatch = () => {
                 onChange={handleChange}
                 className="input input-bordered"
                 required
+                min={new Date().toISOString().split('T')[0]}
+                max={new Date().toISOString().split('T')[0]}
               />
             </div>
 
             <div className="form-control">
-              <label className="label">Tea Weight (kg)</label>
+              <label className="label">Tea Weight (kg) (Production Manager)</label>
               <input
                 type="number"
                 name="teaWeight"
@@ -169,7 +169,39 @@ const CreateProductionBatch = () => {
                 className="input input-bordered"
                 required
               />
+              <div className="text-sm mt-2">
+                <span className="font-semibold">Total Plucked Today (All Fields): </span>
+                <span className="text-green-600 font-bold">{pluckingTotal} kg</span>
+              </div>
             </div>
+
+            {/* Variance reason/note if needed */}
+            {Number(formData.teaWeight) !== pluckingTotal && (
+              <div className="form-control border border-warning rounded p-3 bg-yellow-50">
+                <label className="label font-semibold text-warning">Variance Detected</label>
+                <label className="label">Reason for Variance</label>
+                <select
+                  className="select select-bordered"
+                  value={varianceReason}
+                  onChange={e => setVarianceReason(e.target.value)}
+                  required
+                >
+                  <option value="">Select Reason</option>
+                  <option value="Moisture Loss">Moisture Loss</option>
+                  <option value="Spillage">Spillage</option>
+                  <option value="Measurement Error">Measurement Error</option>
+                  <option value="Other">Other</option>
+                </select>
+                <label className="label">Explanation</label>
+                <textarea
+                  className="textarea textarea-bordered"
+                  value={varianceNote}
+                  onChange={e => setVarianceNote(e.target.value)}
+                  required
+                  placeholder="Please explain the variance..."
+                />
+              </div>
+            )}
 
             <div className="form-control">
               <label className="label">Quality Grade</label>

@@ -101,14 +101,24 @@ exports.listPluckingRecords = async (req, res) => {
     const limit = Math.min(Math.max(parseInt(req.query.limit || '10', 10), 1), 50);
     const skip = (page - 1) * limit;
 
+    // Support filtering by date (YYYY-MM-DD)
+    let filter = {};
+    if (req.query.date) {
+      const start = new Date(req.query.date);
+      const end = new Date(req.query.date);
+      end.setHours(23, 59, 59, 999);
+      filter.date = { $gte: start, $lte: end };
+      console.log('[PluckingRecord list] Date filter:', filter.date);
+    }
+
     const [items, total] = await Promise.all([
-      PluckingRecord.find()
+      PluckingRecord.find(filter)
         .sort({ date: -1, createdAt: -1 })
         .skip(skip)
         .limit(limit),
-      PluckingRecord.countDocuments()
+      PluckingRecord.countDocuments(filter)
     ]);
-
+    console.log('[PluckingRecord list] Found items:', items.length, 'Total:', total);
     res.json({ items, total, page, limit });
   } catch (error) {
     console.error('[PluckingRecord list] ERROR:', error);
