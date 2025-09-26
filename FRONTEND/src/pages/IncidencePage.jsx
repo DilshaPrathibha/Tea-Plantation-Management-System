@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+// IncidencePage.jsx - Modern Light Theme with Weather Integration
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
@@ -15,24 +16,37 @@ import {
   Loader,
   Info,
   Search,
-  Download
+  Filter,
+  X,
+  Lock,
+  Cloud,
+  CloudRain,
+  Sun,
+  CloudSnow,
+  CloudDrizzle,
+  Thermometer,
+  Droplets,
+  Wind,
+  Shield,
+  AlertCircle
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
+// Modern light theme colors
 const statusColors = {
-  'Pending': 'badge badge-warning',
-  'Under Review': 'badge badge-info',
-  'Action Taken': 'badge badge-success',
-  'Resolved': 'badge badge-neutral',
+  'Pending': 'bg-amber-100 text-amber-800 border-amber-200',
+  'Under Review': 'bg-blue-100 text-blue-800 border-blue-200',
+  'Action Taken': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'Resolved': 'bg-gray-100 text-gray-800 border-gray-200',
 };
 
 const severityColors = {
-  'Low': 'badge badge-success',
-  'Medium': 'badge badge-warning',
-  'High': 'badge badge-error',
-  'Critical': 'badge badge-error',
+  'Low': 'bg-green-100 text-green-800 border-green-200',
+  'Medium': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  'High': 'bg-orange-100 text-orange-800 border-orange-200',
+  'Critical': 'bg-red-100 text-red-800 border-red-200',
 };
 
 const typeIcons = {
@@ -42,22 +56,52 @@ const typeIcons = {
   'Other': '⚠️'
 };
 
+// Weather icon mapping with modern styling
+const weatherIcons = {
+  'clear': <Sun className="w-8 h-8 text-yellow-500" />,
+  'sunny': <Sun className="w-8 h-8 text-yellow-500" />,
+  'cloudy': <Cloud className="w-8 h-8 text-gray-400" />,
+  'overcast': <Cloud className="w-8 h-8 text-gray-500" />,
+  'rain': <CloudRain className="w-8 h-8 text-blue-500" />,
+  'drizzle': <CloudDrizzle className="w-8 h-8 text-blue-400" />,
+  'snow': <CloudSnow className="w-8 h-8 text-blue-200" />,
+  'fog': <Cloud className="w-8 h-8 text-gray-300" />,
+  'storm': <CloudRain className="w-8 h-8 text-purple-500" />,
+};
+
 const IncidencePage = () => {
   const [incidences, setIncidences] = useState([]);
+  const [filteredIncidences, setFilteredIncidences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Weather states
+  const [currentWeather, setCurrentWeather] = useState(null);
+  const [weatherForecast, setWeatherForecast] = useState([]);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [weatherError, setWeatherError] = useState('');
+
   const navigate = useNavigate();
   const location = useLocation();
-  const [showSuccess, setShowSuccess] = useState(location.state?.success || false);
+  
+  const [showSuccess, setShowSuccess] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [infoMessage, setInfoMessage] = useState('');
-  const [currentUser, setCurrentUser] = useState(null);
 
-  // NEW: search & filters
-  const [q, setQ] = useState('');
-  const [filterField, setFilterField] = useState('all'); // location
-  const [filterType, setFilterType] = useState('all');   // incidence type
+  useEffect(() => {
+    setShowSuccess(location.state?.success || false);
+    setDeleteSuccess(location.state?.deleteSuccess || false);
+    fetchCurrentUser();
+  }, [location.state]);
 
   useEffect(() => {
     if (showSuccess) {
@@ -74,16 +118,13 @@ const IncidencePage = () => {
   }, [deleteSuccess]);
 
   useEffect(() => {
-    if (location.state?.deleteSuccess) {
-      setDeleteSuccess(true);
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state]);
+    fetchIncidences();
+    fetchWeatherData();
+  }, []);
 
   useEffect(() => {
-    fetchCurrentUser();
-    fetchIncidences();
-  }, []);
+    filterIncidences();
+  }, [incidences, searchTerm, dateFilter, typeFilter, statusFilter]);
 
   const fetchCurrentUser = () => {
     try {
@@ -105,19 +146,161 @@ const IncidencePage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIncidences(response.data.items || []);
-      setError('');
     } catch (error) {
       console.error('Error fetching incidences:', error);
-      setError('Failed to load incidence reports. Please try again.');
       Swal.fire({
         icon: 'error',
         title: 'Error',
         text: 'Failed to load incidence reports. Please try again.',
-        confirmButtonColor: '#1d4ed8'
+        confirmButtonColor: '#3b82f6'
       });
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchWeatherData = async () => {
+    try {
+      setWeatherLoading(true);
+      
+      // Using Open-Meteo API (free and no API key required)
+      const latitude = 6.9553; // Avissawella, Sri Lanka
+      const longitude = 80.2160;
+      
+      // Fetch current weather and forecast
+      const response = await axios.get(
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia%2FColombo`
+      );
+      
+      const currentData = response.data.current;
+      setCurrentWeather({
+        temperature: currentData.temperature_2m,
+        humidity: currentData.relative_humidity_2m,
+        precipitation: currentData.precipitation,
+        windSpeed: currentData.wind_speed_10m,
+        weatherCode: currentData.weather_code,
+        time: currentData.time
+      });
+      
+      // Process forecast data
+      const dailyData = response.data.daily;
+      const forecast = dailyData.time.slice(0, 5).map((date, index) => ({
+        date,
+        maxTemp: dailyData.temperature_2m_max[index],
+        minTemp: dailyData.temperature_2m_min[index],
+        precipitation: dailyData.precipitation_sum[index],
+        weatherCode: dailyData.weather_code[index]
+      }));
+      
+      setWeatherForecast(forecast);
+      
+      // Check for weather alerts
+      checkWeatherAlerts(currentData, forecast);
+      
+    } catch (error) {
+      console.error('Error fetching weather data:', error);
+      setWeatherError('Weather data temporarily unavailable');
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+
+  const getWeatherInfo = (weatherCode) => {
+    // WMO Weather interpretation codes
+    if (weatherCode === 0) return { description: 'Clear sky', icon: 'clear' };
+    if (weatherCode >= 1 && weatherCode <= 3) 
+      return { description: 'Partly cloudy', icon: 'cloudy' };
+    if (weatherCode >= 45 && weatherCode <= 48) 
+      return { description: 'Fog', icon: 'fog' };
+    if (weatherCode >= 51 && weatherCode <= 55) 
+      return { description: 'Drizzle', icon: 'drizzle' };
+    if (weatherCode >= 61 && weatherCode <= 65) 
+      return { description: 'Rain', icon: 'rain' };
+    if (weatherCode >= 71 && weatherCode <= 75) 
+      return { description: 'Snow', icon: 'snow' };
+    if (weatherCode >= 80 && weatherCode <= 82) 
+      return { description: 'Rain showers', icon: 'rain' };
+    if (weatherCode >= 95 && weatherCode <= 99) 
+      return { description: 'Thunderstorm', icon: 'storm' };
+    
+    return { description: 'Unknown', icon: 'cloudy' };
+  };
+
+  const checkWeatherAlerts = (currentWeather, forecast) => {
+    const alerts = [];
+    
+    if (currentWeather.precipitation > 10) {
+      alerts.push('Heavy rainfall detected. Potential for flooding.');
+    }
+    
+    if (currentWeather.temperature_2m > 35) {
+      alerts.push('High temperature warning. Risk of heat-related incidents.');
+    }
+    
+    forecast.forEach(day => {
+      if (day.precipitation > 15) {
+        alerts.push(`Heavy rain expected. Prepare for wet conditions.`);
+      }
+    });
+    
+    if (alerts.length > 0) {
+      setInfoMessage(`Weather Alert: ${alerts[0]}`);
+    }
+  };
+
+  const filterIncidences = () => {
+    let filtered = incidences;
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(incidence =>
+        incidence.title.toLowerCase().includes(term) ||
+        incidence.reporterName.toLowerCase().includes(term) ||
+        incidence.location.toLowerCase().includes(term)
+      );
+    }
+
+    if (dateFilter) {
+      filtered = filtered.filter(incidence => 
+        new Date(incidence.date).toISOString().split('T')[0] === dateFilter
+      );
+    }
+
+    if (typeFilter) {
+      filtered = filtered.filter(incidence => 
+        incidence.type === typeFilter
+      );
+    }
+
+    if (statusFilter) {
+      filtered = filtered.filter(incidence => 
+        incidence.status === statusFilter
+      );
+    }
+
+    setFilteredIncidences(filtered);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setDateFilter('');
+    setTypeFilter('');
+    setStatusFilter('');
+  };
+
+  const hasActiveFilters = searchTerm || dateFilter || typeFilter || statusFilter;
+
+  // Permission checks
+  const canEditIncidence = (incidence) => {
+    return currentUser && 
+           currentUser._id === incidence.reportedBy && 
+           incidence.status !== 'Resolved';
+  };
+
+  const canDeleteIncidence = (incidence) => {
+    return currentUser && 
+           currentUser._id === incidence.reportedBy && 
+           incidence.status === 'Resolved';
   };
 
   const handleAddNew = () => {
@@ -129,7 +312,7 @@ const IncidencePage = () => {
     navigate(`/incidences/${id}`);
   };
 
-  const handleEdit = (id, status, e) => {
+  const handleEdit = (id, status, incidence, e) => {
     if (e && e.stopPropagation) e.stopPropagation();
     
     if (status === 'Resolved') {
@@ -137,7 +320,17 @@ const IncidencePage = () => {
         icon: 'warning',
         title: 'Cannot Edit',
         text: 'Resolved incidence reports cannot be edited.',
-        confirmButtonColor: '#1d4ed8'
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
+
+    if (!canEditIncidence(incidence)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'Only the reporter can edit this incidence report.',
+        confirmButtonColor: '#3b82f6'
       });
       return;
     }
@@ -145,15 +338,25 @@ const IncidencePage = () => {
     navigate(`/incidences/${id}/edit`);
   };
 
-  const handleDelete = async (id, status, e) => {
+  const handleDelete = async (id, status, incidence, e) => {
     if (e && e.stopPropagation) e.stopPropagation();
     
     if (status !== 'Resolved') {
       Swal.fire({
         icon: 'warning',
         title: 'Cannot Delete',
-        text: 'Only resolved incidence reports can be deleted. Please resolve the report first.',
-        confirmButtonColor: '#1d4ed8'
+        text: 'Only resolved incidence reports can be deleted.',
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
+
+    if (!canDeleteIncidence(incidence)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'Only the reporter can delete this incidence report.',
+        confirmButtonColor: '#3b82f6'
       });
       return;
     }
@@ -163,8 +366,8 @@ const IncidencePage = () => {
       text: "You won't be able to revert this!",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#1d4ed8',
-      cancelButtonColor: '#dc2626',
+      confirmButtonColor: '#3b82f6',
+      cancelButtonColor: '#ef4444',
       confirmButtonText: 'Yes, delete it!',
       cancelButtonText: 'Cancel'
     });
@@ -178,13 +381,13 @@ const IncidencePage = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        setIncidences(prev => prev.filter(inc => inc._id !== id));
+        setIncidences(incidences.filter(inc => inc._id !== id));
         
         await Swal.fire({
           title: 'Deleted!',
           text: 'Incidence report has been deleted successfully.',
           icon: 'success',
-          confirmButtonColor: '#1d4ed8'
+          confirmButtonColor: '#3b82f6'
         });
       } catch (error) {
         console.error('Error deleting incidence:', error);
@@ -192,7 +395,7 @@ const IncidencePage = () => {
           icon: 'error',
           title: 'Error',
           text: 'Failed to delete incidence report. Please try again.',
-          confirmButtonColor: '#1d4ed8'
+          confirmButtonColor: '#3b82f6'
         });
       } finally {
         setDeletingId(null);
@@ -201,7 +404,6 @@ const IncidencePage = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -209,182 +411,25 @@ const IncidencePage = () => {
     });
   };
 
-  const canEditIncidence = (incidence) => {
-    return currentUser && 
-           currentUser._id === incidence.reportedBy && 
-           incidence.status !== 'Resolved';
-  };
-
-  const canDeleteIncidence = (incidence) => {
-    return currentUser && 
-           currentUser._id === incidence.reportedBy && 
-           incidence.status === 'Resolved';
-  };
-
-  // ---------- FILTERS & SEARCH ----------
-
-  const uniqueFields = useMemo(() => {
-    const set = new Set();
-    incidences.forEach(i => set.add(i.location || 'Unknown'));
-    return ['all', ...Array.from(set)];
-  }, [incidences]);
-
-  const uniqueTypes = useMemo(() => {
-    const set = new Set();
-    incidences.forEach(i => set.add(i.type || 'Other'));
-    return ['all', ...Array.from(set)];
-  }, [incidences]);
-
-  const normalized = (s) => (s || '').toString().toLowerCase();
-
-  const filteredIncidences = useMemo(() => {
-    const query = normalized(q);
-    return incidences.filter(i => {
-      const matchesQuery =
-        !query ||
-        normalized(i.title).includes(query) ||
-        normalized(i.description).includes(query) ||
-        normalized(i.reporterName).includes(query);
-
-      const matchesField =
-        filterField === 'all' ||
-        (i.location || 'Unknown') === filterField;
-
-      const matchesType =
-        filterType === 'all' ||
-        (i.type || 'Other') === filterType;
-
-      return matchesQuery && matchesField && matchesType;
-    });
-  }, [incidences, q, filterField, filterType]);
-
-  // ---------- PDF EXPORT (no deps; uses native print -> Save as PDF) ----------
-
-  const printableHTML = (rows) => {
-    const escape = (v) => String(v ?? '').replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-    const now = new Date().toLocaleString();
-
-    const tableRows = rows.map((r, idx) => `
-      <tr>
-        <td>${idx + 1}</td>
-        <td>${escape(r.title)}</td>
-        <td>${escape(r.type || '')}</td>
-        <td>${escape(r.severity || '')}</td>
-        <td>${escape(r.status || '')}</td>
-        <td>${escape(r.location === 'full_estate' ? 'Full Estate' : (r.location || ''))}</td>
-        <td>${escape(formatDate(r.date))}</td>
-        <td>${escape(r.time || '')}</td>
-        <td>${escape(r.reporterName || '')}</td>
-      </tr>
-    `).join('');
-
-    return `
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Incidence Reports</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { font-family: Arial, Helvetica, sans-serif; padding: 24px; color: #111; }
-    h1 { margin: 0 0 6px; }
-    .meta { font-size: 12px; color: #555; margin-bottom: 16px; }
-    .filters { font-size: 12px; color: #333; margin-bottom: 16px; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { border: 1px solid #ddd; padding: 8px; vertical-align: top; }
-    th { background: #f3f4f6; text-align: left; }
-    tfoot td { border: none; padding-top: 12px; font-size: 12px; color: #555; }
-    @media print {
-      @page { size: A4 landscape; margin: 12mm; }
-      .noprint { display: none; }
-    }
-    .count { margin: 8px 0 16px; font-weight: bold; }
-  </style>
-</head>
-<body>
-  <h1>Incidence Reports</h1>
-  <div class="meta">Generated at: ${escape(now)}</div>
-  <div class="filters">
-    <div><strong>Search:</strong> ${escape(q || '—')}</div>
-    <div><strong>Field:</strong> ${escape(filterField === 'all' ? 'All' : filterField)}</div>
-    <div><strong>Incident Type:</strong> ${escape(filterType === 'all' ? 'All' : filterType)}</div>
-  </div>
-  <div class="count">Total: ${rows.length}</div>
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Title</th>
-        <th>Type</th>
-        <th>Severity</th>
-        <th>Status</th>
-        <th>Field</th>
-        <th>Date</th>
-        <th>Time</th>
-        <th>Reporter</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${tableRows || `<tr><td colspan="9" style="text-align:center;color:#666;">No data for current filters</td></tr>`}
-    </tbody>
-    <tfoot>
-      <tr>
-        <td colspan="9">Tip: In the print dialog, choose <em>Save as PDF</em>.</td>
-      </tr>
-    </tfoot>
-  </table>
-  <div class="noprint" style="margin-top:16px;">
-    <button onclick="window.print()">Print / Save as PDF</button>
-  </div>
-</body>
-</html>
-    `;
-  };
-
-  const exportPDF = () => {
-    const html = printableHTML(filteredIncidences);
-    const w = window.open('', '_blank', 'noopener,noreferrer');
-    if (!w) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Popup Blocked',
-        text: 'Please allow popups for this site to export PDF.',
-        confirmButtonColor: '#1d4ed8'
-      });
-      return;
-    }
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-    // Auto-open print dialog once content is ready
-    w.onload = () => {
-      try {
-        w.focus();
-        w.print();
-      } catch (_) {}
-    };
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-base-200 py-10 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-2xl font-bold text-base-content">Incidence Reports</h1>
-            <div className="animate-pulse bg-base-300 h-10 w-32 rounded"></div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((item) => (
-              <div key={item} className="bg-base-100 rounded-xl shadow p-6 animate-pulse">
-                <div className="h-6 bg-base-300 rounded w-3/4 mb-4"></div>
-                <div className="h-4 bg-base-300 rounded w-1/2 mb-2"></div>
-                <div className="h-4 bg-base-300 rounded w-2/3 mb-4"></div>
-                <div className="flex justify-between mt-4">
-                  <div className="h-8 bg-base-300 rounded w-16"></div>
-                  <div className="h-8 bg-base-300 rounded w-16"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-white rounded-lg w-64 mb-8"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="bg-white rounded-2xl shadow-sm p-6">
+                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+                  <div className="flex justify-between mt-4">
+                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -392,198 +437,329 @@ const IncidencePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-200 py-10 px-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Success Messages */}
         {showSuccess && (
-          <div className="mb-6 p-4 bg-success/20 text-success-content rounded-lg flex items-center justify-center text-lg font-semibold">
-            Incidence submitted successfully!
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center">
+            <div className="w-3 h-3 bg-emerald-500 rounded-full mr-3"></div>
+            <span className="text-emerald-800 font-medium">Incidence submitted successfully!</span>
           </div>
         )}
         
         {deleteSuccess && (
-          <div className="mb-6 p-4 bg-success/20 text-success-content rounded-lg flex items-center justify-center text-lg font-semibold">
-            Incidence report deleted successfully!
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center">
+            <div className="w-3 h-3 bg-emerald-500 rounded-full mr-3"></div>
+            <span className="text-emerald-800 font-medium">Incidence report deleted successfully!</span>
           </div>
         )}
 
         {infoMessage && (
-          <div className="mb-6 p-4 bg-info/20 text-info-content rounded-lg flex items-center justify-center">
-            <Info className="w-5 h-5 mr-2" />
-            {infoMessage}
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center">
+            <AlertCircle className="w-5 h-5 text-amber-600 mr-3" />
+            <span className="text-amber-800">{infoMessage}</span>
           </div>
         )}
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-base-content flex items-center">
-              <AlertTriangle className="mr-2 h-7 w-7" />
-              Incidence Reports
-            </h1>
-            <p className="text-base-content/70 mt-1">
-              Manage and track all field incidents and reports
-            </p>
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
+          <div className="flex-1">
+            <div className="flex items-center mb-3">
+              <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mr-4">
+                <AlertTriangle className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Incidence Reports</h1>
+                <p className="text-gray-600 mt-1">Manage and track all field incidents and safety reports</p>
+              </div>
+            </div>
           </div>
+          
           <div className="flex gap-3">
             <button
-              onClick={fetchIncidences}
-              className="flex items-center px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors"
+              onClick={() => {
+                fetchIncidences();
+                fetchWeatherData();
+              }}
+              className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all duration-200 flex items-center shadow-sm hover:shadow-md"
             >
-              <RefreshCw className="w-4 h-4 mr-1" />
+              <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </button>
             <button
               onClick={handleAddNew}
-              className="flex items-center px-4 py-2 bg-primary text-primary-content rounded-lg hover:bg-primary-focus transition-colors"
+              className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center shadow-lg hover:shadow-xl"
             >
-              <Plus className="w-4 h-4 mr-1" />
+              <Plus className="w-4 h-4 mr-2" />
               New Report
             </button>
+          </div>
+        </div>
+
+        {/* Weather Dashboard */}
+        <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+              <Cloud className="w-5 h-5 text-blue-500 mr-2" />
+              Weather Forecast - Avissawella, Sri Lanka
+            </h2>
+          </div>
+          
+          {weatherError ? (
+            <div className="p-6 text-center text-gray-500">
+              {weatherError}
+            </div>
+          ) : weatherLoading ? (
+            <div className="p-8 flex justify-center items-center">
+              <Loader className="w-6 h-6 animate-spin text-blue-500" />
+            </div>
+          ) : (
+            <div className="p-6">
+              {/* Current Weather */}
+              {currentWeather && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Current Conditions</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 text-center">
+                      <div className="flex justify-center mb-3">
+                        {weatherIcons[getWeatherInfo(currentWeather.weatherCode).icon]}
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">{Math.round(currentWeather.temperature)}°C</div>
+                      <div className="text-sm text-gray-600 capitalize mt-1">{getWeatherInfo(currentWeather.weatherCode).description}</div>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-xl p-4 text-center">
+                      <Droplets className="w-6 h-6 text-blue-500 mx-auto mb-2" />
+                      <div className="text-xl font-bold text-gray-900">{currentWeather.humidity}%</div>
+                      <div className="text-sm text-gray-600">Humidity</div>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-xl p-4 text-center">
+                      <CloudRain className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                      <div className="text-xl font-bold text-gray-900">{currentWeather.precipitation}mm</div>
+                      <div className="text-sm text-gray-600">Precipitation</div>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-xl p-4 text-center">
+                      <Wind className="w-6 h-6 text-gray-500 mx-auto mb-2" />
+                      <div className="text-xl font-bold text-gray-900">{currentWeather.windSpeed} km/h</div>
+                      <div className="text-sm text-gray-600">Wind Speed</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* 5-Day Forecast */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">5-Day Forecast</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                  {weatherForecast.map((day, index) => {
+                    const weatherInfo = getWeatherInfo(day.weatherCode);
+                    return (
+                      <div key={index} className="bg-gray-50 rounded-lg p-3 text-center">
+                        <div className="text-sm font-medium text-gray-900 mb-2">
+                          {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                        </div>
+                        <div className="flex justify-center mb-2">
+                          {weatherIcons[weatherInfo.icon]}
+                        </div>
+                        <div className="text-lg font-bold text-gray-900">{Math.round(day.maxTemp)}°</div>
+                        <div className="text-xs text-gray-500">{Math.round(day.minTemp)}°</div>
+                        {day.precipitation > 0 && (
+                          <div className="text-xs text-blue-600 font-medium mt-1">
+                            {day.precipitation}mm
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Search and Filter Section */}
+        <div className="mb-6 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="flex flex-col md:flex-row gap-4 items-end">
+            {/* Search Input */}
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search Reports</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search by title, reporter, or location..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                />
+              </div>
+            </div>
+
+            {/* Filter Toggle */}
             <button
-              onClick={exportPDF}
-              disabled={filteredIncidences.length === 0}
-              className={`flex items-center px-4 py-2 rounded-lg transition-colors ${filteredIncidences.length === 0 ? 'bg-base-300 text-base-content/40 cursor-not-allowed' : 'bg-base-100 border border-base-300 hover:bg-base-200'}`}
-              title={filteredIncidences.length === 0 ? 'No data to export' : 'Export current view to PDF'}
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all duration-200 flex items-center"
             >
-              <Download className="w-4 h-4 mr-1" />
-              Export PDF
+              <Filter className="w-4 h-4 mr-2" />
+              Filters
+              {hasActiveFilters && (
+                <span className="ml-2 w-2 h-2 bg-blue-500 rounded-full"></span>
+              )}
             </button>
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 flex items-center"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Clear
+              </button>
+            )}
           </div>
+
+          {/* Advanced Filters */}
+          {showFilters && (
+            <div className="mt-6 pt-6 border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">All Types</option>
+                  <option value="Injury">Injury</option>
+                  <option value="Equipment Damage">Equipment Damage</option>
+                  <option value="Environmental Hazard">Environmental Hazard</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Under Review">Under Review</option>
+                  <option value="Action Taken">Action Taken</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* NEW: Search + Filters */}
-        <div className="bg-base-100 border border-base-300 rounded-xl p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/60" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search title, description, reporter..."
-                className="input input-bordered w-full pl-9"
-              />
-            </div>
-
-            <div>
-              <select
-                value={filterField}
-                onChange={(e) => setFilterField(e.target.value)}
-                className="select select-bordered w-full"
-              >
-                {uniqueFields.map((f) => (
-                  <option key={f} value={f}>
-                    {f === 'all' ? 'All Fields' : (f === 'full_estate' ? 'Full Estate' : f)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="select select-bordered w-full"
-              >
-                {uniqueTypes.map((t) => (
-                  <option key={t} value={t}>
-                    {t === 'all' ? 'All Incident Types' : t}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-3 text-sm text-base-content/60">
-            Showing <span className="font-semibold text-base-content">{filteredIncidences.length}</span> of {incidences.length} reports
-          </div>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-error/20 text-error-content rounded-lg border border-error/30">
-            {error}
+        {/* Results Count */}
+        {hasActiveFilters && (
+          <div className="mb-4 text-sm text-gray-600">
+            Showing {filteredIncidences.length} of {incidences.length} reports
+            {searchTerm && ` matching "${searchTerm}"`}
           </div>
         )}
 
         {/* Incidences Grid */}
-        {incidences.length === 0 ? (
-          <div className="bg-base-100 rounded-xl shadow p-8 text-center">
-            <AlertTriangle className="mx-auto h-12 w-12 text-base-content/40 mb-4" />
-            <h3 className="text-lg font-medium text-base-content mb-2">No incidence reports yet</h3>
-            <p className="text-base-content/60 mb-4">
-              Get started by creating your first incidence report.
+        {filteredIncidences.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
+            <AlertTriangle className="mx-auto w-16 h-16 text-gray-300 mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {hasActiveFilters ? 'No matching reports found' : 'No incidence reports yet'}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {hasActiveFilters ? 'Try adjusting your search or filters' : 'Get started by creating your first incidence report.'}
             </p>
-            <button
-              onClick={handleAddNew}
-              className="px-4 py-2 bg-primary text-primary-content rounded-lg hover:bg-primary-focus"
-            >
-              Create Report
-            </button>
-          </div>
-        ) : filteredIncidences.length === 0 ? (
-          <div className="bg-base-100 rounded-xl shadow p-8 text-center">
-            <Search className="mx-auto h-12 w-12 text-base-content/40 mb-4" />
-            <h3 className="text-lg font-medium text-base-content mb-2">No results</h3>
-            <p className="text-base-content/60">
-              Try changing your search or filters.
-            </p>
+            {hasActiveFilters ? (
+              <button
+                onClick={clearFilters}
+                className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+              >
+                Clear Filters
+              </button>
+            ) : (
+              <button
+                onClick={handleAddNew}
+                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+              >
+                Create First Report
+              </button>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredIncidences.map((incidence) => {
               const canEdit = canEditIncidence(incidence);
               const canDelete = canDeleteIncidence(incidence);
+              const isResolved = incidence.status === 'Resolved';
               
               return (
                 <div 
                   key={incidence._id} 
-                  className="bg-base-100 rounded-xl shadow-md border border-base-300 hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={(e) => handleViewDetails(incidence._id, e)}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden"
                 >
                   {/* Card Header */}
-                  <div className="p-5 border-b border-base-300">
+                  <div className="p-6 border-b border-gray-200">
                     <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center">
-                        <span className="text-2xl mr-2">{typeIcons[incidence.type] || '⚠️'}</span>
-                        <h3 className="font-semibold text-base-content line-clamp-1">
+                      <div className="flex items-center min-w-0">
+                        <span className="text-2xl mr-3 flex-shrink-0">{typeIcons[incidence.type] || '⚠️'}</span>
+                        <h3 className="font-semibold text-gray-900 truncate">
                           {incidence.title}
                         </h3>
                       </div>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[incidence.status]}`}>
+                      <span className={`px-3 py-1 text-xs font-medium rounded-full border ${statusColors[incidence.status]} flex-shrink-0`}>
                         {incidence.status}
                       </span>
                     </div>
                     
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${severityColors[incidence.severity]}`}>
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full border ${severityColors[incidence.severity]}`}>
                       {incidence.severity} Severity
                     </span>
                   </div>
 
                   {/* Card Body */}
-                  <div className="p-5">
+                  <div className="p-6">
                     <div className="space-y-3">
-                      <div className="flex items-center text-sm text-base-content/70">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        <span>{incidence.location === 'full_estate' ? 'Full Estate' : incidence.location}</span>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">{incidence.location === 'full_estate' ? 'Full Estate' : incidence.location}</span>
                       </div>
                       
-                      <div className="flex items-center text-sm text-base-content/70">
-                        <Calendar className="w-4 h-4 mr-2" />
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span>{formatDate(incidence.date)}</span>
                       </div>
                       
-                      <div className="flex items-center text-sm text-base-content/70">
-                        <Clock className="w-4 h-4 mr-2" />
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span>{incidence.time}</span>
                       </div>
                       
-                      <div className="flex items-center text-sm text-base-content/70">
-                        <User className="w-4 h-4 mr-2" />
+                      <div className="flex items-center text-sm text-gray-600">
+                        <User className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span>By: {incidence.reporterName}</span>
+                        {currentUser && currentUser._id === incidence.reportedBy && (
+                          <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">You</span>
+                        )}
                       </div>
 
                       <div className="pt-2">
-                        <p className="text-sm text-base-content/70 line-clamp-2">
+                        <p className="text-sm text-gray-600 line-clamp-2">
                           {incidence.description}
                         </p>
                       </div>
@@ -591,30 +767,39 @@ const IncidencePage = () => {
                   </div>
 
                   {/* Card Footer */}
-                  <div className="p-5 border-t border-base-300 flex justify-between items-center">
-                    <span className="text-xs text-base-content/50">
+                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                    <span className="text-xs text-gray-500">
                       {new Date(incidence.createdAt).toLocaleDateString()}
                     </span>
                     <div className="flex space-x-2">
                       <button
                         onClick={(e) => handleViewDetails(incidence._id, e)}
-                        className="p-2 text-info hover:bg-info/10 rounded-lg transition-colors"
+                        className="p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors duration-200"
                         title="View details"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
+                      
                       <button
-                        onClick={(e) => handleEdit(incidence._id, incidence.status, e)}
-                        disabled={!canEdit}
-                        className={`p-2 ${canEdit ? 'text-warning hover:bg-warning/10' : 'text-base-content/30'} rounded-lg transition-colors`}
-                        title={canEdit ? "Edit report" : incidence.status === 'Resolved' ? "Resolved reports cannot be edited" : "Only the reporter can edit"}
+                        onClick={(e) => handleEdit(incidence._id, incidence.status, incidence, e)}
+                        className={`p-2 rounded-lg transition-colors duration-200 ${
+                          canEdit 
+                            ? 'text-blue-600 hover:bg-blue-100' 
+                            : 'text-gray-400 cursor-not-allowed'
+                        }`}
+                        title={canEdit ? "Edit report" : isResolved ? "Resolved reports cannot be edited" : "Only the reporter can edit"}
                       >
-                        <Edit className="w-4 h-4" />
+                        {canEdit ? <Edit className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                       </button>
+                      
                       <button
-                        onClick={(e) => handleDelete(incidence._id, incidence.status, e)}
+                        onClick={(e) => handleDelete(incidence._id, incidence.status, incidence, e)}
                         disabled={deletingId === incidence._id || !canDelete}
-                        className={`p-2 ${canDelete ? 'text-error hover:bg-error/10' : 'text-base-content/30'} rounded-lg transition-colors relative`}
+                        className={`p-2 rounded-lg transition-colors duration-200 ${
+                          canDelete 
+                            ? 'text-red-600 hover:bg-red-100' 
+                            : 'text-gray-400 cursor-not-allowed'
+                        }`}
                         title={canDelete ? "Delete report" : "Only resolved reports by the reporter can be deleted"}
                       >
                         {deletingId === incidence._id ? (
