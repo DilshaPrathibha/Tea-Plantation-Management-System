@@ -183,7 +183,7 @@ export default function FNIPage() {
           { content: `${fertilizerKg} kg, ${fertilizerL} L`, styles: { textColor: [0, 0, 0], fontStyle: 'bold' } },
           { content: `${insecticideKg} kg, ${insecticideL} L`, styles: { textColor: [0, 0, 0], fontStyle: 'bold' } },
           { content: `${lowStockCount}`, styles: { textColor: [220, 38, 38], fontStyle: 'bold' } },
-          { content: `${sumTotalValue.toFixed(2)}`, styles: { textColor: [0, 0, 0], fontStyle: 'bold' } }
+          { content: `LKR ${sumTotalValue.toFixed(2)}`, styles: { textColor: [0, 0, 0], fontStyle: 'bold' } }
         ]
       ];
       autoTable(doc, {
@@ -287,41 +287,64 @@ export default function FNIPage() {
         </div>
 
         {/* FNI Summary Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-4 bg-base-100 rounded-lg shadow p-3 sm:p-4 mb-4 sm:mb-6">
-          <div className="text-center p-2 sm:p-0">
-            <div className="flex items-center justify-center gap-1 mb-2">
-              <Package className="w-4 h-4 text-base-content/60" />
-              <div className="text-xs text-base-content/60">Total Items</div>
+        <div className="bg-base-100 rounded-lg shadow border border-gray-700/30 p-3 sm:p-4 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h2 className="text-sm sm:text-base font-semibold text-white">FNI Overvi</h2>
+              <p className="text-xs text-base-content/60 hidden sm:block">Fertilizers & Insecticides statistics</p>
             </div>
-            <div className="font-bold text-base sm:text-lg">{totalItems}</div>
           </div>
-          <div className="text-center p-2 sm:p-0">
-            <div className="flex items-center justify-center gap-1 mb-2">
-              <Leaf className="w-4 h-4 text-success" />
-              <div className="text-xs text-base-content/60">Fertilizer Available</div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-1 sm:gap-2">
+            <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-md p-2 flex items-center gap-2 border border-gray-700/50 hover:shadow-md transition-all duration-200">
+              <div className="bg-blue-500/20 p-1.5 rounded-full flex-shrink-0">
+                <Package className="w-3 h-3 text-blue-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-base-content/60 font-medium truncate">Total Items</div>
+                <div className="font-bold text-base sm:text-lg text-blue-400">{totalItems}</div>
+              </div>
             </div>
-            <div className="font-bold text-xs sm:text-base lg:text-lg text-success">{fertilizerKg} kg, {fertilizerL} L</div>
-          </div>
-          <div className="text-center p-2 sm:p-0">
-            <div className="flex items-center justify-center gap-1 mb-2">
-              <Bug className="w-4 h-4 text-info" />
-              <div className="text-xs text-base-content/60">Insecticide Available</div>
+            
+            <div className="bg-gradient-to-r from-green-800/20 to-green-900/30 rounded-md p-2 flex items-center gap-2 border border-green-700/30 hover:shadow-md transition-all duration-200">
+              <div className="bg-green-500/20 p-1.5 rounded-full flex-shrink-0">
+                <Leaf className="w-3 h-3 text-green-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-base-content/60 font-medium truncate">Fertilizer Available</div>
+                <div className="font-bold text-xs sm:text-sm text-green-400">{fertilizerKg} kg, {fertilizerL} L</div>
+              </div>
             </div>
-            <div className="font-bold text-xs sm:text-base lg:text-lg text-info">{insecticideKg} kg, {insecticideL} L</div>
-          </div>
-          <div className="text-center p-2 sm:p-0">
-            <div className="flex items-center justify-center gap-1 mb-2">
-              <TrendingDown className="w-4 h-4 text-error" />
-              <div className="text-xs text-base-content/60">Low Stock Items</div>
+            
+            <div className="bg-gradient-to-r from-cyan-800/20 to-cyan-900/30 rounded-md p-2 flex items-center gap-2 border border-cyan-700/30 hover:shadow-md transition-all duration-200">
+              <div className="bg-cyan-500/20 p-1.5 rounded-full flex-shrink-0">
+                <Bug className="w-3 h-3 text-cyan-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-base-content/60 font-medium truncate">Insecticide Available</div>
+                <div className="font-bold text-xs sm:text-sm text-cyan-400">{insecticideKg} kg, {insecticideL} L</div>
+              </div>
             </div>
-            <div className="font-bold text-base sm:text-lg text-error">{lowStockCount}</div>
-          </div>
-          <div className="text-center p-2 sm:p-0">
-            <div className="flex items-center justify-center gap-1 mb-2">
-              <DollarSign className="w-4 h-4 text-primary" />
-              <div className="text-xs text-base-content/60">Total Inventory Value</div>
+            
+            <div className="bg-gradient-to-r from-red-800/20 to-red-900/30 rounded-md p-2 flex items-center gap-2 border border-red-700/30 hover:shadow-md transition-all duration-200">
+              <div className="bg-red-500/20 p-1.5 rounded-full flex-shrink-0">
+                <TrendingDown className="w-3 h-3 text-red-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-base-content/60 font-medium truncate">Low Stock Items</div>
+                <div className="font-bold text-base sm:text-lg text-red-400">{lowStockCount}</div>
+              </div>
             </div>
-            <div className="font-bold text-xs sm:text-base lg:text-lg text-primary">LKR {sumTotalValue.toFixed(2)}</div>
+            
+            <div className="bg-gradient-to-r from-emerald-800/20 to-emerald-900/30 rounded-md p-2 flex items-center gap-2 border border-emerald-700/30 hover:shadow-md transition-all duration-200">
+              <div className="bg-emerald-500/20 p-1.5 rounded-full flex-shrink-0">
+                <DollarSign className="w-3 h-3 text-emerald-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-base-content/60 font-medium truncate">Total Inventory Value</div>
+                <div className="font-bold text-xs sm:text-sm text-emerald-400">LKR {sumTotalValue.toFixed(2)}</div>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -47,7 +47,7 @@ const InventoryManagerDashboard = () => {
       title: 'Inventory Reports',
       desc: 'Generate and view inventory reports',
       icon: BarChart2,
-      link: '/inventory-reports',
+      link: '/inventory/reports',
       color: 'bg-purple-900 text-purple-200'
     }
   ];
@@ -168,7 +168,7 @@ const InventoryManagerDashboard = () => {
                   )}
                 </h2>
                 <p className="text-sm text-gray-400">
-                  Fertilizers, Nutrients & Inputs statistics
+                  Fertilizers & Insecticides statistics
                   {!fniLoading && (
                     <span className="text-green-400 ml-2">• Updated</span>
                   )}

@@ -266,7 +266,7 @@ const Navbar = () => {
             ) : (
               <div className="flex items-center">
                 {/* User chip with responsive styling */}
-                <div className="dropdown dropdown-end">
+                <div className="dropdown dropdown-end dropdown-hover" style={{ position: 'relative' }}>
                   <div tabIndex={0} role="button" className="flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-2 sm:px-3 py-1.5 hover:bg-white/10 transition cursor-pointer">
                     <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 grid place-items-center text-white font-bold">
                       <span className="text-xs sm:text-sm leading-none">{initialsOf(user)}</span>
@@ -282,7 +282,16 @@ const Navbar = () => {
                     </div>
                   </div>
                   {/* Dropdown menu for actions */}
-                  <ul tabIndex={0} className="dropdown-content menu bg-base-300 rounded-box z-[9999] w-52 p-2 shadow-xl border border-base-content/10 mt-2">
+                  <ul 
+                    tabIndex={0} 
+                    className="dropdown-content menu bg-base-300 rounded-box z-[9999] w-52 p-2 shadow-xl border border-base-content/10"
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      right: 0,
+                      marginTop: 0
+                    }}
+                  >
                     <li className="menu-title">
                       <span className="text-xs">Account Info</span>
                     </li>
