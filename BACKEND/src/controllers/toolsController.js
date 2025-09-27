@@ -4,6 +4,11 @@ const getAllTools = async (req, res) => {
   try {
     const { q, type, condition, status } = req.query;
     let filter = {};
+    // Hide retired tools by default (unless specifically requested)
+    if (!status || status !== 'retired') {
+      filter.condition = { $ne: 'retired' };
+    }
+    
     if (q) {
       filter.$or = [
         { toolId: { $regex: q, $options: 'i' } },
@@ -13,7 +18,8 @@ const getAllTools = async (req, res) => {
     if (type) filter.toolType = type;
     if (condition) filter.condition = condition;
     if (status) {
-      if (status === 'needs_repair') filter.condition = 'needs_repair';
+      if (status === 'retired') filter.condition = 'retired';
+      else if (status === 'needs_repair') filter.condition = 'needs_repair';
       else if (status === 'assigned') filter.assignedTo = { $ne: null };
       else if (status === 'available') {
         filter.condition = { $ne: 'needs_repair' };
@@ -26,7 +32,8 @@ const getAllTools = async (req, res) => {
     // Add status field for frontend compatibility
     tools = tools.map(tool => {
       let status = 'available';
-      if (tool.condition === 'needs_repair') status = 'needs_repair';
+      if (tool.condition === 'retired') status = 'retired';
+      else if (tool.condition === 'needs_repair') status = 'needs_repair';
       else if (tool.assignedTo) status = 'assigned';
       return { ...tool.toObject(), status };
     });
@@ -121,9 +128,17 @@ const unassignTool = async (req, res) => {
 const deleteTool = async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await Tool.findByIdAndDelete(id);
-    if (!deleted) return res.status(404).json({ message: "Tool not found" });
-    res.status(200).json({ message: "Tool deleted" });
+    // Instead of deleting, mark as retired
+    const tool = await Tool.findById(id);
+    if (!tool) return res.status(404).json({ message: "Tool not found" });
+    
+    // Unassign if currently assigned
+    tool.assignedTo = null;
+    tool.condition = 'retired';
+    tool.note = tool.note ? `${tool.note} | Retired on ${new Date().toLocaleDateString()}` : `Retired on ${new Date().toLocaleDateString()}`;
+    
+    await tool.save();
+    res.status(200).json({ message: "Tool retired successfully" });
   } catch (error) {
     console.error("Error in deleteTool controller:", error);
     res.status(500).json({ message: "Internal server error" });

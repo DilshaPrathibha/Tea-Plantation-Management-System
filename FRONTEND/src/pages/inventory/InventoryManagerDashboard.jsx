@@ -12,6 +12,7 @@ const InventoryManagerDashboard = () => {
     availableTools,
     assignedTools,
     needsRepairTools,
+    retiredTools,
     uniqueTypes,
     isLoading: toolsLoading,
     error: toolsError,
@@ -145,8 +146,8 @@ const InventoryManagerDashboard = () => {
                 <div className="font-bold text-lg sm:text-2xl text-error">{needsRepairTools}</div>
               </div>
               <div className="text-center p-2 sm:p-4 bg-base-200 rounded-lg col-span-2 sm:col-span-1">
-                <div className="text-xs text-base-content/60 mb-1">Tool Types</div>
-                <div className="font-bold text-lg sm:text-2xl text-info">{uniqueTypes}</div>
+                <div className="text-xs text-base-content/60 mb-1">Retired Tools</div>
+                <div className="font-bold text-lg sm:text-2xl text-neutral">{retiredTools}</div>
               </div>
             </div>
           )}

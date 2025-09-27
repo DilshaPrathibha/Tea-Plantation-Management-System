@@ -58,6 +58,7 @@ const useToolsStats = () => {
     availableTools: 0,
     assignedTools: 0,
     needsRepairTools: 0,
+    retiredTools: 0,
     uniqueTypes: 0,
     isLoading: true,
     error: null,
@@ -69,22 +70,33 @@ const useToolsStats = () => {
   const fetchTools = async () => {
     try {
       setStats(prev => ({ ...prev, isLoading: true, error: null }));
-      const response = await api.get('/tools');
-      const toolsData = response.data || [];
-      setTools(toolsData);
       
-      // Calculate statistics
-      const totalTools = toolsData.length;
-      const availableTools = toolsData.filter(t => t.status === 'available').length;
-      const assignedTools = toolsData.filter(t => t.status === 'assigned').length;
-      const needsRepairTools = toolsData.filter(t => String(t.condition).toLowerCase() === 'needs_repair').length;
-      const uniqueTypes = Array.from(new Set(toolsData.map(t => t.toolType))).length;
+      // Fetch both active and retired tools separately and combine them
+      const [activeResponse, retiredResponse] = await Promise.all([
+        api.get('/tools'),
+        api.get('/tools', { params: { status: 'retired' } })
+      ]);
+      
+      const activeTools = activeResponse.data || [];
+      const retiredToolsData = retiredResponse.data || [];
+      const allTools = [...activeTools, ...retiredToolsData];
+      
+      setTools(allTools);
+      
+      // Calculate statistics from all tools
+      const totalTools = allTools.length;
+      const availableTools = allTools.filter(t => t.status === 'available').length;
+      const assignedTools = allTools.filter(t => t.status === 'assigned').length;
+      const needsRepairTools = allTools.filter(t => String(t.condition).toLowerCase() === 'needs_repair').length;
+      const retiredTools = allTools.filter(t => String(t.condition).toLowerCase() === 'retired').length;
+      const uniqueTypes = Array.from(new Set(allTools.map(t => t.toolType))).length;
       
       setStats({
         totalTools,
         availableTools,
         assignedTools,
         needsRepairTools,
+        retiredTools,
         uniqueTypes,
         isLoading: false,
         error: null,
@@ -182,7 +194,7 @@ const useToolsStats = () => {
           { content: `Available: ${stats.availableTools}`, styles: { textColor: [34, 197, 94] } }, // green
           { content: `Assigned: ${stats.assignedTools}`, styles: { textColor: [202, 138, 4] } }, // yellow
           { content: `Needs Repair: ${stats.needsRepairTools}`, styles: { textColor: [220, 38, 38] } }, // red
-          { content: `Tool Types: ${stats.uniqueTypes}`, styles: { textColor: [30, 41, 59] } }
+          { content: `Retired: ${stats.retiredTools}`, styles: { textColor: [107, 114, 128] } } // gray
         ]],
         startY: titleY + 12,
         theme: 'plain',

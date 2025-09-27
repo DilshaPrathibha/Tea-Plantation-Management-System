@@ -58,11 +58,13 @@ const svgToPngDataUrl = (svgMarkup, targetPx = 28) =>
 
 const ToolsPage = () => {
   const [tools, setTools] = useState([]);
-  // Summary metrics (after tools is defined)
+  const [allTools, setAllTools] = useState([]); // For retired tools statistics only
+  // Summary metrics (filtered tools for most stats, allTools only for retired count)
   const totalTools = tools.length;
   const availableTools = tools.filter(t => t.status === 'available').length;
   const assignedTools = tools.filter(t => t.status === 'assigned').length;
   const needsRepairTools = tools.filter(t => String(t.condition).toLowerCase() === 'needs_repair').length;
+  const retiredTools = allTools.filter(t => String(t.condition).toLowerCase() === 'retired').length;
   const uniqueTypes = Array.from(new Set(tools.map(t => t.toolType))).length;
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -92,6 +94,21 @@ const ToolsPage = () => {
     }
   };
 
+  const fetchAllTools = async () => {
+    try {
+      // Fetch both active and retired tools separately and combine them
+      const [activeResponse, retiredResponse] = await Promise.all([
+        api.get('/tools'),
+        api.get('/tools', { params: { status: 'retired' } })
+      ]);
+      setAllTools([...activeResponse.data, ...retiredResponse.data]);
+    } catch (error) {
+      console.error('Failed to fetch all tools for statistics', error);
+      // Fallback: use current tools data for statistics
+      setAllTools([]);
+    }
+  };
+
   const fetchWorkers = async () => {
     try {
       const res = await api.get('/admin/workers');
@@ -111,6 +128,10 @@ const ToolsPage = () => {
   useEffect(() => {
     fetchTools();
   }, [search, typeFilter, statusFilter]);
+
+  useEffect(() => {
+    fetchAllTools();
+  }, []);
 
   // Export CSV
   const exportCSV = () => {
@@ -244,15 +265,15 @@ const ToolsPage = () => {
   };
 
   const deleteTool = async id => {
-    const ok = await Sweet.confirm('Are you sure you want to delete this tool?');
+    const ok = await Sweet.confirm('Are you sure you want to retire this tool? This action will mark it as permanently out of service but keep it in records.');
     if (!ok) return;
     setActionLoading(true);
     try {
       await api.delete(`/tools/${id}`);
-      Toast.success('Tool deleted');
+      Toast.success('Tool retired successfully');
       fetchTools();
     } catch {
-      Toast.error('Delete failed');
+      Toast.error('Retire failed');
     } finally {
       setActionLoading(false);
     }
@@ -315,6 +336,7 @@ const ToolsPage = () => {
               <option value="available">Available</option>
               <option value="assigned">Assigned</option>
               <option value="needs_repair">Needs Repair</option>
+              <option value="retired">Retired</option>
             </select>
             
             {/* Export buttons right after filters */}
@@ -338,7 +360,7 @@ const ToolsPage = () => {
         </div>
 
         {/* Tools Summary Section */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 bg-base-100 rounded-lg shadow p-3 sm:p-4 mb-4 sm:mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 bg-base-100 rounded-lg shadow p-3 sm:p-4 mb-4 sm:mb-6">
           <div className="text-center p-2 sm:p-0">
             <div className="flex items-center justify-center gap-1 mb-2">
               <Package className="w-4 h-4 text-base-content/60" />
@@ -369,10 +391,10 @@ const ToolsPage = () => {
           </div>
           <div className="text-center p-2 sm:p-0 col-span-2 sm:col-span-1">
             <div className="flex items-center justify-center gap-1 mb-2">
-              <Wrench className="w-4 h-4 text-base-content/60" />
-              <div className="text-xs text-base-content/60">Tool Types</div>
+              <Trash2 className="w-4 h-4 text-base-content/60" />
+              <div className="text-xs text-base-content/60">Retired</div>
             </div>
-            <div className="font-bold text-base sm:text-lg">{uniqueTypes}</div>
+            <div className="font-bold text-base sm:text-lg">{retiredTools}</div>
           </div>
         </div>
 
@@ -395,6 +417,7 @@ const ToolsPage = () => {
                       {tool.status === 'available' && <span className="badge badge-success badge-sm">Available</span>}
                       {tool.status === 'assigned' && <span className="badge badge-warning badge-sm">Assigned</span>}
                       {tool.status === 'needs_repair' && <span className="badge badge-error badge-sm">Needs Repair</span>}
+                      {tool.status === 'retired' && <span className="badge badge-neutral badge-sm">Retired</span>}
                     </div>
                   </div>
                   
@@ -425,7 +448,15 @@ const ToolsPage = () => {
                     {(() => {
                       const isAssigned = !!tool.assignedTo;
                       const isRepair = String(tool.condition).toLowerCase() === 'needs_repair';
-                      if (!isAssigned) {
+                      const isRetired = String(tool.condition).toLowerCase() === 'retired';
+                      
+                      if (isRetired) {
+                        return (
+                          <button className="btn btn-xs btn-disabled flex-1 min-w-0" disabled>
+                            <span className="text-xs">Retired</span>
+                          </button>
+                        );
+                      } else if (!isAssigned) {
                         return (
                           <button
                             className={`btn btn-xs btn-success flex-1 min-w-0 ${isRepair ? 'btn-disabled opacity-50 cursor-not-allowed' : ''}`}
@@ -457,13 +488,15 @@ const ToolsPage = () => {
                     >
                       <Edit3 size={10}/> Edit
                     </button>
-                    <button 
-                      className="btn btn-xs btn-error flex-1 min-w-0" 
-                      disabled={actionLoading} 
-                      onClick={() => deleteTool(tool._id)}
-                    >
-                      <Trash2 size={10}/> Delete
-                    </button>
+                    {String(tool.condition).toLowerCase() !== 'retired' && (
+                      <button 
+                        className="btn btn-xs btn-error flex-1 min-w-0" 
+                        disabled={actionLoading} 
+                        onClick={() => deleteTool(tool._id)}
+                      >
+                        <Trash2 size={10}/> Retire
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -494,6 +527,7 @@ const ToolsPage = () => {
                         {tool.status === 'available' && <span className="badge badge-success gap-1">Available</span>}
                         {tool.status === 'assigned' && <span className="badge badge-warning gap-1">Assigned</span>}
                         {tool.status === 'needs_repair' && <span className="badge badge-error gap-1">Needs Repair</span>}
+                        {tool.status === 'retired' && <span className="badge badge-neutral gap-1">Retired</span>}
                       </td>
                       <td>{tool.note}</td>
                       <td>
@@ -502,7 +536,15 @@ const ToolsPage = () => {
                             {(() => {
                               const isAssigned = !!tool.assignedTo;
                               const isRepair = String(tool.condition).toLowerCase() === 'needs_repair';
-                              if (!isAssigned) {
+                              const isRetired = String(tool.condition).toLowerCase() === 'retired';
+                              
+                              if (isRetired) {
+                                return (
+                                  <button className="btn btn-sm btn-disabled w-full text-xs" disabled>
+                                    Retired
+                                  </button>
+                                );
+                              } else if (!isAssigned) {
                                 return (
                                   <button
                                     className={`btn btn-sm btn-success w-full text-xs ${isRepair ? 'btn-disabled opacity-50 cursor-not-allowed' : ''}`}
@@ -532,9 +574,11 @@ const ToolsPage = () => {
                           <button className="btn btn-sm btn-warning flex-shrink-0 text-xs" onClick={() => navigate(`/inventory/tools/${tool._id}`)}>
                             <Edit3 size={12}/> Details
                           </button>
-                          <button className="btn btn-sm btn-error flex-shrink-0 text-xs" disabled={actionLoading} onClick={() => deleteTool(tool._id)}>
-                            <Trash2 size={12}/> Delete
-                          </button>
+                          {String(tool.condition).toLowerCase() !== 'retired' && (
+                            <button className="btn btn-sm btn-error flex-shrink-0 text-xs" disabled={actionLoading} onClick={() => deleteTool(tool._id)}>
+                              <Trash2 size={12}/> Retire
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
