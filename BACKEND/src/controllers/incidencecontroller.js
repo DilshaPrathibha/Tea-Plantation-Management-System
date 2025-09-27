@@ -1,4 +1,6 @@
+// BACKEND/src/controllers/incidencecontroller.js
 const Incidence = require('../../models/Incidence');
+
 
 exports.createIncidence = async (req, res) => {
   try {
@@ -11,7 +13,8 @@ exports.createIncidence = async (req, res) => {
       type, 
       severity, 
       description, 
-      status 
+      status,
+      imageUrl // This comes from Supabase now
     } = req.body;
 
     const incidence = await Incidence.create({
@@ -24,6 +27,7 @@ exports.createIncidence = async (req, res) => {
       severity,
       description,
       status,
+      imageUrl: imageUrl || '', 
       reportedBy: req.user.id
     });
 
@@ -34,7 +38,7 @@ exports.createIncidence = async (req, res) => {
   }
 };
 
-// list Incidences function 
+
 exports.listIncidences = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page || '1', 10), 1);
@@ -56,7 +60,6 @@ exports.listIncidences = async (req, res) => {
   }
 };
 
-// view single incidence
 exports.getIncidence = async (req, res) => {
   try {
     const incidence = await Incidence.findById(req.params.id);
@@ -71,9 +74,11 @@ exports.getIncidence = async (req, res) => {
   }
 };
 
-// Update an incidence report
 exports.updateIncidence = async (req, res) => {
   try {
+    
+    console.log('Received update data:', req.body);
+
     const { 
       title, 
       location, 
@@ -82,7 +87,8 @@ exports.updateIncidence = async (req, res) => {
       type, 
       severity, 
       description, 
-      status 
+      status,
+      imageUrl 
     } = req.body;
 
     const incidence = await Incidence.findByIdAndUpdate(
@@ -95,7 +101,8 @@ exports.updateIncidence = async (req, res) => {
         type,
         severity,
         description,
-        status
+        status,
+        imageUrl
       }, 
       { new: true, runValidators: true }
     );
@@ -109,7 +116,6 @@ exports.updateIncidence = async (req, res) => {
   }
 };
 
-// Delete an incidence report
 exports.deleteIncidence = async (req, res) => {
   try {
     const incidence = await Incidence.findByIdAndDelete(req.params.id);
