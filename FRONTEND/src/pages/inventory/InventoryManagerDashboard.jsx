@@ -108,7 +108,7 @@ const InventoryManagerDashboard = () => {
                 <span className="hidden sm:inline">Export PDF</span>
                 <span className="sm:hidden">PDF</span>
               </button>
-              <Link to="/tools" className="btn btn-primary btn-sm">
+              <Link to="/inventory/tools" className="btn btn-primary btn-sm">
                 <span className="hidden sm:inline">View All Tools</span>
                 <span className="sm:hidden">Tools</span>
               </Link>
@@ -201,7 +201,7 @@ const InventoryManagerDashboard = () => {
                 <span className="hidden sm:inline">Export PDF</span>
                 <span className="sm:hidden">PDF</span>
               </button>
-              <Link to="/fni" className="btn btn-primary btn-sm">
+              <Link to="/inventory/fni" className="btn btn-primary btn-sm">
                 <span className="hidden sm:inline">Manage FNI</span>
                 <span className="sm:hidden">FNI</span>
               </Link>
