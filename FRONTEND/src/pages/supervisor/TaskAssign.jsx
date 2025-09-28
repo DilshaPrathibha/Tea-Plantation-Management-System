@@ -7,6 +7,37 @@ import {
   UserCheck, CheckCircle2, Pencil, Trash2, Save, X
 } from 'lucide-react';
 import { Sweet, Toast } from '@/utils/sweet';
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+
+// CeylonLeaf SVG logo constant
+const CEYLONLEAF_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+     fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+  <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+</svg>`;
+
+// Utility: Convert SVG string to PNG Data URL for jsPDF
+async function svgToPngDataUrl(svg, size = 24) {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    const svg64 = btoa(unescape(encodeURIComponent(svg)));
+    const image64 = 'data:image/svg+xml;base64,' + svg64;
+    img.onload = function () {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, size, size);
+      ctx.drawImage(img, 0, 0, size, size);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = reject;
+    img.src = image64;
+  });
+}
+
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 const todayStr = () => new Date().toISOString().slice(0, 10);
@@ -24,6 +55,9 @@ export default function TaskAssign() {
   const [tasks, setTasks] = useState([]);
   const [loadingFields, setLoadingFields] = useState(false);
   const [loadingLists, setLoadingLists] = useState(false);
+
+  // search bar
+  const [search, setSearch] = useState('');
 
   // assign form
   const [pickedWorker, setPickedWorker] = useState(null);
@@ -86,9 +120,19 @@ export default function TaskAssign() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date, fieldName]);
 
-  /* weather (Awissawella) + advisory */
+    // add this state near wx
+  const [nowTime, setNowTime] = useState(new Date());
+
+  // keep clock ticking every second
   useEffect(() => {
-    (async () => {
+    const timer = setInterval(() => setNowTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // weather (Awissawella) + advisory
+  useEffect(() => {
+    let timer;
+    const fetchWeather = async () => {
       try {
         setWx(w => ({ ...w, loading: true }));
         const lat = 6.9566, lon = 80.1997;
@@ -113,8 +157,14 @@ export default function TaskAssign() {
       } catch {
         setWx({ loading: false, rows: [], now: null, loc: 'Awissawella', advisory: '' });
       }
-    })();
+    };
+
+    fetchWeather();
+    // refresh weather every 5 minutes
+    timer = setInterval(fetchWeather, 5 * 60 * 1000);
+    return () => clearInterval(timer);
   }, []);
+
 
   /* pick worker for assign */
   const pick = (w) => {
@@ -218,17 +268,145 @@ export default function TaskAssign() {
             </Link>
             <h1 className="text-2xl md:text-3xl font-bold">Task Assignment</h1>
           </div>
+
           <button className="btn btn-ghost" onClick={refresh}>
             <RefreshCw className={`w-4 h-4 ${loadingLists ? 'animate-spin' : ''}`} /> Refresh
           </button>
         </div>
+
+        {/* seach bar + Export PDF */}
+<div className="relative w-full flex gap-2 items-start">
+  <div className="flex-1 relative">
+    <input
+      type="text"
+      placeholder="Search by EmpID, Worker name, or Task"
+      value={search}
+      onChange={e => setSearch(e.target.value)}
+      className="input input-bordered w-full mt-2"
+    />
+
+    {search && (
+      <ul className="absolute bg-base-100 border rounded-lg w-full mt-1 max-h-48 overflow-y-auto z-10">
+        {tasks
+          .filter(t =>
+            [t.workerId, t.workerName, t.taskType, t.customTask]
+              .some(val =>
+                val?.toString().toLowerCase().includes(search.toLowerCase())
+              )
+          )
+          .slice(0, 5) // limit to 5 suggestions
+          .map(t => (
+            <li
+              key={t._id || `${t.workerId}-${t.date}-${t.taskType}`}
+              className="p-2 hover:bg-base-200 cursor-pointer"
+              onClick={() =>
+                setSearch(
+                  t.workerName || t.workerId || t.taskType || t.customTask
+                )
+              }
+            >
+              {t.workerName} ({t.workerId}) —{" "}
+              {t.taskType === "other" ? t.customTask : t.taskType}
+            </li>
+          ))}
+
+        {tasks.filter(t =>
+          [t.workerId, t.workerName, t.taskType, t.customTask]
+            .some(val =>
+              val?.toString().toLowerCase().includes(search.toLowerCase())
+            )
+        ).length === 0 && (
+          <li className="p-2 opacity-60">No results</li>
+        )}
+      </ul>
+    )}
+  </div>
+
+{/* Export PDF button */}
+<button
+  className="btn btn-secondary mt-2"
+  onClick={async () => {
+    const doc = new jsPDF();
+
+  // --- Header layout values ---
+  const brandFontSize = 22;
+  const logoH = 8; // display size
+  const logoW = 8;
+  const left = 14;
+  const top = 16;
+  const now = new Date().toLocaleString();
+  // --- Draw logo ---
+  // Render SVG at 3x size for sharpness
+  const logoPng = await svgToPngDataUrl(CEYLONLEAF_SVG, logoH * 3);
+  // Align logo and text with date row (y = top + 6)
+  const headerY = top + 6;
+  doc.addImage(logoPng, 'PNG', left, headerY - logoH + 2, logoW, logoH);
+
+  // --- Brand text (aligned with logo and date) ---
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(brandFontSize);
+  doc.setTextColor('#22C55E');
+  doc.text('CeylonLeaf', left + logoW + 2, headerY);
+
+    // --- Date/time top right ---
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+    doc.setTextColor('#000');
+  doc.text(`Generated on ${now}`, doc.internal.pageSize.getWidth() - 14, headerY, { align: 'right' });
+
+    // --- Report title center ---
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor('#000');
+    doc.text('Daily Task Report', doc.internal.pageSize.getWidth() / 2, top + 28, { align: 'center' });
+
+    // --- Field and date info below title ---
+    doc.setFontSize(12);
+    doc.text(`Field: ${fieldName || "All"}`, doc.internal.pageSize.getWidth() - 14, top + 36, { align: 'right' });
+    doc.text(`Date: ${date}`, left, top + 36);
+
+    // --- Table ---
+    const tableData = tasks.map(t => [
+      t.workerName || "-",
+      t.workerId || "-",
+      t.taskType === "other" ? (t.customTask || "other") : t.taskType,
+      asTime(t.dueTime),
+      t.priority || "normal",
+      t.field || "-",
+      t.status || "assigned",
+    ]);
+
+
+    doc.autoTable({
+      head: [["Name", "EmpID", "Task", "Due", "Priority", "Field", "Status"]],
+      body: tableData,
+      startY: top + 44,
+      headStyles: {
+        fillColor: [34, 197, 94], // #22C55E
+        textColor: 255,
+        fontStyle: 'bold',
+        halign: 'center',
+        fontSize: 12,
+      },
+    });
+
+    doc.save(`Daily_Tasks_${date}.pdf`);
+  }}
+>
+  Export PDF
+</button>
+</div>
 
         {/* Filters + Weather */}
         <div className="grid lg:grid-cols-2 gap-4">
           <div className="rounded-2xl bg-base-100 p-4 border">
             <label className="form-control mb-3">
               <span className="label-text">Date</span>
-              <input type="date" className="input input-bordered" value={date} onChange={e => setDate(e.target.value)} />
+              <input type="date" className="input input-bordered" 
+              value={date} 
+                min={todayStr()}
+                max={todayStr()}
+              onChange={e => setDate(e.target.value)} />
             </label>
 
             <label className="form-control">
@@ -259,12 +437,16 @@ export default function TaskAssign() {
               <>
                 {wx.now ? (
                   <>
-                    <div className="grid grid-cols-3 gap-3 text-sm">
+
                       <div className="rounded-xl border p-3">
                         <div className="opacity-70">Now</div>
-                        <div className="text-xl font-semibold">{wx.now.temp}°C</div>
-                        <div className="text-xs opacity-70"><Clock className="w-3 h-3 inline mr-1" />{wx.now.time}</div>
+                        <div className="text-xl font-semibold">{wx.now?.temp}°C</div>
+                        <div className="text-xs opacity-70">
+                          <Clock className="w-3 h-3 inline mr-1" />
+                          {nowTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </div>
                       </div>
+
                       <div className="rounded-xl border p-3">
                         <div className="opacity-70">Rain</div>
                         <div className="text-xl font-semibold">{wx.now.rainp ?? 0}%</div>
@@ -274,7 +456,7 @@ export default function TaskAssign() {
                         <div className="opacity-70">Wind</div>
                         <div className="text-xl font-semibold">{wx.now.wind ?? 0} km/h</div>
                       </div>
-                    </div>
+                  
                     {wx.advisory && (
                       <div className="mt-2 text-sm alert alert-info">
                         <span><b>Advisory:</b> {wx.advisory}</span>
@@ -494,8 +676,16 @@ export default function TaskAssign() {
                   <th>Worker</th><th>EmpID</th><th>Task</th><th>Due</th><th>Priority</th><th>Field</th><th>Status</th><th />
                 </tr>
               </thead>
+
               <tbody>
-                {tasks.map(t => (
+              {tasks
+                .filter(t =>
+                  [t.workerId, t.workerName, t.taskType, t.customTask]
+                    .some(val =>
+                      val?.toString().toLowerCase().includes(search.toLowerCase())
+                    )
+                )
+                .map(t => (
                   <tr key={t._id || `${t.workerId}-${t.date}-${t.taskType}`}>
                     <td>{t.workerName || '-'}</td>
                     <td><code>{t.workerId || '-'}</code></td>
@@ -505,15 +695,18 @@ export default function TaskAssign() {
                     <td>{t.field || '-'}</td>
                     <td className="capitalize">{t.status || 'assigned'}</td>
                     <td className="text-right">
-                      <button className="btn btn-sm mr-2" onClick={() => startEdit(t)}><Pencil className="w-4 h-4" /> Edit</button>
-                      <button className="btn btn-sm btn-error" onClick={() => removeTask(t._id)}><Trash2 className="w-4 h-4" /> Delete</button>
+                      <button
+                        className="btn btn-sm mr-2"
+                        style={{ backgroundColor: '#FFC107', color: '#111', borderRadius: '2em', border: 'none', fontWeight: 600, minWidth: 90 }}
+                        onClick={() => startEdit(t)}
+                      >
+                        <Pencil className="w-4 h-4" /> Edit
+                      </button>
                     </td>
                   </tr>
                 ))}
-                {tasks.length === 0 && (
-                  <tr><td colSpan={8} className="opacity-60">No tasks yet</td></tr>
-                )}
-              </tbody>
+            </tbody>
+
             </table>
           </div>
         </div>
