@@ -13,9 +13,13 @@ import {
   Download,
   X as XIcon,
   LocateFixed,
+  Image as ImageIcon,
 } from "lucide-react";
 import MapPicker from "../../components/MapPickerOSM.jsx"; // ⬅️ OSM
 import { Sweet } from "@/utils/sweet";
+
+import toast from "react-hot-toast";
+import { uploadFieldImage, deriveStoragePath } from "@/utils/supabaseUpload";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5001";
 const COMPANY = { name: "Celloanleaf", email: "ceylonleaf@gmail.com", phone: "" };
@@ -33,6 +37,7 @@ const newField = () => ({
   remarks: "",
   lat: "",
   lng: "",
+  images: [],
   // keep this key to avoid breaking anything that might read it,
   // but we don't render it in the UI anymore:
   searchAddress: "",
@@ -68,8 +73,149 @@ export default function FieldsPage() {
   const [showEdit, setShowEdit] = useState(false);
   const [edit, setEdit] = useState(emptyEdit());
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
   const [error, setError] = useState("");
+
+  const MAX_IMAGE_COUNT = 5;
+  const MAX_IMAGE_SIZE_MB = 4;
+  const MAX_IMAGE_SIZE = MAX_IMAGE_SIZE_MB * 1024 * 1024;
+
+  const normalizeImages = (list = []) => {
+    if (!Array.isArray(list)) return [];
+    return list
+      .map((img, idx) => {
+        const url = typeof img?.url === "string" ? img.url.trim() : "";
+        if (!url) return null;
+        const nameValue = typeof img?.name === "string" ? img.name.trim() : "";
+        const pathValue =
+          typeof img?.path === "string" && img.path
+            ? img.path
+            : deriveStoragePath(url);
+        const idValue = img?.id || img?._id || pathValue || url || `field-image-${idx}`;
+        return {
+          id: idValue,
+          name: nameValue || `Image ${idx + 1}`,
+          url,
+          path: pathValue || "",
+        };
+      })
+      .filter(Boolean);
+  };
+
+const toPayloadImages = (images = []) =>
+  Array.isArray(images)
+    ? images
+        .filter((img) => img && img.url)
+        .slice(0, MAX_IMAGE_COUNT)
+        .map(({ name, url }) => ({ name: typeof name === "string" ? name.trim() : '', url }))
+    : [];
+
+const escapeHtml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const viewImages = (field) => {
+  const images = normalizeImages(field?.images);
+  if (!images.length) {
+    Sweet.info("No images uploaded for this field yet.");
+    return;
+  }
+
+  const html = images
+    .map((img, idx) => {
+      const safeUrl = escapeHtml(img.url || "");
+      const safeName = escapeHtml(img.name || `Image ${idx + 1}`);
+      return `
+        <figure style="margin:0 0 18px;">
+          <img src="${safeUrl}" alt="${safeName}" style="width:100%;border-radius:12px;object-fit:cover;margin-bottom:8px;" />
+          <figcaption style="font-size:0.85rem;color:#9ca3af;">${safeName}</figcaption>
+        </figure>
+      `;
+    })
+    .join("");
+
+  Sweet.fire({
+    title: field?.name ? `Images – ${escapeHtml(field.name)}` : "Field images",
+    html,
+    width: "60rem",
+    showCloseButton: true,
+    confirmButtonText: "Close",
+    focusConfirm: true,
+    scrollbarPadding: false,
+  });
+};
+
+  const uploadImages = async (fileList, currentImages = [], setter) => {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    const currentCount = Array.isArray(currentImages) ? currentImages.length : 0;
+    let available = MAX_IMAGE_COUNT - currentCount;
+    if (available <= 0) {
+      toast.error(`Maximum ${MAX_IMAGE_COUNT} images allowed.`);
+      return;
+    }
+    if (files.length > available) {
+      toast(available === 1 ? 'Only one more image allowed.' : `Only ${available} additional images can be added.`);
+    }
+
+    for (const file of files.slice(0, available)) {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name} is not an image.`);
+        continue;
+      }
+      if (file.size > MAX_IMAGE_SIZE) {
+        toast.error(`${file.name} exceeds ${MAX_IMAGE_SIZE_MB} MB.`);
+        continue;
+      }
+
+      try {
+        const { url, path } = await uploadFieldImage(file);
+        setter((prev) => {
+          const existing = Array.isArray(prev.images) ? prev.images : [];
+          const nextImages = [
+            ...existing,
+            {
+              id: path || url,
+              name: file.name,
+              url,
+              path: path || "",
+            },
+          ].slice(0, MAX_IMAGE_COUNT);
+          return { ...prev, images: nextImages };
+        });
+      } catch (err) {
+        console.error('[image upload]', err);
+        toast.error(`Failed to upload ${file.name}`);
+      }
+    }
+  };
+
+  const handleFormImages = async (event) => {
+    await uploadImages(event.target.files, form.images, setForm);
+    event.target.value = '';
+  };
+
+  const handleEditImages = async (event) => {
+    await uploadImages(event.target.files, edit.images, setEdit);
+    event.target.value = '';
+  };
+
+  const removeFormImage = (id) =>
+    setForm((prev) => ({
+      ...prev,
+      images: (prev.images || []).filter((img) => img.id !== id),
+    }));
+
+  const removeEditImage = (id) =>
+    setEdit((prev) => ({
+      ...prev,
+      images: (prev.images || []).filter((img) => img.id !== id),
+    }));
 
   const fetchAll = async () => {
     try {
@@ -78,10 +224,10 @@ export default function FieldsPage() {
       const res = await axios.get(`${API}/api/fields`, { headers: authHeader });
       const rows = Array.isArray(res.data?.items) ? res.data.items : res.data || [];
       rows.sort(sortDescByCreated);
-      setItems(rows);
+      setItems(rows.map((row) => ({ ...row, images: normalizeImages(row.images) })));
       if (rows.length) await Sweet.success("Fields loaded");
     } catch (e) {
-      console.error(e);
+      console.error('[fields load]', e);
       const msg = e?.response?.data?.message || "Failed to load fields";
       setError(msg);
       await Sweet.error(msg);
@@ -104,6 +250,7 @@ export default function FieldsPage() {
         ...form,
         lat: form.lat === "" ? undefined : Number(form.lat),
         lng: form.lng === "" ? undefined : Number(form.lng),
+        images: toPayloadImages(form.images),
       };
       await axios.post(`${API}/api/fields`, payload, {
         headers: { ...authHeader, "Content-Type": "application/json" },
@@ -122,27 +269,64 @@ export default function FieldsPage() {
     }
   };
 
-  const openEdit = (row) => {
-    setEdit({
-      id: row._id || row.id,
-      name: row.name || "",
-      teaType: row.teaType || "",
-      status: row.status || "Active",
-      revenue: row.revenue || "",
-      value: row.value || "",
-      address: row.address || "",
-      remarks: row.remarks || "",
-      lat: row.lat ?? "",
-      lng: row.lng ?? "",
+  const openEdit = async (row) => {
+    const id = row?._id || row?.id;
+    if (!id) {
+      toast.error('Field is missing an identifier');
+      return;
+    }
+
+    const base = {
+      id,
+      name: row?.name || "",
+      teaType: row?.teaType || "",
+      status: row?.status || "Active",
+      revenue: row?.revenue || "",
+      value: row?.value || "",
+      address: row?.address || "",
+      remarks: row?.remarks || "",
+      lat: row?.lat ?? "",
+      lng: row?.lng ?? "",
+      images: normalizeImages(row?.images),
       searchAddress: "",
-    });
+    };
+
+    setEdit(base);
     setShowEdit(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
+
+    try {
+      setEditLoading(true);
+      const res = await axios.get(`${API}/api/fields/${id}`, { headers: authHeader });
+      const field = res.data?.field;
+      if (field) {
+        setEdit({
+          id,
+          name: field.name || "",
+          teaType: field.teaType || "",
+          status: field.status || "Active",
+          revenue: field.revenue || "",
+          value: field.value || "",
+          address: field.address || "",
+          remarks: field.remarks || "",
+          lat: field.lat ?? "",
+          lng: field.lng ?? "",
+          images: normalizeImages(field.images),
+          searchAddress: "",
+        });
+      }
+    } catch (err) {
+      console.error('[field load]', err);
+      toast.error(err?.response?.data?.message || 'Failed to load latest field data');
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   const cancelEdit = () => {
     setShowEdit(false);
     setEdit(emptyEdit());
+    setEditLoading(false);
   };
 
   const onSaveEdit = async (e) => {
@@ -155,6 +339,7 @@ export default function FieldsPage() {
         ...edit,
         lat: edit.lat === "" ? undefined : Number(edit.lat),
         lng: edit.lng === "" ? undefined : Number(edit.lng),
+        images: toPayloadImages(edit.images),
       };
       delete payload.id;
       delete payload.searchAddress;
@@ -315,6 +500,11 @@ export default function FieldsPage() {
             </div>
 
             <form onSubmit={onSaveEdit} onKeyDown={blockEnter} className="space-y-4">
+              {editLoading && (
+                <div className="alert alert-info">
+                  <span>Refreshing latest field data...</span>
+                </div>
+              )}
               <div className="grid md:grid-cols-3 gap-3">
                 <input
                   className="input input-bordered"
@@ -382,6 +572,51 @@ export default function FieldsPage() {
                 height={300}
                 zoom={15}
               />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">Field images</span>
+                  <span className="text-xs text-base-content/70">{(Array.isArray(edit.images) ? edit.images.length : 0)}/{MAX_IMAGE_COUNT}</span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {(Array.isArray(edit.images) ? edit.images : []).map((img) => (
+                    <div
+                      key={img.id}
+                      className="relative h-24 w-32 overflow-hidden rounded-lg border border-base-300 bg-base-200/50"
+                    >
+                      <img src={img.url} alt={img.name} className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-error absolute right-1 top-1 px-2"
+                        onClick={() => removeEditImage(img.id)}
+                        title="Remove image"
+                      >
+                        <XIcon className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  {(!Array.isArray(edit.images) || edit.images.length < MAX_IMAGE_COUNT) && (
+                    <label
+                      htmlFor="edit-field-images"
+                      className="flex h-24 w-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-base-300 bg-base-200/40 text-xs text-base-content/70 hover:border-primary hover:text-primary"
+                    >
+                      <ImageIcon className="h-5 w-5" />
+                      <span>Add images</span>
+                    </label>
+                  )}
+                </div>
+                <input
+                  id="edit-field-images"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleEditImages}
+                />
+                <p className="text-xs text-base-content/60">
+                  Up to {MAX_IMAGE_COUNT} images (max {MAX_IMAGE_SIZE_MB} MB each).
+                </p>
+              </div>
+
 
               {/* Coordinates */}
               <div className="grid md:grid-cols-2 gap-3">
@@ -517,6 +752,51 @@ export default function FieldsPage() {
                 height={300}
                 zoom={15}
               />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">Field images</span>
+                  <span className="text-xs text-base-content/70">{(Array.isArray(form.images) ? form.images.length : 0)}/{MAX_IMAGE_COUNT}</span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {(Array.isArray(form.images) ? form.images : []).map((img) => (
+                    <div
+                      key={img.id}
+                      className="relative h-24 w-32 overflow-hidden rounded-lg border border-base-300 bg-base-200/50"
+                    >
+                      <img src={img.url} alt={img.name} className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-error absolute right-1 top-1 px-2"
+                        onClick={() => removeFormImage(img.id)}
+                        title="Remove image"
+                      >
+                        <XIcon className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  {(!Array.isArray(form.images) || form.images.length < MAX_IMAGE_COUNT) && (
+                    <label
+                      htmlFor="create-field-images"
+                      className="flex h-24 w-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-base-300 bg-base-200/40 text-xs text-base-content/70 hover:border-primary hover:text-primary"
+                    >
+                      <ImageIcon className="h-5 w-5" />
+                      <span>Add images</span>
+                    </label>
+                  )}
+                </div>
+                <input
+                  id="create-field-images"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFormImages}
+                />
+                <p className="text-xs text-base-content/60">
+                  Up to {MAX_IMAGE_COUNT} images (max {MAX_IMAGE_SIZE_MB} MB each).
+                </p>
+              </div>
+
 
               {/* Coordinates */}
               <div className="grid md:grid-cols-2 gap-3">
@@ -624,12 +904,33 @@ export default function FieldsPage() {
                     <td>{r.lat ?? "-"}, {r.lng ?? "-"}</td>
                     <td>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "-"}</td>
                     <td>
-                      <div className="flex justify-end gap-2">
-                        <button className="btn btn-sm" onClick={() => openEdit(r)}>
-                          <Pencil className="w-4 h-4 mr-1" /> Edit
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost"
+                          onClick={() => viewImages(r)}
+                          title="View images"
+                          aria-label="View images"
+                        >
+                          <ImageIcon className="w-4 h-4" />
                         </button>
-                        <button className="btn btn-sm btn-error" onClick={() => onDelete(r._id || r.id)}>
-                          <Trash2 className="w-4 h-4 mr-1" /> Delete
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost"
+                          onClick={() => openEdit(r)}
+                          title="Edit field"
+                          aria-label="Edit field"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-error"
+                          onClick={() => onDelete(r._id || r.id)}
+                          title="Delete field"
+                          aria-label="Delete field"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

@@ -254,7 +254,7 @@ export default function AdminUsers() {
             Generated: ${now.toLocaleString()}<br/>
             ${q ? `Search: "${escapeHTML(q)}"<br/>` : ''}
             Sort: ${escapeHTML(SORT_FIELDS.find(s => s.value === sortBy)?.label || 'Created')} (${escapeHTML(sortDir)})
-            &nbsp;•&nbsp; Page ${page} of ${totalPages}
+            &nbsp;|&nbsp; Page ${page} of ${totalPages}
           </div>
         </div>
         <hr class="hr"/>
@@ -286,7 +286,7 @@ export default function AdminUsers() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Users className="w-6 h-6 text-primary" />
-            <h1 className="text-2xl md:text-3xl font-bold">Admin — Users</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">Admin - Users</h1>
           </div>
 
           <div className="flex items-center gap-2">
@@ -311,7 +311,7 @@ export default function AdminUsers() {
             <Search className="w-4 h-4 opacity-60 absolute left-3 top-3.5" />
             <input
               className="input input-bordered w-full pl-9"
-              placeholder="Search name, email, role, empId, phone…"
+              placeholder="Search name, email, role, empId, phone..."
               value={q}
               onChange={(e) => {
                 setPage(1);
@@ -595,19 +595,19 @@ export default function AdminUsers() {
           {/* Pagination */}
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-base-content/70">
-              Page {page} of {totalPages} • {total} total
+              Page {page} of {totalPages} | {total} total
             </div>
             <div className="join">
               <button className="btn join-item" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                « Prev
+                &lt; Prev
               </button>
               <button className="btn join-item" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
-                Next »
+                Next &gt;
               </button>
             </div>
           </div>
 
-          {listLoading && <div className="mt-3 text-sm opacity-70">Loading…</div>}
+          {listLoading && <div className="mt-3 text-sm opacity-70">Loading...</div>}
         </div>
 
       </div>

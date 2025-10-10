@@ -58,7 +58,12 @@ const TransportPage = () => {
     navigate(`/edit-transport/${transport._id}`);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (transport) => {
+    if (!transport || transport.status !== 'delivered') {
+      Swal.fire('Not allowed', 'Only delivered transports can be deleted.', 'info');
+      return;
+    }
+
     const result = await Swal.fire({
       title: 'Are you sure?',
       text: "You won't be able to revert this!",
@@ -72,14 +77,15 @@ const TransportPage = () => {
     if (!result.isConfirmed) return;
     
     try {
-      await axios.delete(`${API_URL}/api/transports/${id}`, {
+      await axios.delete(`${API_URL}/api/transports/${transport._id}`, {
         headers: getAuthHeader()
       });
       Swal.fire('Deleted!', 'Transport record deleted successfully', 'success');
       fetchTransports(); // Refresh the list
     } catch (error) {
       console.error('Error deleting transport:', error);
-      Swal.fire('Error', 'Failed to delete transport record', 'error');
+      const message = error?.response?.data?.message || 'Failed to delete transport record';
+      Swal.fire('Error', message, 'error');
     }
   };
 

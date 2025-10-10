@@ -81,6 +81,16 @@ export default function AttendanceList() {
     }
   };
 
+  const showNote = (note, workerName, date) => {
+    if (!note) return;
+    Sweet.fire({
+      icon: 'info',
+      title: `${workerName || 'Worker'} (${date || 'date unknown'})`,
+      text: note,
+      confirmButtonText: 'Close',
+    });
+  };
+
   // ---- ZERO-DEPENDENCY PDF (print) ----
   const exportPdf = () => {
     const w = window.open('', '_blank');
@@ -213,21 +223,45 @@ export default function AttendanceList() {
             <tbody>
               {loading && (<tr><td colSpan={8}>Loading…</td></tr>)}
               {!loading && rows.length === 0 && (<tr><td colSpan={8}>No records</td></tr>)}
-              {rows.map((r) => (
-                <tr key={r._id}>
-                  <td>{r.date}</td>
-                  <td>{r.workerId}</td>
-                  <td>{r.workerName}</td>
-                  <td>{r.field}</td>
-                  <td>{r.checkInTime}</td>
-                  <td>{r.expectedOutTime || '-'}</td>
-                  <td className="capitalize">{r.status}</td>
-                  <td className="text-right">
-                    <Link className="btn btn-sm mr-2" to={`/supervisor/attendance/${r._id}`}>Edit</Link>
-                    <button className="btn btn-sm btn-error" onClick={() => deleteRow(r._id)}>Delete</button>
-                  </td>
-                </tr>
-              ))}
+              {rows.map((r) => {
+                const edited = Boolean(r.notes && String(r.notes).trim().length);
+                return (
+                  <tr
+                    key={r._id}
+                    className={`transition-colors ${edited ? 'bg-amber-900/10 hover:bg-amber-900/20' : 'hover:bg-base-200/50'}`}
+                  >
+                    <td>{r.date}</td>
+                    <td>{r.workerId}</td>
+                    <td>{r.workerName}</td>
+                    <td>{r.field}</td>
+                    <td>{r.checkInTime}</td>
+                    <td>{r.expectedOutTime || '-'}</td>
+                    <td className="capitalize">
+                      {r.status}
+                      {edited && <span className="badge badge-warning badge-sm ml-2">Edited</span>}
+                    </td>
+                    <td className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {edited && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-xs"
+                            onClick={() => showNote(r.notes, r.workerName, r.date)}
+                          >
+                            View reason
+                          </button>
+                        )}
+                        <Link
+                          className="btn btn-sm btn-warning text-black hover:brightness-110"
+                          to={`/supervisor/attendance/${r._id}`}
+                        >
+                          Edit
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

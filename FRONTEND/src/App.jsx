@@ -73,6 +73,8 @@ import FNIEditPage from './pages/FNIEditPage.jsx';
 import PrivacyPage from './pages/PrivacyPage.jsx';
 import TermsPage from './pages/TermsPage.jsx';
 import SupportPage from './pages/SupportPage.jsx';
+import MyTicketsPage from './pages/tickets/MyTicketsPage.jsx';
+import AdminTicketsPage from './pages/tickets/AdminTicketsPage.jsx';
 
 export default function App() {
   return (
@@ -101,6 +103,7 @@ export default function App() {
           <Route path="users" element={<AdminUsers />} />
           <Route path="fields" element={<FieldsPage />} />
           <Route path="notifications" element={<AdminNotifications />} />
+          <Route path="tickets" element={<AdminTicketsPage />} />
         </Route>
 
         {/* Notes (practice) */}
@@ -159,6 +162,7 @@ export default function App() {
           <Route path="plucking-records/add" element={<AddPluckingRecordPage />} />
           <Route path="plucking-records/:id" element={<ViewPluckingRecordPage />} />
           <Route path="plucking-records/:id/edit" element={<EditPluckingRecordPage />} />
+          <Route path="tickets" element={<MyTicketsPage title="Field Support Tickets" />} />
         </Route>
 
         {/* Legacy routes (still valid) */}
@@ -268,6 +272,14 @@ export default function App() {
             </RequireAuth>
           }
         />
+        <Route
+          path="/production/tickets"
+          element={
+            <RequireAuth role="production_manager">
+              <MyTicketsPage title="Production Support Tickets" />
+            </RequireAuth>
+          }
+        />
 
         {/* INVENTORY MANAGER AREA with sub-navbar & breadcrumbs */}
         <Route
@@ -292,6 +304,7 @@ export default function App() {
           <Route path="fni" element={<FNIPage />} />
           <Route path="fni/create" element={<FNICreate />} />
           <Route path="fni/:id/edit" element={<FNIEditPage />} />
+          <Route path="tickets" element={<MyTicketsPage title="Inventory Support Tickets" />} />
         </Route>
 
         {/* Fallback inside layout */}

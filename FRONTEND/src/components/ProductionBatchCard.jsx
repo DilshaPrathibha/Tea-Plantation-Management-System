@@ -2,6 +2,8 @@ import React from 'react';
 import { Calendar, Scale, User, Edit, Trash2 } from 'lucide-react';
 
 const ProductionBatchCard = ({ batch, onEdit, onDelete }) => {
+  const canDelete = batch.status !== 'pending';
+
   return (
     <div className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
       <div className="card-body p-4">
@@ -48,9 +50,11 @@ const ProductionBatchCard = ({ batch, onEdit, onDelete }) => {
           >
             <Edit className="w-3 h-3 mr-1" /> Edit
           </button>
-          <button 
-            onClick={() => onDelete(batch._id)} 
+          <button
+            onClick={() => onDelete(batch)}
             className="btn btn-outline btn-error btn-xs"
+            disabled={!canDelete}
+            title={canDelete ? 'Delete batch' : 'Pending batches cannot be deleted'}
           >
             <Trash2 className="w-3 h-3 mr-1" /> Delete
           </button>

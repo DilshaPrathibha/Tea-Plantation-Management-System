@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
-const LABELS = { admin:"Admin", users:"Users", fields:"Fields", notifications:"Notifications" };
+const LABELS = { admin: "Admin", users: "Users", fields: "Fields", notifications: "Notifications", tickets: "Tickets" };
 const human = s => LABELS[s] || decodeURIComponent(s).replace(/-/g, " ");
 
 function Breadcrumbs() {

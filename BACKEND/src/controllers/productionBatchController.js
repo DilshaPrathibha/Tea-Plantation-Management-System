@@ -21,19 +21,26 @@ const getBatchById = async (req, res) => {
 
 const createBatch = async (req, res) => {
 	try {
-		const batch = new ProductionBatch(req.body);
+		const payload = { ...req.body };
+		if (payload.teaWeight !== undefined) payload.teaWeight = Number(payload.teaWeight);
+		if (payload.pluckingTotal !== undefined) payload.pluckingTotal = Number(payload.pluckingTotal);
+		const batch = new ProductionBatch(payload);
 		const newBatch = await batch.save();
 		res.status(201).json(newBatch);
 	} catch (error) {
+		console.error('[ProductionBatch create] error', error);
 		res.status(400).json({ message: error.message });
 	}
 };
 
 const updateBatch = async (req, res) => {
 	try {
+		const payload = { ...req.body };
+		if (payload.teaWeight !== undefined) payload.teaWeight = Number(payload.teaWeight);
+		if (payload.pluckingTotal !== undefined) payload.pluckingTotal = Number(payload.pluckingTotal);
 		const batch = await ProductionBatch.findByIdAndUpdate(
 			req.params.id,
-			req.body,
+			payload,
 			{ new: true, runValidators: true }
 		);
 		if (!batch) return res.status(404).json({ message: 'Batch not found' });
@@ -45,10 +52,15 @@ const updateBatch = async (req, res) => {
 
 const deleteBatch = async (req, res) => {
 	try {
-		const batch = await ProductionBatch.findByIdAndDelete(req.params.id);
+		const batch = await ProductionBatch.findById(req.params.id);
 		if (!batch) return res.status(404).json({ message: 'Batch not found' });
+		if (batch.status === 'pending') {
+			return res.status(400).json({ message: 'Pending batches cannot be deleted.' });
+		}
+		await batch.deleteOne();
 		res.json({ message: 'Batch deleted successfully' });
 	} catch (error) {
+		console.error('[ProductionBatch delete] error', error);
 		res.status(500).json({ message: error.message });
 	}
 };

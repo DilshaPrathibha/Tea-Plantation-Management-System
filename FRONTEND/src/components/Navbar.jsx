@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import axios from 'axios';
 import { Link, useNavigate, NavLink } from 'react-router-dom';
 import {
   Leaf,
@@ -14,14 +15,18 @@ import {
   Users,
   MapPin,
   Mail,
+  Bell,
   Calendar,
   Shield,
   FileText,
   Package,
   Truck,
-  User
+  User,
+  Ticket
 } from 'lucide-react';
 import { Sweet } from '../utils/sweet';
+
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 /* Route to send user after login based on role */
 const roleHome = (role) => {
@@ -39,7 +44,9 @@ const roleHome = (role) => {
 const readAuth = () => {
   const token = localStorage.getItem('token');
   let user = null;
-  try { user = JSON.parse(localStorage.getItem('user') || 'null'); } catch {}
+  try { user = JSON.parse(localStorage.getItem('user') || 'null'); } catch (e) {
+    console.warn('[readAuth] Failed to parse user from storage', e);
+  }
   const authed = Boolean(token && user && user.role);
   return { authed, token, user };
 };
@@ -65,6 +72,7 @@ const getRoleNavLinks = (role) => {
         { label: 'Users', href: '/admin/users', icon: Users },
         { label: 'Fields', href: '/admin/fields', icon: MapPin },
         { label: 'Notifications', href: '/admin/notifications', icon: Mail },
+        { label: 'Tickets', href: '/admin/tickets', icon: Ticket },
       ];
     
     case 'field_supervisor':
@@ -73,6 +81,7 @@ const getRoleNavLinks = (role) => {
         { label: 'Attendance', href: '/supervisor/attendance', icon: Calendar },
         { label: 'Tasks', href: '/supervisor/tasks', icon: Users },
         { label: 'Pest & Disease', href: '/supervisor/pestdisease', icon: Shield },
+        { label: 'Tickets', href: '/supervisor/tickets', icon: Ticket },
         { label: 'Reports', href: '/reports', icon: FileText },
       ];
     
@@ -82,6 +91,7 @@ const getRoleNavLinks = (role) => {
         { label: 'Batches', href: '/production-batches', icon: Package },
         { label: 'Tracking', href: '/vehicle-tracking', icon: Truck },
         { label: 'Transport', href: '/transports', icon: Truck },
+        { label: 'Tickets', href: '/production/tickets', icon: Ticket },
         { label: 'Reports', href: '/reports', icon: FileText },
       ];
     
@@ -90,6 +100,7 @@ const getRoleNavLinks = (role) => {
         { label: 'Dashboard', href: '/inventory', icon: Home, exact: true },
         { label: 'Tools', href: '/inventory/tools', icon: Wrench },
         { label: 'FNI', href: '/inventory/fni', icon: FlaskConical },
+        { label: 'Tickets', href: '/inventory/tickets', icon: Ticket },
         { label: 'Reports', href: '/inventory/reports', icon: BarChart2 },
       ];
     
@@ -117,10 +128,125 @@ const initialsOf = (user) => {
   return 'U';
 };
 
+const timestampOf = (notif) => {
+  if (!notif) return 0;
+  const stamp = notif.updatedAt || notif.createdAt;
+  if (!stamp) return 0;
+  const time = new Date(stamp).getTime();
+  return Number.isFinite(time) ? time : 0;
+};
+
 const Navbar = () => {
   const navigate = useNavigate();
-  const [{ authed, user }, setAuth] = useState(readAuth());
+  const [{ authed, user, token }, setAuth] = useState(readAuth());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [notifications, setNotifications] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const ackRef = useRef({});
+  const userId = user?._id || user?.id;
+  const ackStorageKey = useMemo(
+    () => (userId ? `notif:seen:${userId}` : null),
+    [userId]
+  );
+
+  const authHeader = useMemo(() => (token ? { Authorization: `Bearer ${token}` } : null), [token]);
+
+  const computeUnread = useCallback((list) => {
+    const ack = ackRef.current || {};
+    if (!Array.isArray(list) || list.length === 0) return 0;
+    const unread = list.reduce((total, notif) => {
+      const id = notif?._id;
+      const stamp = timestampOf(notif);
+      const seen = id ? ack[id] || 0 : 0;
+      return stamp > seen ? total + 1 : total;
+    }, 0);
+    console.debug('[navbar computeUnread]', {
+      listLength: list.length,
+      ackKeys: Object.keys(ack).length,
+      unread,
+      ids: list.map(n => n?._id),
+      stamps: list.map(n => n?.updatedAt || n?.createdAt),
+      seenEntries: Object.entries(ack).slice(0, 5),
+    });
+    return unread;
+  }, []);
+
+  const fetchNotifications = useCallback(async ({ silent = false } = {}) => {
+    if (!authed || !authHeader) {
+      setNotifications([]);
+      setNotifLoading(false);
+      return [];
+    }
+    try {
+      if (!silent) setNotifLoading(true);
+      const res = await axios.get(`${API}/api/notifications`, { headers: authHeader });
+      const items = Array.isArray(res.data?.items) ? res.data.items : [];
+      console.debug('[navbar fetch] received', {
+        count: items.length,
+        ids: items.map(n => n._id),
+        updated: items.map(n => n.updatedAt || n.createdAt),
+      });
+      setNotifications(items);
+      setUnreadCount(computeUnread(items));
+      return items;
+    } catch (error) {
+      console.error('[navbar notifications]', error?.response?.status, error?.response?.data);
+      return [];
+    } finally {
+      if (!silent) setNotifLoading(false);
+    }
+  }, [authed, authHeader, computeUnread]);
+
+  useEffect(() => {
+    if (!ackStorageKey) {
+      ackRef.current = {};
+    } else {
+      try {
+        const raw = localStorage.getItem(ackStorageKey);
+        const parsed = raw ? JSON.parse(raw) : {};
+        ackRef.current = parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (error) {
+        console.warn('[navbar seen] failed to parse storage', error);
+        ackRef.current = {};
+      }
+    }
+    console.debug('[navbar seen init]', {
+      key: ackStorageKey,
+      entries: Object.entries(ackRef.current || {}).slice(0, 5),
+    });
+    setUnreadCount(computeUnread(notifications));
+  }, [ackStorageKey, computeUnread, notifications]);
+
+  useEffect(() => {
+    if (!authed || !authHeader) {
+      setNotifications([]);
+      return;
+    }
+
+    const refresh = () => {
+      fetchNotifications({ silent: true });
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        refresh();
+      }
+    };
+
+    refresh();
+
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', handleVisibility);
+    const interval = setInterval(refresh, 5000);
+
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      clearInterval(interval);
+    };
+  }, [authed, authHeader, fetchNotifications]);
 
   /* Keep Navbar updated after login/logout and across tabs */
   useEffect(() => {
@@ -157,13 +283,6 @@ const Navbar = () => {
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  // Enhanced mobile menu toggle with proper mobile touch handling
-  const toggleMobileMenu = useCallback((event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setMobileMenuOpen(prev => !prev);
-  }, []);
-
   // Handle touch events specifically for mobile - prevent double triggering
   const handleMenuButtonTouch = useCallback((event) => {
     // Only handle touch on mobile devices
@@ -186,6 +305,10 @@ const Navbar = () => {
     setMobileMenuOpen(prev => !prev);
   }, []);
 
+  const badgeCount = unreadCount;
+  const badgeLabel = badgeCount > 9 ? '9+' : `${badgeCount}`;
+  const visibleNotifications = notifications.slice(0, 8);
+
   const handleLogout = useCallback(async () => {
     const confirmed = await Sweet.confirm('Are you sure you want to sign out?', 'Confirm Sign Out');
     if (!confirmed) return;
@@ -195,6 +318,44 @@ const Navbar = () => {
     window.dispatchEvent(new Event('auth-changed')); // notify listeners
     navigate('/login');
   }, [navigate]);
+
+  const handleNotificationsOpen = useCallback(async () => {
+    const items = await fetchNotifications();
+    const list = Array.isArray(items) && items.length ? items : notifications;
+    if (!list.length) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const next = { ...(ackRef.current || {}) };
+    list.forEach((notif) => {
+      const id = notif?._id;
+      const stamp = timestampOf(notif);
+      if (id && stamp) {
+        next[id] = stamp;
+      }
+    });
+
+    let entries = Object.entries(next);
+    if (entries.length > 200) {
+      entries = entries
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 200);
+    }
+    ackRef.current = Object.fromEntries(entries);
+
+    if (ackStorageKey) {
+      try {
+        localStorage.setItem(ackStorageKey, JSON.stringify(ackRef.current));
+      } catch (error) {
+        console.warn('[navbar] failed to persist seen map', error);
+      }
+    }
+    console.debug('[navbar handleOpen] stored seen map', {
+      entries: Object.entries(ackRef.current).slice(0, 5),
+    });
+    setUnreadCount(computeUnread(list));
+  }, [fetchNotifications, notifications, computeUnread, ackStorageKey]);
 
   return (
     <header className="sticky top-0 bg-base-300 border-b border-base-content/10 z-50">
@@ -264,9 +425,87 @@ const Navbar = () => {
                 <span className="font-semibold">Login</span>
               </button>
             ) : (
-              <div className="flex items-center">
+              <div className="flex items-center gap-3">
+                <div className="dropdown dropdown-end">
+                  <div
+                    tabIndex={0}
+                    role="button"
+                    className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                    aria-label="Notifications"
+                    onClick={handleNotificationsOpen}
+                  >
+                    {badgeCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-error px-1 text-xs font-semibold text-white shadow-lg">
+                        {badgeLabel}
+                      </span>
+                    )}
+                    <Bell className={`h-5 w-5 ${notifLoading ? 'animate-pulse' : ''}`} />
+                  </div>
+                  <div
+                    tabIndex={0}
+                    className="dropdown-content mt-3 w-[20rem] max-h-96 space-y-2 overflow-hidden rounded-2xl border border-base-content/10 bg-base-200/95 shadow-2xl backdrop-blur"
+                  >
+                    <div className="flex items-center justify-between px-4 pt-3">
+                      <span className="text-sm font-semibold tracking-wide text-base-content/80">
+                        Notifications
+                      </span>
+                      <button
+                        className="btn btn-ghost btn-xs"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          fetchNotifications();
+                        }}
+                      >
+                        Refresh
+                      </button>
+                    </div>
+                    <div className="px-4">
+                      <div className="divider my-2"></div>
+                    </div>
+                    {notifLoading ? (
+                      <div className="w-full px-4 pb-4 text-center text-sm opacity-70">
+                        Loading...
+                      </div>
+                    ) : visibleNotifications.length === 0 ? (
+                      <div className="w-full px-4 pb-4 text-center text-sm opacity-70">
+                        No notifications to show.
+                      </div>
+                    ) : (
+                      <div className="w-full max-h-64 overflow-y-auto px-4 pb-3 pr-5">
+                        <div className="space-y-3">
+                          {visibleNotifications.map((notif) => {
+                            const stamp = notif?.updatedAt || notif?.createdAt;
+                            return (
+                              <article
+                                key={notif._id}
+                                className="rounded-xl border border-base-content/10 bg-base-100 p-3 shadow-sm transition hover:border-primary/40 hover:shadow-md"
+                              >
+                                <h3 className="text-sm font-semibold text-base-content/90 break-words">
+                                  {notif.title || 'Notification'}
+                                </h3>
+                                <p className="mt-1 text-xs text-base-content/60">
+                                  {stamp ? new Date(stamp).toLocaleString() : ''}
+                                  {notif?.updatedAt && notif.updatedAt !== notif.createdAt ? ' (updated)' : ''}
+                                </p>
+                                <p className="mt-2 max-h-24 overflow-hidden text-sm leading-snug text-base-content/80 whitespace-pre-line break-words">
+                                  {notif.content || ''}
+                                </p>
+                              </article>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {notifications.length > visibleNotifications.length && (
+                      <div className="px-4 pb-3 text-right text-xs text-base-content/50">
+                        Showing {visibleNotifications.length} of {notifications.length}
+                      </div>
+                    )}
+                  </div>
+                </div>
                 {/* User chip with responsive styling */}
-                <div className="dropdown dropdown-end dropdown-hover" style={{ position: 'relative' }}>
+                <div className="dropdown dropdown-end">
                   <div tabIndex={0} role="button" className="flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-2 sm:px-3 py-1.5 hover:bg-white/10 transition cursor-pointer">
                     <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 grid place-items-center text-white font-bold">
                       <span className="text-xs sm:text-sm leading-none">{initialsOf(user)}</span>
@@ -282,16 +521,7 @@ const Navbar = () => {
                     </div>
                   </div>
                   {/* Dropdown menu for actions */}
-                  <ul 
-                    tabIndex={0} 
-                    className="dropdown-content menu bg-base-300 rounded-box z-[9999] w-52 p-2 shadow-xl border border-base-content/10"
-                    style={{
-                      position: 'absolute',
-                      top: '100%',
-                      right: 0,
-                      marginTop: 0
-                    }}
-                  >
+                  <ul tabIndex={0} className="dropdown-content menu bg-base-300 rounded-box z-[9999] w-52 p-2 shadow-xl border border-base-content/10 mt-2">
                     <li className="menu-title">
                       <span className="text-xs">Account Info</span>
                     </li>
@@ -379,3 +609,8 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
+
+
+
+

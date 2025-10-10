@@ -141,7 +141,7 @@ export default function AttendanceScan() {
 
     try {
       setSaving(true);
-      setMessage('Saving…');
+      setMessage('Savingâ€¦');
 
       const { data } = await axios.post(
         `${API}/api/attendance/checkin`,
@@ -150,13 +150,13 @@ export default function AttendanceScan() {
       );
 
       setMessage(
-        `✅ ${data.workerName || data.workerId} • Field: ${data.field || selectedField} • In: ${data.checkInTime || '—'} • Expected out: ${data.expectedOutTime || '—'} • Status: ${data.status || 'present'}`
+        `âœ… ${data.workerName || data.workerId} â€¢ Field: ${data.field || selectedField} â€¢ In: ${data.checkInTime || 'â€”'} â€¢ Expected out: ${data.expectedOutTime || 'â€”'} â€¢ Status: ${data.status || 'present'}`
       );
       Toast.fire({ icon: 'success', title: 'Attendance saved' });
     } catch (e) {
       const status = e?.response?.status;
       const msg = e?.response?.data?.message || e?.message || 'Save failed';
-      setMessage(`❌ ${status ? status + ' ' : ''}${msg}`);
+      setMessage(`âŒ ${status ? status + ' ' : ''}${msg}`);
       console.error('[scan checkin error]', status, e?.response?.data || e);
       Sweet.fire({ icon: 'error', title: 'Save failed', text: msg });
     } finally {
@@ -222,14 +222,14 @@ export default function AttendanceScan() {
           <div className="flex items-center justify-between">
             <div className="font-medium">
               <ScanLine className="w-4 h-4 inline mr-2" />
-              {scanning ? `Scanning… (${selectedField || 'no field'})` : 'Scanner idle'}
+              {scanning ? `Scanningâ€¦ (${selectedField || 'no field'})` : 'Scanner idle'}
             </div>
-            <div className="text-sm opacity-70">Last: <code>{lastText || '—'}</code></div>
+            <div className="text-sm opacity-70">Last: <code>{lastText || 'â€”'}</code></div>
           </div>
 
           <div id="qr-reader-container" style={{ width: '100%' }} className="mt-3" />
 
-          {saving && <div className="mt-2 alert">Saving…</div>}
+          {saving && <div className="mt-2 alert">Savingâ€¦</div>}
           {message && <div className="mt-2 text-sm">{message}</div>}
 
           <div className="mt-3 text-xs opacity-60">

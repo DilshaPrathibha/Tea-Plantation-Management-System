@@ -48,7 +48,12 @@ const ProductionBatchPage = () => {
     navigate(`/edit-production-batch/${batch._id}`);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (batch) => {
+    if (!batch || batch.status === 'pending') {
+      Swal.fire('Not allowed', 'Pending batches cannot be deleted.', 'info');
+      return;
+    }
+
     const result = await Swal.fire({
       title: 'Are you sure?',
       text: "You won't be able to revert this!",
@@ -62,12 +67,13 @@ const ProductionBatchPage = () => {
     if (!result.isConfirmed) return;
 
     try {
-      await axios.delete(`${API_URL}/api/production-batches/${id}`);
+      await axios.delete(`${API_URL}/api/production-batches/${batch._id}`);
       await fetchBatches();
       Swal.fire('Deleted!', 'Batch deleted successfully', 'success');
     } catch (error) {
       console.error('Error deleting batch:', error);
-      Swal.fire('Error', 'Failed to delete batch', 'error');
+      const message = error?.response?.data?.message || 'Failed to delete batch';
+      Swal.fire('Error', message, 'error');
     }
   };
 

@@ -30,11 +30,21 @@ const createTransport = async (req, res) => {
   try {
     // Validate required fields
     const { vehicleId, vehicleType, driverName, batchId, destination } = req.body;
-    
+
     if (!vehicleId || !vehicleType || !driverName || !batchId || !destination) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-    
+
+    const activeTransport = await Transport.findOne({
+      driverName,
+      status: { $ne: 'delivered' }
+    });
+    if (activeTransport) {
+      return res.status(400).json({
+        message: 'Driver is already assigned to another transport that is not delivered.'
+      });
+    }
+
     const transport = new Transport(req.body);
     const newTransport = await transport.save();
     res.status(201).json(newTransport);
@@ -77,11 +87,17 @@ const updateTransport = async (req, res) => {
 
 const deleteTransport = async (req, res) => {
   try {
-    const transport = await Transport.findByIdAndDelete(req.params.id);
+    const transport = await Transport.findById(req.params.id);
     
     if (!transport) {
       return res.status(404).json({ message: 'Transport not found' });
     }
+
+    if (transport.status !== 'delivered') {
+      return res.status(400).json({ message: 'Only delivered transports can be deleted.' });
+    }
+
+    await transport.deleteOne();
     
     res.json({ message: 'Transport deleted successfully' });
   } catch (error) {

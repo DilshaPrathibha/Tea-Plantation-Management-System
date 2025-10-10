@@ -1,8 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import Swal from 'sweetalert2';
+
+const toDatetimeLocal = (date) => {
+  if (!date) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hour = pad(date.getHours());
+  const minute = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+};
 
 const EditTransport = () => {
   const [formData, setFormData] = useState({
@@ -19,6 +30,7 @@ const EditTransport = () => {
 
   const [loading, setLoading] = useState(false);
   const [batchIds, setBatchIds] = useState([]);
+  const [activeDrivers, setActiveDrivers] = useState([]);
   const navigate = useNavigate();
   const { id } = useParams();
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
@@ -46,14 +58,30 @@ const EditTransport = () => {
   const fetchBatchIds = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/production-batches`);
-      const batches = response.data;
-      
-      const uniqueBatchIds = [...new Set(batches.map(batch => batch.batchId))];
+      const batches = response.data || [];
+      const uniqueBatchIds = [...new Set(batches.map((batch) => batch.batchId))];
       setBatchIds(uniqueBatchIds);
     } catch (error) {
       console.error('Error fetching batch IDs:', error);
     }
   };
+
+  const refreshActiveDrivers = useCallback(
+    async (currentDriver) => {
+      try {
+        const { data } = await axios.get(`${API_URL}/api/transports`);
+        const drivers = (data || [])
+          .filter((t) => t.status !== 'delivered' && t._id !== id)
+          .map((t) => t.driverName)
+          .filter(Boolean);
+        setActiveDrivers(Array.from(new Set(drivers.filter((d) => d !== currentDriver))));
+      } catch (error) {
+        console.error('Error fetching active drivers:', error);
+        setActiveDrivers([]);
+      }
+    },
+    [API_URL, id]
+  );
 
   const getTransportData = async () => {
     try {
@@ -70,6 +98,7 @@ const EditTransport = () => {
         status: transport.status,
         notes: transport.notes || ''
       });
+      refreshActiveDrivers(transport.driverName);
     } catch (error) {
       Swal.fire('Error', 'Cannot load transport data', 'error');
       navigate('/transports');
@@ -77,28 +106,85 @@ const EditTransport = () => {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === 'departureTime') {
+      if (!value) {
+        setFormData((prev) => ({ ...prev, departureTime: toDatetimeLocal(new Date()) }));
+        return;
+      }
+      const timePart = value.split('T')[1] || '';
+      const base = formData.departureTime ? new Date(formData.departureTime) : new Date();
+      if (timePart) {
+        const [hours = '0', minutes = '0'] = timePart.split(':');
+        base.setHours(parseInt(hours, 10) || 0, parseInt(minutes, 10) || 0, 0, 0);
+      }
+      setFormData((prev) => ({ ...prev, departureTime: toDatetimeLocal(base) }));
+      return;
+    }
+
+    if (name === 'estimatedArrival') {
+      if (!value) {
+        setFormData((prev) => ({ ...prev, estimatedArrival: '' }));
+        return;
+      }
+      const chosen = new Date(value);
+      const start = new Date(chosen);
+      start.setHours(0, 0, 0, 0);
+      const departure = formData.departureTime ? new Date(formData.departureTime) : new Date();
+      departure.setHours(0, 0, 0, 0);
+      if (start < departure) {
+        Swal.fire('Invalid date', 'Estimated arrival cannot be before the departure day.', 'warning');
+        setFormData((prev) => ({ ...prev, estimatedArrival: '' }));
+        return;
+      }
+      setFormData((prev) => ({ ...prev, estimatedArrival: value }));
+      return;
+    }
+
+    setFormData({ ...formData, [name]: value });
   };
+
+  const departureBounds = useMemo(() => {
+    if (!formData.departureTime) {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const end = new Date(now);
+      end.setHours(23, 59, 0, 0);
+      return { min: toDatetimeLocal(now), max: toDatetimeLocal(end) };
+    }
+    const base = new Date(formData.departureTime);
+    const start = new Date(base);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(base);
+    end.setHours(23, 59, 0, 0);
+    return { min: toDatetimeLocal(start), max: toDatetimeLocal(end) };
+  }, [formData.departureTime]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-    // Get token from localStorage
-    const token = localStorage.getItem('token');
-    
-    await axios.put(`${API_URL}/api/transports/${id}`, formData, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    Swal.fire('Success', 'Transport updated successfully', 'success');
-    navigate('/transports');
-  } catch (error) {
-    Swal.fire('Error', 'Cannot update transport', 'error');
-  } finally {
-    setLoading(false);
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `${API_URL}/api/transports/${id}`,
+        formData,
+        token
+          ? {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }
+          : undefined
+      );
+      Swal.fire('Success', 'Transport updated successfully', 'success');
+      navigate('/transports');
+    } catch (error) {
+      const message = error?.response?.data?.message || 'Cannot update transport';
+      Swal.fire('Error', message, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -156,11 +242,22 @@ const EditTransport = () => {
               >
                 <option value="">Select Driver</option>
                 {driverNames.map((name, index) => (
-                  <option key={index} value={name}>
+                  <option
+                    key={index}
+                    value={name}
+                    disabled={activeDrivers.includes(name) && name !== formData.driverName}
+                    style={activeDrivers.includes(name) && name !== formData.driverName ? { color: '#9ca3af' } : undefined}
+                  >
                     {name}
+                    {activeDrivers.includes(name) && name !== formData.driverName ? ' (Unavailable)' : ''}
                   </option>
                 ))}
               </select>
+              {activeDrivers.length > 0 && (
+                <p className="text-xs mt-1 text-warning">
+                  Active drivers currently assigned: {activeDrivers.join(', ')}
+                </p>
+              )}
             </div>
 
             <div className="form-control">
@@ -202,6 +299,8 @@ const EditTransport = () => {
                 onChange={handleChange}
                 className="input input-bordered"
                 required
+                min={departureBounds.min}
+                max={departureBounds.max}
               />
             </div>
 
@@ -213,6 +312,7 @@ const EditTransport = () => {
                 value={formData.estimatedArrival}
                 onChange={handleChange}
                 className="input input-bordered"
+                min={departureBounds.min}
               />
             </div>
           </div>
