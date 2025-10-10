@@ -1,24 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import Swal from 'sweetalert2';
 
+const toDatetimeLocal = (date) => {
+  if (!date) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hour = pad(date.getHours());
+  const minute = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+};
+
+const fetchActiveDrivers = async (apiUrl) => {
+  try {
+    const { data } = await axios.get(`${apiUrl}/api/transports`);
+    return (data || [])
+      .filter((t) => t.status !== 'delivered')
+      .map((t) => t.driverName);
+  } catch (error) {
+    console.error('Error fetching active drivers:', error);
+    return [];
+  }
+};
+
 const CreateTransport = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     vehicleId: '',
     vehicleType: '',
     driverName: '',
     batchId: '',
     destination: '',
-    departureTime: new Date().toISOString().slice(0, 16),
+    departureTime: toDatetimeLocal(new Date()),
     estimatedArrival: '',
     status: 'scheduled',
     notes: ''
-  });
+  }));
+
+  const todayStartLocal = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return toDatetimeLocal(d);
+  }, []);
+
+  const todayEndLocal = useMemo(() => {
+    const d = new Date();
+    d.setHours(23, 59, 0, 0);
+    return toDatetimeLocal(d);
+  }, []);
 
   const [loading, setLoading] = useState(false);
   const [batchIds, setBatchIds] = useState([]);
+  const [activeDrivers, setActiveDrivers] = useState([]);
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -30,50 +66,47 @@ const CreateTransport = () => {
     'Sunil Rajapaksa'
   ];
 
-  const vehicleTypes = [
-    'Van',
-    'Lorry',
-    'Truck',
-    'Container'
-  ];
+  const vehicleTypes = ['Van', 'Lorry', 'Truck', 'Container'];
 
   useEffect(() => {
     generateVehicleId();
     fetchBatchIds();
+    fetchActiveDrivers(API_URL).then((drivers) => {
+      setActiveDrivers(Array.from(new Set(drivers.filter(Boolean))));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const generateVehicleId = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/transports`);
-      const transports = response.data;
-      
+      const { data } = await axios.get(`${API_URL}/api/transports`);
+      const transports = data || [];
+
       let highestNumber = 0;
-      transports.forEach(transport => {
+      transports.forEach((transport) => {
         if (transport.vehicleId && transport.vehicleId.startsWith('V')) {
           const numberPart = parseInt(transport.vehicleId.slice(1), 10);
-          if (!isNaN(numberPart) && numberPart > highestNumber) {
+          if (!Number.isNaN(numberPart) && numberPart > highestNumber) {
             highestNumber = numberPart;
           }
         }
       });
-      
+
       const newNumber = highestNumber + 1;
-      const newVehicleId = 'V' + newNumber.toString().padStart(3, '0');
-      
-      setFormData(prev => ({ ...prev, vehicleId: newVehicleId }));
+      const newVehicleId = `V${newNumber.toString().padStart(3, '0')}`;
+      setFormData((prev) => ({ ...prev, vehicleId: newVehicleId }));
     } catch (error) {
       console.error('Error generating vehicle ID:', error);
-      const randomId = 'V' + Math.floor(100 + Math.random() * 900);
-      setFormData(prev => ({ ...prev, vehicleId: randomId }));
+      const fallbackId = `V${Math.floor(100 + Math.random() * 900)}`;
+      setFormData((prev) => ({ ...prev, vehicleId: fallbackId }));
     }
   };
 
   const fetchBatchIds = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/production-batches`);
-      const batches = response.data;
-      
-      const uniqueBatchIds = [...new Set(batches.map(batch => batch.batchId))];
+      const { data } = await axios.get(`${API_URL}/api/production-batches`);
+      const batches = data || [];
+      const uniqueBatchIds = [...new Set(batches.map((batch) => batch.batchId))];
       setBatchIds(uniqueBatchIds);
     } catch (error) {
       console.error('Error fetching batch IDs:', error);
@@ -81,7 +114,42 @@ const CreateTransport = () => {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === 'departureTime') {
+      if (!value) {
+        setFormData((prev) => ({ ...prev, departureTime: toDatetimeLocal(new Date()) }));
+        return;
+      }
+      const timePart = value.split('T')[1] || '';
+      const today = new Date();
+      if (timePart) {
+        const [hours = '0', minutes = '0'] = timePart.split(':');
+        today.setHours(parseInt(hours, 10) || 0, parseInt(minutes, 10) || 0, 0, 0);
+      }
+      setFormData((prev) => ({ ...prev, departureTime: toDatetimeLocal(today) }));
+      return;
+    }
+
+    if (name === 'estimatedArrival') {
+      if (!value) {
+        setFormData((prev) => ({ ...prev, estimatedArrival: '' }));
+        return;
+      }
+      const chosen = new Date(value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const chosenDay = new Date(chosen);
+      chosenDay.setHours(0, 0, 0, 0);
+      if (chosenDay < today) {
+        setFormData((prev) => ({ ...prev, estimatedArrival: todayStartLocal }));
+        return;
+      }
+      setFormData((prev) => ({ ...prev, estimatedArrival: value }));
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -89,18 +157,24 @@ const CreateTransport = () => {
     setLoading(true);
 
     try {
-      // Get token from localStorage
       const token = localStorage.getItem('token');
-
-      await axios.post(`${API_URL}/api/transports`, formData, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+      await axios.post(
+        `${API_URL}/api/transports`,
+        formData,
+        token
+          ? {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          : undefined
+      );
       Swal.fire('Success', 'Transport created successfully', 'success');
       navigate('/transports');
     } catch (error) {
-      Swal.fire('Error', 'Failed to create transport', 'error');
+      const message = error?.response?.data?.message || 'Failed to create transport';
+      Swal.fire('Error', message, 'error');
     } finally {
       setLoading(false);
     }
@@ -141,8 +215,8 @@ const CreateTransport = () => {
                 required
               >
                 <option value="">Select Vehicle Type</option>
-                {vehicleTypes.map((type, index) => (
-                  <option key={index} value={type}>
+                {vehicleTypes.map((type) => (
+                  <option key={type} value={type}>
                     {type}
                   </option>
                 ))}
@@ -159,12 +233,24 @@ const CreateTransport = () => {
                 required
               >
                 <option value="">Select Driver</option>
-                {driverNames.map((name, index) => (
-                  <option key={index} value={name}>
+                {driverNames.map((name) => (
+                  <option
+                    key={name}
+                    value={name}
+                    disabled={activeDrivers.includes(name)}
+                    style={activeDrivers.includes(name) ? { color: '#9ca3af' } : undefined}
+                  >
                     {name}
+                    {activeDrivers.includes(name) ? ' (Unavailable)' : ''}
                   </option>
                 ))}
               </select>
+              {activeDrivers.length > 0 && (
+                <p className="text-xs mt-1 text-warning">
+                  {activeDrivers.length} driver{activeDrivers.length > 1 ? 's are' : ' is'} currently assigned to
+                  ongoing transports.
+                </p>
+              )}
             </div>
 
             <div className="form-control">
@@ -177,8 +263,8 @@ const CreateTransport = () => {
                 required
               >
                 <option value="">Select Batch ID</option>
-                {batchIds.map((batchId, index) => (
-                  <option key={index} value={batchId}>
+                {batchIds.map((batchId) => (
+                  <option key={batchId} value={batchId}>
                     {batchId}
                   </option>
                 ))}
@@ -205,6 +291,8 @@ const CreateTransport = () => {
                 value={formData.departureTime}
                 onChange={handleChange}
                 className="input input-bordered"
+                min={todayStartLocal}
+                max={todayEndLocal}
                 required
               />
             </div>
@@ -217,6 +305,7 @@ const CreateTransport = () => {
                 value={formData.estimatedArrival}
                 onChange={handleChange}
                 className="input input-bordered"
+                min={todayStartLocal}
               />
             </div>
           </div>
@@ -243,7 +332,8 @@ const CreateTransport = () => {
               value={formData.notes}
               onChange={handleChange}
               className="textarea textarea-bordered"
-              rows="3"
+              rows={3}
+              placeholder="Optional instructions for the driver..."
             />
           </div>
 

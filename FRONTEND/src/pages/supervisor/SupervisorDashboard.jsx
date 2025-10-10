@@ -1,16 +1,14 @@
-// FRONTEND/src/pages/supervisor/SupervisorDashboard.jsx
+﻿// FRONTEND/src/pages/supervisor/SupervisorDashboard.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
   Leaf,
   BarChart3,
-  Package,
-  Factory,
   ClipboardList,
-  Bug
+  Bug,
+  Ticket
 } from 'lucide-react';
-import { Sweet } from '@/utils/sweet';
 
 const Tile = ({ icon, title, desc, onClick }) => (
   <button
@@ -26,7 +24,7 @@ const Tile = ({ icon, title, desc, onClick }) => (
     </div>
     <p className="mt-2 text-base-content/70">{desc}</p>
     <div className="mt-4 text-sm text-primary opacity-0 group-hover:opacity-100 transition">
-      Open →
+      Open ->
     </div>
   </button>
 );
@@ -37,7 +35,6 @@ export default function SupervisorDashboard() {
   return (
     <div className="min-h-screen bg-base-200">
       <div className="mx-auto max-w-6xl p-6">
-        {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Field Supervisor Dashboard</h1>
           <p className="text-base-content/70">
@@ -49,26 +46,32 @@ export default function SupervisorDashboard() {
           <Tile
             icon={<ClipboardList className="w-6 h-6" />}
             title="Attendance"
-            desc="Manage daily attendance (QR/manual)."
+            desc="Review and manage daily attendance records."
             onClick={() => navigate('/supervisor/attendance')}
           />
           <Tile
             icon={<ClipboardList className="w-6 h-6" />}
             title="QR Scan"
-            desc="Scan worker QR codes to mark attendance."
+            desc="Scan worker QR codes to mark attendance instantly."
             onClick={() => navigate('/supervisor/attendance/scan')}
           />
           <Tile
             icon={<ClipboardList className="w-6 h-6" />}
             title="Manual Entry"
-            desc="Create a record with the 7-field form."
+            desc="Create or edit attendance entries manually."
             onClick={() => navigate('/supervisor/attendance/new')}
           />
           <Tile
             icon={<Users className="w-6 h-6" />}
             title="Task Assignment"
-            desc="Assign today’s tasks to attended workers."
+            desc="Assign today's tasks to attended workers."
             onClick={() => navigate('/supervisor/tasks')}
+          />
+          <Tile
+            icon={<Ticket className="w-6 h-6" />}
+            title="Support Tickets"
+            desc="Submit and track support tickets for admin review."
+            onClick={() => navigate('/supervisor/tickets')}
           />
           <Tile
             icon={<BarChart3 className="w-6 h-6" />}
@@ -78,8 +81,8 @@ export default function SupervisorDashboard() {
           />
           <Tile
             icon={<Bug className="w-6 h-6" />}
-            title="Pest & Disease Report"
-            desc="Report and view pest/disease issues in the field."
+            title="Pest & Disease"
+            desc="Report and review pest or disease issues."
             onClick={() => navigate('/supervisor/pestdisease')}
           />
           <Tile

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 // Removed: InventoryManagerNavbar and global Navbar (provided by RootLayout)
-import { Truck, BarChart2, AlertTriangle, Clock, TrendingUp, Wrench, FlaskConical, Download, Printer, RefreshCw } from 'lucide-react';
+import { Truck, BarChart2, AlertTriangle, Clock, TrendingUp, Wrench, FlaskConical, Download, Printer, RefreshCw, Ticket } from 'lucide-react';
 import useToolsStats from '../../hooks/useToolsStats';
 import useFNIStats from '../../hooks/useFNIStats';
 import useDashboardStats from '../../hooks/useDashboardStats';
@@ -49,6 +49,13 @@ const InventoryManagerDashboard = () => {
       icon: BarChart2,
       link: '/inventory/reports',
       color: 'bg-purple-900 text-purple-200'
+    },
+    {
+      title: 'Support Tickets',
+      desc: 'Submit or monitor support tickets',
+      icon: Ticket,
+      link: '/inventory/tickets',
+      color: 'bg-amber-900 text-amber-200'
     }
   ];
 

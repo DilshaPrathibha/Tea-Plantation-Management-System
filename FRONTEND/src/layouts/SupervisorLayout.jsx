@@ -11,6 +11,7 @@ const LABELS = {
   incidences: "Incidents",
   "pestdisease": "Pest & Disease",
   "plucking-records": "Plucking Records",
+  tickets: "Tickets",
 };
 
 function Breadcrumbs() {

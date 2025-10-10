@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -18,6 +18,9 @@ const EditProductionBatch = () => {
 
   const [supervisors, setSupervisors] = useState([]);
   const [fieldNames, setFieldNames] = useState([]);
+  const [pluckingTotal, setPluckingTotal] = useState(0);
+  const [varianceReason, setVarianceReason] = useState('');
+  const [varianceNote, setVarianceNote] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
@@ -81,6 +84,9 @@ const EditProductionBatch = () => {
         notes: batch.notes || '',
         status: batch.status,
       });
+      setPluckingTotal(Number(batch.pluckingTotal) || 0);
+      setVarianceReason(batch.varianceReason || '');
+      setVarianceNote(batch.varianceNote || '');
     } catch (error) {
       Swal.fire('Error', 'Cannot load batch data', 'error');
       navigate('/production-batches');
@@ -101,19 +107,58 @@ const EditProductionBatch = () => {
     }));
   };
 
+  const varianceRequired = useMemo(() => {
+    const numeric = Number(formData.teaWeight);
+    if (Number.isNaN(numeric)) return false;
+    return numeric !== pluckingTotal;
+  }, [formData.teaWeight, pluckingTotal]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (varianceRequired && (!varianceReason || !varianceNote.trim())) {
+      Swal.fire('Provide Details', 'Please explain the variance between plucked and recorded tea weight.', 'warning');
+      return;
+    }
+
     setLoading(true);
     try {
-      await axios.put(`${API_URL}/api/production-batches/${id}`, formData);
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `${API_URL}/api/production-batches/${id}`,
+        {
+          ...formData,
+          pluckingDate: formData.pluckingDate ? new Date(formData.pluckingDate) : undefined,
+          varianceReason: varianceRequired ? varianceReason : '',
+          varianceNote: varianceRequired ? varianceNote : '',
+          pluckingTotal,
+        },
+        token
+          ? {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          : undefined
+      );
       Swal.fire('Success', 'Batch updated successfully', 'success');
       navigate('/production-batches');
     } catch (error) {
-      Swal.fire('Error', 'Cannot update batch', 'error');
+      const message = error?.response?.data?.message || 'Cannot update batch';
+      Swal.fire('Error', message, 'error');
     } finally {
       setLoading(false);
     }
   };
+
+  const dateBounds = useMemo(() => {
+    if (!formData.pluckingDate) {
+      const today = new Date().toISOString().split('T')[0];
+      return { min: today, max: today };
+    }
+    return { min: formData.pluckingDate, max: formData.pluckingDate };
+  }, [formData.pluckingDate]);
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -155,6 +200,9 @@ const EditProductionBatch = () => {
                 onChange={handleChange}
                 className="input input-bordered"
                 required
+                min={dateBounds.min}
+                max={dateBounds.max}
+                disabled
               />
             </div>
 
@@ -167,8 +215,47 @@ const EditProductionBatch = () => {
                 onChange={handleChange}
                 className="input input-bordered"
                 required
+                min="0"
+                step="0.01"
               />
             </div>
+
+            <div className="md:col-span-2 text-sm text-gray-300">
+              <span className="font-semibold">Total Plucked on this date:</span>{' '}
+              <span className="text-green-500 font-bold">{pluckingTotal} kg</span>
+            </div>
+
+            {varianceRequired && (
+              <div className="form-control md:col-span-2 border border-warning/60 rounded-lg bg-warning/10 p-4 space-y-3">
+                <label className="label font-semibold text-warning">Variance Detected</label>
+                <div>
+                  <label className="label pb-1">Reason for variance</label>
+                  <select
+                    className="select select-bordered w-full"
+                    value={varianceReason}
+                    onChange={(e) => setVarianceReason(e.target.value)}
+                    required
+                  >
+                    <option value="">Select Reason</option>
+                    <option value="Moisture Loss">Moisture Loss</option>
+                    <option value="Spillage">Spillage</option>
+                    <option value="Measurement Error">Measurement Error</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label pb-1">Explanation</label>
+                  <textarea
+                    className="textarea textarea-bordered w-full"
+                    value={varianceNote}
+                    onChange={(e) => setVarianceNote(e.target.value)}
+                    rows={3}
+                    placeholder="Explain why the recorded weight differs from the total plucked weight."
+                    required
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="form-control">
               <label className="label">Quality Grade</label>

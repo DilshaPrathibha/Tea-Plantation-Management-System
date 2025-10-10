@@ -1,15 +1,37 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { Sweet } from '@/utils/sweet';
-import { Languages, Bell, CheckCircle2, Leaf, ClipboardList, RefreshCw, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import {
+  Bell,
+  CheckCircle2,
+  ClipboardList,
+  Languages,
+  Leaf,
+  LogOut,
+  Ticket,
+  RefreshCw
+} from 'lucide-react';
+import { Sweet } from '@/utils/sweet';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 const STR = {
-  en: { title: 'Worker Dashboard', hello: 'Hello', today: 'Today', plucked: 'Leaves plucked (kg)', tasksToday: 'Tasks today', noTasks: 'No tasks assigned yet.', notices: 'Notices', noNotices: 'No notices to show.', lang: 'Language', refresh: 'Refresh', logout: 'Logout' },
-  si: { title: 'කම්කරුවන්ගේ පුවරුව', hello: 'ආයුබෝවන්', today: 'අද', plucked: 'අද කොයල දමාගත්ත (කි.ග්‍රැ.)', tasksToday: 'අද කටයුතු', noTasks: 'දැනට කටයුතු නැත.', notices: 'නිවේදන', noNotices: 'පෙන්වීමට නිවේදන නොමැත.', lang: 'භාෂාව', refresh: 'නවතම කරන්න', logout: 'ලොග් අවුට්' },
-  ta: { title: 'தொழிலாளர் பலகை', hello: 'வணக்கம்', today: 'இன்று', plucked: 'இன்று பறித்த இலை (கிலோ)', tasksToday: 'இன்றைய பணிகள்', noTasks: 'இன்னும் பணிகள் இல்லை.', notices: 'அறிவிப்புகள்', noNotices: 'காண்பிக்க அறிவிப்புகள் இல்லை.', lang: 'மொழி', refresh: 'புதுப்பி', logout: 'வெளியேறு' },
+  en: {
+    title: 'Worker Dashboard',
+    hello: 'Hello',
+    today: 'Today',
+    plucked: 'Leaves plucked (kg)',
+    tasksToday: 'Tasks today',
+    noTasks: 'No tasks assigned yet.',
+    notices: 'Notices',
+    noNotices: 'No notices to show.',
+    tickets: 'Support Tickets',
+    noTickets: 'No support tickets submitted yet.',
+    lang: 'Language',
+    refresh: 'Refresh',
+    logout: 'Logout',
+    newTicket: 'Create ticket',
+  },
 };
 
 export default function WorkerDashboard() {
@@ -18,26 +40,35 @@ export default function WorkerDashboard() {
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const authHeader = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
 
-  const [lang, setLang] = useState(localStorage.getItem('lang') || 'en');
-  const T = STR[lang] || STR.en;
+  const [lang] = useState('en');
+  const T = STR[lang];
 
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState({ worker: { id: '', name: '' }, pluckedKg: 0, tasks: [], notices: [], notifications: [] });
+  const [data, setData] = useState({
+    worker: { id: '', name: '' },
+    pluckedKg: 0,
+    tasks: [],
+    notices: [],
+    notifications: [],
+    tickets: [],
+  });
 
   const refresh = async () => {
     try {
       setLoading(true);
       const [summaryRes, notifRes] = await Promise.all([
         axios.get(`${API}/api/worker/summary?date=${date}`, { headers: authHeader }),
-        axios.get(`${API}/api/notifications`, { headers: authHeader })
+        axios.get(`${API}/api/notifications`, { headers: authHeader }),
       ]);
+      const ticketsRes = await axios.get(`${API}/api/tickets/my`, { headers: authHeader }).catch(() => ({ data: { tickets: [] } }));
       setData({
         worker: summaryRes.data.worker || {},
         pluckedKg: Number(summaryRes.data.pluckedKg || 0),
         tasks: Array.isArray(summaryRes.data.tasks) ? summaryRes.data.tasks : [],
         notices: Array.isArray(summaryRes.data.notices) ? summaryRes.data.notices : [],
         notifications: Array.isArray(notifRes.data.items) ? notifRes.data.items : [],
+        tickets: Array.isArray(ticketsRes.data?.tickets) ? ticketsRes.data.tickets : [],
       });
     } catch (e) {
       console.error('[worker summary]', e?.response?.status, e?.response?.data);
@@ -47,38 +78,30 @@ export default function WorkerDashboard() {
     }
   };
 
-  useEffect(() => { refresh(); /* eslint-disable-next-line */ }, [date]);
-
-  const onLangChange = (v) => { setLang(v); localStorage.setItem('lang', v); };
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date]);
 
   const logout = async () => {
-    const ok = await Sweet.confirm("Log out?");
+    const ok = await Sweet.confirm('Log out?');
     if (!ok) return;
-    // keep language preference
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    await Sweet.success("Signed out");
+    await Sweet.success('Signed out');
     navigate('/login');
   };
 
   return (
     <div className="min-h-screen bg-base-200">
       <div className="mx-auto max-w-5xl p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <Leaf className="w-7 h-7 text-primary" />
             <h1 className="text-3xl font-extrabold">{T.title}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <div className="join">
-              <span className="btn btn-ghost join-item"><Languages className="w-4 h-4 mr-2" /> {T.lang}</span>
-              <select className="select select-bordered join-item" value={lang} onChange={(e) => onLangChange(e.target.value)}>
-                <option value="en">English</option>
-                <option value="si">සිංහල</option>
-                <option value="ta">தமிழ்</option>
-              </select>
-            </div>
+            <span className="btn btn-ghost join-item"><Languages className="w-4 h-4 mr-2" /> {T.lang}</span>
             <button className="btn" onClick={refresh} disabled={loading}>
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               {T.refresh}
@@ -89,7 +112,6 @@ export default function WorkerDashboard() {
           </div>
         </div>
 
-        {/* Greeting + date */}
         <div className="mt-4 flex items-center justify-between">
           <div className="text-xl">
             {T.hello}, <span className="font-semibold">{data.worker?.name || user?.name || ''}</span>
@@ -98,7 +120,6 @@ export default function WorkerDashboard() {
           <input type="date" className="input input-bordered text-lg" value={date} onChange={(e) => setDate(e.target.value)} aria-label={T.today} />
         </div>
 
-        {/* KPIs */}
         <div className="grid md:grid-cols-3 gap-4 mt-6">
           <div className="rounded-2xl bg-base-100 p-5 border shadow">
             <div className="flex items-center gap-2 text-lg font-semibold"><Leaf className="w-5 h-5 text-primary" /> {T.plucked}</div>
@@ -111,7 +132,7 @@ export default function WorkerDashboard() {
               <div className="mt-3 opacity-70">{T.noTasks}</div>
             ) : (
               <ul className="mt-3 space-y-2">
-                {data.tasks.map(t => (
+                {data.tasks.map((t) => (
                   <li key={t._id} className="p-3 rounded-xl border flex items-center justify-between">
                     <div>
                       <div className="font-semibold text-lg">{t.taskType === 'other' ? (t.customTask || 'Other') : t.taskType}</div>
@@ -130,33 +151,48 @@ export default function WorkerDashboard() {
           </div>
         </div>
 
-        {/* Notifications */}
-        <div className="mt-6">
+        <div className="mt-6 grid md:grid-cols-2 gap-4">
           <div className="rounded-2xl bg-base-100 p-5 border shadow">
             <div className="flex items-center gap-2 text-lg font-semibold">
               <Bell className="w-5 h-5 text-primary" /> Notifications
             </div>
             {data.notifications.length === 0 ? (
-              <div className="mt-3 opacity-70">No notifications to show.</div>
+              <div className="mt-3 opacity-70">{T.noNotices}</div>
             ) : (
               <ul className="mt-3 space-y-2">
-                {data.notifications.map(n => (
+                {data.notifications.map((n) => (
                   <li key={n._id} className="p-3 rounded-xl border">
                     <div className="font-semibold">{n.title || 'Notification'}</div>
                     <div className="text-sm opacity-70">{new Date(n.createdAt).toLocaleString()}</div>
-                    <div className="mt-1">{n.content}</div>
+                    <div className="mt-1 whitespace-pre-wrap leading-relaxed">{n.content}</div>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-        </div>
 
-        {/* Back link (optional) */}
-        <div className="mt-8">
-          <Link className="btn btn-ghost" to=" / ">
-            ← Home
-          </Link>
+          <div className="rounded-2xl bg-base-100 p-5 border shadow">
+            <div className="flex items-center gap-2 text-lg font-semibold">
+              <Ticket className="w-5 h-5 text-primary" /> {T.tickets}
+              <Link to="/worker/tickets" className="btn btn-xs btn-primary ml-auto">{T.newTicket}</Link>
+            </div>
+            {data.tickets.length === 0 ? (
+              <div className="mt-3 opacity-70">{T.noTickets}</div>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {data.tickets.slice(0, 3).map((ticket) => (
+                  <li key={ticket._id} className="p-3 rounded-xl border">
+                    <div className="flex items-center justify-between">
+                      <div className="font-semibold">{ticket.subject || 'Untitled ticket'}</div>
+                      <span className="badge badge-outline capitalize">{ticket.status}</span>
+                    </div>
+                    <div className="text-xs opacity-70">{new Date(ticket.createdAt).toLocaleString()}</div>
+                    <div className="mt-1 text-sm line-clamp-2">{ticket.description}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </div>

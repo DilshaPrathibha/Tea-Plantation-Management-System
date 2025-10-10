@@ -1,91 +1,120 @@
 // FRONTEND/src/utils/supabaseUpload.js
 import { createClient } from "@supabase/supabase-js";
+import toast from "react-hot-toast";
 
-// Initialize Supabase client with your credentials
-const supabase = createClient(
-  "https://ombvnpeoietugpxelugs.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tYnZucGVvaWV0dWdweGVsdWdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5ODM2ODYsImV4cCI6MjA2NzU1OTY4Nn0.mv9NsqrC2tckMmHa2w0X8Vg0fGtjsQXYYbMG1LRy9K4"
-);
+const SUPABASE_URL = "https://ombvnpeoietugpxelugs.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tYnZucGVvaWV0dWdweGVsdWdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE5ODM2ODYsImV4cCI6MjA2NzU1OTY4Nn0.mv9NsqrC2tckMmHa2w0X8Vg0fGtjsQXYYbMG1LRy9K4";
+const BUCKET = "cropcartimages";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const buildIncidencePath = (fileName) => `incidences/${fileName}`;
+const buildFieldPath = (fileName) => `fields/${fileName}`;
 
 export const uploadToSupabase = async (file) => {
-  return new Promise((resolve, reject) => {
-    if (!file) {
-      reject("No file selected");
-      return;
-    }
+  if (!file) throw new Error("No file selected");
+  if (!file.type.startsWith("image/")) throw new Error("Please select a valid image file");
+  if (file.size > 5 * 1024 * 1024) throw new Error("File size must be less than 5MB");
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      reject("Please select a valid image file");
-      return;
-    }
+  const timeStamp = Date.now();
+  const safeName = file.name.replace(/\s+/g, "-");
+  const filePath = buildIncidencePath(`${timeStamp}-${safeName}`);
 
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      reject("File size must be less than 5MB");
-      return;
-    }
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(filePath, file, { cacheControl: "3600", upsert: false });
 
-    const timeStamp = new Date().getTime();
-    const newFileName = `${timeStamp}-${file.name.replace(/\s+/g, '-')}`;
-    const filePath = `incidences/${newFileName}`;
+  if (error) {
+    console.error("Supabase upload error:", error);
+    throw new Error(error.message || "Upload failed");
+  }
 
-    supabase.storage
-      .from('cropcartimages')  // Your bucket name
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      })
-      .then((result) => {
-        if (result.error) {
-          console.error("Supabase upload error:", result.error);
-          reject(`Upload failed: ${result.error.message}`);
-          return;
-        }
+  const { data, error: urlError } = supabase.storage
+    .from(BUCKET)
+    .getPublicUrl(filePath);
 
-        // Get public URL
-        const { data } = supabase.storage
-          .from('cropcartimages')
-          .getPublicUrl(filePath);
+  if (urlError || !data?.publicUrl) {
+    console.error("Failed to get public URL:", urlError);
+    throw new Error("Failed to get public URL");
+  }
 
-        if (data.publicUrl) {
-          resolve(data.publicUrl);
-        } else {
-          reject("Failed to get public URL");
-        }
-      })
-      .catch((error) => {
-        console.error("Error uploading image:", error);
-        reject("Error uploading image");
-      });
-  });
+  return data.publicUrl;
 };
 
-// Enhanced delete function with better error handling
+export async function uploadFieldImage(file) {
+  if (!file) throw new Error("No file provided");
+
+  const timestamp = Date.now();
+  const safeName = file.name.replace(/\s+/g, "_");
+  const fileName = `${timestamp}-${safeName}`;
+  const path = buildFieldPath(fileName);
+
+  const uploadPromise = supabase.storage
+    .from(BUCKET)
+    .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type || "application/octet-stream" });
+
+  const { data } = await toast.promise(
+    uploadPromise.then((result) => {
+      if (result.error) throw result.error;
+      return result;
+    }),
+    {
+      loading: `Uploading ${file.name}...`,
+      success: `Uploaded ${file.name}`,
+      error: `Failed to upload ${file.name}`,
+    }
+  );
+
+  if (!data?.path) {
+    throw new Error("Upload succeeded but no path returned");
+  }
+
+  const { data: urlData, error: urlError } = supabase.storage
+    .from(BUCKET)
+    .getPublicUrl(path);
+
+  if (urlError || !urlData?.publicUrl) {
+    console.error("Failed to get public URL for field image:", urlError);
+    throw urlError || new Error("Failed to get public URL");
+  }
+
+  return { url: urlData.publicUrl, path };
+}
+
+export function deriveStoragePath(url) {
+  if (!url || typeof url !== "string") return "";
+  const prefix = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/`;
+  if (!url.startsWith(prefix)) {
+    const bucketSegment = `/${BUCKET}/`;
+    const idx = url.indexOf(bucketSegment);
+    if (idx === -1) return "";
+    return decodeURIComponent(url.slice(idx + bucketSegment.length));
+  }
+  return decodeURIComponent(url.slice(prefix.length));
+}
+
 export const deleteFromSupabase = async (fileUrl) => {
   try {
-    // Extract file path from URL - more robust parsing
-    const urlParts = fileUrl.split('/');
-    const fileName = urlParts[urlParts.length - 1];
-    
-    if (!fileName) {
-      console.error('Invalid file URL:', fileUrl);
+    let storagePath = deriveStoragePath(fileUrl);
+
+    if (!storagePath) {
+      const urlParts = fileUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      if (!fileName) {
+        console.error('Invalid file URL:', fileUrl);
+        return false;
+      }
+      storagePath = buildIncidencePath(fileName);
+    }
+
+    const { error } = await supabase.storage.from(BUCKET).remove([storagePath]);
+
+    if (error) {
+      console.error('Supabase delete error:', error);
       return false;
     }
 
-    const filePath = `incidences/${fileName}`;
-    
-    const { error } = await supabase.storage
-      .from('cropcartimages')
-      .remove([filePath]);
-    
-    if (error) {
-      console.error('Supabase delete error:', error);
-      // Don't reject - just return false so the main operation can continue
-      return false;
-    }
-    
-    console.log('Successfully deleted file from Supabase:', filePath);
+    console.log('Successfully deleted file from Supabase:', storagePath);
     return true;
   } catch (error) {
     console.error("Error deleting image:", error);

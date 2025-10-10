@@ -6,6 +6,7 @@ const attendanceSchema = new mongoose.Schema(
     workerName: { type: String, trim: true, default: '' },    // convenience
     date: { type: String, required: true, trim: true },       // YYYY-MM-DD
     checkInTime: { type: String, trim: true, default: '' },   // HH:mm
+    checkOutTime: { type: String, trim: true, default: '' },  // HH:mm
     expectedOutTime: { type: String, trim: true, default: '' }, // HH:mm (manual entry by supervisor)
     field: { type: String, trim: true, default: '' },         // field/estate
     status: {
@@ -18,5 +19,7 @@ const attendanceSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+attendanceSchema.index({ workerId: 1, date: 1 }, { unique: true });
 
 module.exports = mongoose.model('Attendance', attendanceSchema);

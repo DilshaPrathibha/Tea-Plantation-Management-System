@@ -10,7 +10,12 @@ router.post('/', verifyToken, requireAnyRole(['admin']), createNotification);
 router.patch('/:id', verifyToken, requireAnyRole(['admin']), updateNotification);
 router.delete('/:id', verifyToken, requireAnyRole(['admin']), deleteNotification);
 
-// Admins and workers can view notifications
-router.get('/', verifyToken, requireAnyRole(['admin', 'worker']), listNotifications);
+// Admins and operational roles can view notifications
+router.get(
+  '/',
+  verifyToken,
+  requireAnyRole(['admin', 'worker', 'field_supervisor', 'production_manager', 'inventory_manager']),
+  listNotifications
+);
 
 module.exports = router;

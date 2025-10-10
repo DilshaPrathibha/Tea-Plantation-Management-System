@@ -10,7 +10,8 @@ const LABELS = {
   tools: "Tools", 
   fni: "FNI",
   create: "Create",
-  edit: "Edit"
+  edit: "Edit",
+  tickets: "Tickets"
 };
 const human = s => LABELS[s] || decodeURIComponent(s).replace(/-/g, " ");
 

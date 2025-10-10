@@ -38,26 +38,36 @@ async function createAttendance(req, res) {
     } = req.body || {};
     if (!workerId) return res.status(400).json({ message: 'workerId is required' });
 
+    const normalizedWorkerId = String(workerId).trim().toUpperCase();
+    const normalizedDate = String(date || todayStr()).trim();
+
+    const duplicate = await Attendance.findOne({ workerId: normalizedWorkerId, date: normalizedDate }).lean();
+    if (duplicate) {
+      return res.status(409).json({
+        message: 'Attendance already recorded for this worker on the selected date',
+        item: duplicate,
+      });
+    }
+
     const doc = await Attendance.create({
-      workerId: String(workerId).trim().toUpperCase(),
+      workerId: normalizedWorkerId,
       workerName,
-      date,
+      date: normalizedDate,
       checkInTime,
       checkOutTime,
       expectedOutTime: isValidHHMM(expectedOutTime) ? expectedOutTime : '',
       field,
       status,
       notes,
-      createdBy: req.user ? {
-        _id: req.user._id,
-        name: req.user.name,
-        email: req.user.email,
-        role: req.user.role
-      } : undefined
+      createdBy: req.user?._id
     });
 
     res.status(201).json({ item: doc });
   } catch (e) {
+    if (e?.code === 11000) {
+      console.warn('[attendance create] duplicate attendance attempted:', e?.keyValue);
+      return res.status(409).json({ message: 'Attendance already recorded for this worker on the selected date' });
+    }
     console.error('[attendance create]', e);
     res.status(500).json({ message: 'Server error' });
   }
@@ -176,9 +186,7 @@ async function checkInAuto(req, res) {
       if (expectedOutTime) doc.expectedOutTime = expectedOutTime;
       doc.status = status || doc.status || 'present';
       if (req.user) {
-        doc.createdBy = {
-          _id: req.user._id, name: req.user.name, email: req.user.email, role: req.user.role
-        };
+        doc.createdBy = req.user?._id;
       }
       await doc.save();
     } else {
@@ -192,9 +200,7 @@ async function checkInAuto(req, res) {
         expectedOutTime,
         status,
         notes: '',
-        createdBy: req.user
-          ? { _id: req.user._id, name: req.user.name, email: req.user.email, role: req.user.role }
-          : undefined
+        createdBy: req.user?._id
       });
     }
 
@@ -227,10 +233,7 @@ async function checkOutAuto(req, res) {
           date,
           status: 'present',
           checkOutTime: time,
-          'createdBy._id': req.user?._id,
-          'createdBy.name': req.user?.name,
-          'createdBy.email': req.user?.email,
-          'createdBy.role': req.user?.role
+          createdBy: req.user?._id
         }
       },
       { new: true, upsert: true }
@@ -252,3 +255,4 @@ module.exports = {
   checkInAuto,
   checkOutAuto,
 };
+

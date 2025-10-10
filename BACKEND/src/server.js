@@ -85,6 +85,7 @@ const pluckingRecordRoutes = require('./routes/pluckingRecordRoutes');
 const productionBatchRoutes = require('./routes/productionBatchRoutes');
 const transportRoutes = require('./routes/transportRoutes');
 const notificationRoutes = require('./routes/notificationroutes');
+const ticketRoutes = require('./routes/ticketroutes');
 
 // Add report routes
 const productionBatchRecordRoutes = require('./routes/productionBatchRecordRoutes');
@@ -103,6 +104,7 @@ app.use('/api/fni', fniRoutes);      // ✅ add for FNI CRUD
 
 app.use('/api/worker', workerRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/tickets', ticketRoutes);
 app.use('/api/incidences', incidenceRoutes);
 app.use('/api/pestdisease', pestDiseaseRoutes);
 app.use('/api/plucking-records', pluckingRecordRoutes);

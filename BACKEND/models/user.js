@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema(
     // profile fields we KEEP
     phone: { type: String, trim: true, default: '' },
 
-    // ⚠️ removed: estate, department (intentionally omitted from schema)
+    // Removed legacy fields (estate, department) by design
   },
   { timestamps: true }
 );

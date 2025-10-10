@@ -10,6 +10,19 @@ const fieldSchema = new mongoose.Schema(
     value: { type: String, trim: true, default: '' },
     address: { type: String, trim: true, default: '' },
     remarks: { type: String, trim: true, default: '' },
+    images: {
+      type: [
+        {
+          name: { type: String, trim: true, default: '' },
+          url: { type: String, required: true, trim: true },
+        },
+      ],
+      default: [],
+      validate: {
+        validator: (arr) => Array.isArray(arr) && arr.length <= 5,
+        message: 'A field can have at most 5 images',
+      },
+    },
     lat: { type: Number, default: undefined },
     lng: { type: Number, default: undefined }
   },
