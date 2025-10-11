@@ -6,6 +6,7 @@ import {
   Bug, 
   MapPin, 
   Calendar, 
+  Clock, 
   User, 
   Edit, 
   Trash2,
@@ -13,24 +14,29 @@ import {
   Eye,
   Loader,
   AlertCircle,
-  Ruler
+  Search,
+  Filter,
+  X,
+  Ruler,
+  Leaf,
+  Map
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 const statusColors = {
-  'Pending': 'badge-warning',
-  'Monitoring': 'badge-info',
-  'Treatment Ongoing': 'badge-warning',
-  'Resolved': 'badge-success',
+  'Pending': 'bg-amber-100 text-amber-800 border-amber-200',
+  'Monitoring': 'bg-blue-100 text-blue-800 border-blue-200',
+  'Treatment Ongoing': 'bg-orange-100 text-orange-800 border-orange-200',
+  'Resolved': 'bg-emerald-100 text-emerald-800 border-emerald-200',
 };
 
-const severityColors = {
-  'Low': 'badge-success',
-  'Medium': 'badge-warning',
-  'High': 'badge-error',
-  'Critical': 'badge-error',
+const urgencyColors = {
+  'Low (Routine monitoring)': 'bg-green-100 text-green-800 border-green-200',
+  'Medium (Schedule treatment)': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  'High (Immediate action needed)': 'bg-orange-100 text-orange-800 border-orange-200',
+  'Emergency (Critical threat)': 'bg-red-100 text-red-800 border-red-200',
 };
 
 const typeIcons = {
@@ -42,19 +48,33 @@ const typeIcons = {
 
 const PestDiseasePage = () => {
   const [reports, setReports] = useState([]);
+  const [filteredReports, setFilteredReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [urgencyFilter, setUrgencyFilter] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
-  const [showSuccess, setShowSuccess] = useState(location.state?.success || false);
+  
+  const [showSuccess, setShowSuccess] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    setCurrentUser(user);
-    
+    setShowSuccess(location.state?.success || false);
+    setDeleteSuccess(location.state?.deleteSuccess || false);
+    fetchCurrentUser();
+    fetchReports();
+  }, [location.state]);
+
+  useEffect(() => {
     if (showSuccess) {
       const timer = setTimeout(() => setShowSuccess(false), 3000);
       return () => clearTimeout(timer);
@@ -69,72 +89,159 @@ const PestDiseasePage = () => {
   }, [deleteSuccess]);
 
   useEffect(() => {
-    if (location.state?.deleteSuccess) {
-      setDeleteSuccess(true);
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state]);
+    filterReports();
+  }, [reports, searchTerm, dateFilter, typeFilter, statusFilter, urgencyFilter]);
 
-  useEffect(() => {
-    fetchReports();
-  }, []);
+  const fetchCurrentUser = () => {
+    try {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        setCurrentUser(user);
+      }
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
 
   const fetchReports = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API}/api/pestdisease`, {
+      const response = await axios.get(`${API}/api/pest-diseases`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setReports(response.data.items || []);
     } catch (error) {
-      console.error('Error fetching reports:', error);
+      console.error('Error fetching pest/disease reports:', error);
       Swal.fire({
         icon: 'error',
         title: 'Error',
         text: 'Failed to load pest/disease reports. Please try again.',
-        confirmButtonColor: '#059669',
-        background: '#1f2937',
-        color: '#fff'
+        confirmButtonColor: '#3b82f6'
       });
     } finally {
       setLoading(false);
     }
   };
 
-  // Can edit if status is not Resolved
-  const canEdit = (report) => {
-    if (!report) return false;
-    return report.status !== 'Resolved';
+  const filterReports = () => {
+    let filtered = reports;
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(report =>
+        report.title?.toLowerCase().includes(term) ||
+        report.reporterName?.toLowerCase().includes(term) ||
+        report.location?.toLowerCase().includes(term) ||
+        report.description?.toLowerCase().includes(term)
+      );
+    }
+
+    if (dateFilter) {
+      filtered = filtered.filter(report => 
+        report.date && new Date(report.date).toISOString().split('T')[0] === dateFilter
+      );
+    }
+
+    if (typeFilter) {
+      filtered = filtered.filter(report => 
+        report.type === typeFilter
+      );
+    }
+
+    if (statusFilter) {
+      filtered = filtered.filter(report => 
+        report.status === statusFilter
+      );
+    }
+
+    if (urgencyFilter) {
+      filtered = filtered.filter(report => 
+        report.urgency === urgencyFilter
+      );
+    }
+
+    setFilteredReports(filtered);
   };
 
-  // Can delete only if status is Resolved AND user is the reporter
-  const canDelete = (report) => {
-    if (!currentUser || !report) return false;
-    return report.status === 'Resolved' && report.reporterId === currentUser.id;
+  const clearFilters = () => {
+    setSearchTerm('');
+    setDateFilter('');
+    setTypeFilter('');
+    setStatusFilter('');
+    setUrgencyFilter('');
   };
 
-  const handleAddNew = () => navigate('/pestdisease/add');
+  const hasActiveFilters = searchTerm || dateFilter || typeFilter || statusFilter || urgencyFilter;
+
+  const canEditReport = (report) => {
+    return currentUser && 
+           currentUser._id === report.reportedBy && 
+           report.status !== 'Resolved';
+  };
+
+  const canDeleteReport = (report) => {
+    return currentUser && 
+           currentUser._id === report.reportedBy && 
+           report.status === 'Resolved';
+  };
+
+  const handleAddNew = () => {
+    navigate('/supervisor/pest-disease/add');
+  };
+
   const handleViewDetails = (id, e) => {
-    if (e) e.stopPropagation();
-    navigate(`/pestdisease/${id}`);
-  };
-  const handleEdit = (id, e) => {
-    if (e) e.stopPropagation();
-    navigate(`/pestdisease/${id}/edit`);
+    if (e && e.stopPropagation) e.stopPropagation();
+    navigate(`/supervisor/pest-disease/${id}`);
   };
 
-  const handleDelete = async (report, e) => {
-    if (e) e.stopPropagation();
+  const handleEdit = (id, status, report, e) => {
+  if (e && e.stopPropagation) e.stopPropagation();
+  
+  if (status === 'Resolved') {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Cannot Edit',
+      text: 'Resolved pest/disease reports cannot be edited.',
+      confirmButtonColor: '#3b82f6'
+    });
+    return;
+  }
+
+  if (!canEditReport(report)) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Access Denied',
+      text: 'Only the reporter can edit this pest/disease report.',
+      confirmButtonColor: '#3b82f6'
+    });
+    return;
+  }
+  
+  // This should navigate to the update page
+  navigate(`/supervisor/pest-disease/${id}/edit`);
+};
+
+  const handleDelete = async (id, status, report, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
     
-    if (!canDelete(report)) {
+    if (status !== 'Resolved') {
       Swal.fire({
         icon: 'warning',
-        title: 'Permission Denied',
-        text: 'You can only delete your own resolved reports.',
-        confirmButtonColor: '#059669',
-        background: '#1f2937',
-        color: '#fff'
+        title: 'Cannot Delete',
+        text: 'Only resolved pest/disease reports can be deleted.',
+        confirmButtonColor: '#3b82f6'
+      });
+      return;
+    }
+
+    if (!canDeleteReport(report)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'Only the reporter can delete this pest/disease report.',
+        confirmButtonColor: '#3b82f6'
       });
       return;
     }
@@ -144,42 +251,36 @@ const PestDiseasePage = () => {
       text: "You won't be able to revert this!",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#059669',
-      cancelButtonColor: '#DC2626',
+      confirmButtonColor: '#3b82f6',
+      cancelButtonColor: '#ef4444',
       confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'Cancel',
-      background: '#1f2937',
-      color: '#fff'
+      cancelButtonText: 'Cancel'
     });
 
     if (result.isConfirmed) {
       try {
-        setDeletingId(report._id);
+        setDeletingId(id);
         const token = localStorage.getItem('token');
         
-        await axios.delete(`${API}/api/pestdisease/${report._id}`, {
+        await axios.delete(`${API}/api/pest-diseases/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        setReports(reports.filter(r => r._id !== report._id));
+        setReports(reports.filter(report => report._id !== id));
         
         await Swal.fire({
           title: 'Deleted!',
-          text: 'Report has been deleted successfully.',
+          text: 'Pest/Disease report has been deleted successfully.',
           icon: 'success',
-          confirmButtonColor: '#059669',
-          background: '#1f2937',
-          color: '#fff'
+          confirmButtonColor: '#3b82f6'
         });
       } catch (error) {
-        console.error('Error deleting report:', error);
+        console.error('Error deleting pest/disease report:', error);
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Failed to delete report. Please try again.',
-          confirmButtonColor: '#059669',
-          background: '#1f2937',
-          color: '#fff'
+          text: 'Failed to delete pest/disease report. Please try again.',
+          confirmButtonColor: '#3b82f6'
         });
       } finally {
         setDeletingId(null);
@@ -188,6 +289,7 @@ const PestDiseasePage = () => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'No date';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -195,26 +297,36 @@ const PestDiseasePage = () => {
     });
   };
 
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'No date';
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-base-200 py-10 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-2xl font-bold text-base-content">Pest & Disease Reports</h1>
-            <div className="animate-pulse bg-base-300 h-10 w-32 rounded"></div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((item) => (
-              <div key={item} className="bg-base-100 rounded-xl shadow p-6 animate-pulse">
-                <div className="h-6 bg-base-300 rounded w-3/4 mb-4"></div>
-                <div className="h-4 bg-base-300 rounded w-1/2 mb-2"></div>
-                <div className="h-4 bg-base-300 rounded w-2/3 mb-4"></div>
-                <div className="flex justify-between mt-4">
-                  <div className="h-8 bg-base-300 rounded w-16"></div>
-                  <div className="h-8 bg-base-300 rounded w-16"></div>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-white rounded-lg w-64 mb-8"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="bg-white rounded-2xl shadow-sm p-6">
+                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+                  <div className="flex justify-between mt-4">
+                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -222,154 +334,290 @@ const PestDiseasePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-200 py-10 px-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Success Messages */}
         {showSuccess && (
-          <div className="mb-6 p-4 bg-success/20 text-success-content rounded-lg flex items-center justify-center text-lg font-semibold">
-            Report submitted successfully!
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center">
+            <div className="w-3 h-3 bg-emerald-500 rounded-full mr-3"></div>
+            <span className="text-emerald-800 font-medium">Pest/Disease report submitted successfully!</span>
           </div>
         )}
         
         {deleteSuccess && (
-          <div className="mb-6 p-4 bg-success/20 text-success-content rounded-lg flex items-center justify-center text-lg font-semibold">
-            Report deleted successfully!
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center">
+            <div className="w-3 h-3 bg-emerald-500 rounded-full mr-3"></div>
+            <span className="text-emerald-800 font-medium">Pest/Disease report deleted successfully!</span>
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-base-content flex items-center">
-              <Bug className="mr-2 h-7 w-7" />
-              Pest & Disease Reports
-            </h1>
-            <p className="text-base-content/70 mt-1">
-              Monitor and manage agricultural threats in your plantation
-            </p>
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
+          <div className="flex-1">
+            <div className="flex items-center mb-3">
+              <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mr-4">
+                <Bug className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Pest & Disease Reports</h1>
+                <p className="text-gray-600 mt-1">Monitor and manage agricultural threats in your plantation</p>
+              </div>
+            </div>
           </div>
+          
           <div className="flex gap-3">
             <button
               onClick={fetchReports}
-              className="btn btn-outline"
+              className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all duration-200 flex items-center shadow-sm hover:shadow-md"
             >
-              <RefreshCw className="w-4 h-4 mr-1" />
+              <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </button>
             <button
               onClick={handleAddNew}
-              className="btn btn-primary"
+              className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center shadow-lg hover:shadow-xl"
             >
-              <Plus className="w-4 h-4 mr-1" />
+              <Plus className="w-4 h-4 mr-2" />
               New Report
             </button>
           </div>
         </div>
 
-        {error && (
-          <div className="alert alert-error mb-6">
-            <span>{error}</span>
-            <button className="btn btn-sm btn-ghost" onClick={fetchReports}>
-              Try Again
+        {/* Search and Filter Section */}
+        <div className="mb-6 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search Reports</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search by title, reporter, location, or description..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all duration-200 flex items-center"
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filters
+              {hasActiveFilters && (
+                <span className="ml-2 w-2 h-2 bg-green-500 rounded-full"></span>
+              )}
             </button>
+
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 flex items-center"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Clear
+              </button>
+            )}
+          </div>
+
+          {showFilters && (
+            <div className="mt-6 pt-6 border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                >
+                  <option value="">All Types</option>
+                  <option value="Pest Infestation">Pest Infestation</option>
+                  <option value="Disease">Disease</option>
+                  <option value="Both">Both</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Monitoring">Monitoring</option>
+                  <option value="Treatment Ongoing">Treatment Ongoing</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Urgency</label>
+                <select
+                  value={urgencyFilter}
+                  onChange={(e) => setUrgencyFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                >
+                  <option value="">All Urgency</option>
+                  <option value="Low (Routine monitoring)">Low</option>
+                  <option value="Medium (Schedule treatment)">Medium</option>
+                  <option value="High (Immediate action needed)">High</option>
+                  <option value="Emergency (Critical threat)">Emergency</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Results Count */}
+        {hasActiveFilters && (
+          <div className="mb-4 text-sm text-gray-600">
+            Showing {filteredReports.length} of {reports.length} reports
+            {searchTerm && ` matching "${searchTerm}"`}
           </div>
         )}
 
-        {reports.length === 0 ? (
-          <div className="bg-base-100 rounded-xl shadow p-8 text-center">
-            <Bug className="mx-auto h-12 w-12 text-base-content/40 mb-4" />
-            <h3 className="text-lg font-medium text-base-content mb-2">No pest/disease reports yet</h3>
-            <p className="text-base-content/70 mb-4">
-              Get started by creating your first pest or disease report.
+        {/* Reports Grid */}
+        {filteredReports.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
+            <Bug className="mx-auto w-16 h-16 text-gray-300 mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {hasActiveFilters ? 'No matching reports found' : 'No pest/disease reports yet'}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {hasActiveFilters ? 'Try adjusting your search or filters' : 'Get started by creating your first pest/disease report.'}
             </p>
-            <button
-              onClick={handleAddNew}
-              className="btn btn-primary"
-            >
-              Create Report
-            </button>
+            {hasActiveFilters ? (
+              <button
+                onClick={clearFilters}
+                className="px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+              >
+                Clear Filters
+              </button>
+            ) : (
+              <button
+                onClick={handleAddNew}
+                className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200"
+              >
+                Create First Report
+              </button>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {reports.map((report) => (
-              <div 
-                key={report._id} 
-                className="bg-base-100 rounded-xl shadow-md border border-base-300 hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={(e) => handleViewDetails(report._id, e)}
-              >
-                <div className="p-5 border-b border-base-300">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center">
-                      <span className="text-2xl mr-2">{typeIcons[report.issueType] || '❓'}</span>
-                      <h3 className="font-semibold text-base-content line-clamp-1">
-                        {report.pestDiseaseName}
-                      </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredReports.map((report) => {
+              const canEdit = canEditReport(report);
+              const canDelete = canDeleteReport(report);
+              const isResolved = report.status === 'Resolved';
+              const hasMapLocation = report.mapCoordinates && report.mapCoordinates.lat;
+              const urgencyDisplay = report.urgency ? report.urgency.split(' (')[0] : 'Unknown';
+              
+              return (
+                <div 
+                  key={report._id} 
+                  className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden"
+                >
+                  <div className="p-6 border-b border-gray-200">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center min-w-0">
+                        <span className="text-2xl mr-3 flex-shrink-0">{typeIcons[report.type] || '❓'}</span>
+                        <h3 className="font-semibold text-gray-900 truncate">
+                          {report.title || 'Untitled Report'}
+                        </h3>
+                      </div>
+                      <span className={`px-3 py-1 text-xs font-medium rounded-full border ${statusColors[report.status] || 'bg-gray-100 text-gray-800 border-gray-200'} flex-shrink-0`}>
+                        {report.status || 'Unknown'}
+                      </span>
                     </div>
-                    <span className={`badge ${statusColors[report.status]}`}>
-                      {report.status}
+                    
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full border ${urgencyColors[report.urgency] || 'bg-gray-100 text-gray-800 border-gray-200'} mb-2 inline-block`}>
+                      {urgencyDisplay}
                     </span>
                   </div>
-                  
-                  <span className={`badge ${severityColors[report.severity]}`}>
-                    {report.severity} Severity
-                  </span>
-                </div>
 
-                <div className="p-5">
-                  <div className="space-y-3">
-                    <div className="flex items-center text-sm text-base-content/70">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      <span>{report.location}</span>
-                    </div>
-                    
-                    <div className="flex items-center text-sm text-base-content/70">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      <span>{formatDate(report.date)}</span>
-                    </div>
-                    
-                    <div className="flex items-center text-sm text-base-content/70">
-                      <Ruler className="w-4 h-4 mr-2" />
-                      <span>{report.affectedArea} acres affected</span>
-                    </div>
-                    
-                    <div className="flex items-center text-sm text-base-content/70">
-                      <User className="w-4 h-4 mr-2" />
-                      <span>By: {report.reporterName}</span>
-                    </div>
+                  <div className="p-6">
+                    <div className="space-y-3">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">{report.location || 'No location'}</span>
+                        {hasMapLocation && (
+                          <Map className="w-3 h-3 ml-2 text-green-600 flex-shrink-0" />
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span>{formatDate(report.date)}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Ruler className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span>{report.affectedArea || 0} perch affected</span>
+                      </div>
+                      
+                      <div className="flex items-center text-sm text-gray-600">
+                        <User className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span>By: {report.reporterName || 'Unknown'}</span>
+                        {currentUser && currentUser._id === report.reportedBy && (
+                          <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded">You</span>
+                        )}
+                      </div>
 
-                    <div className="pt-2">
-                      <p className="text-sm text-base-content/70 line-clamp-2">
-                        {report.description}
-                      </p>
+                      <div className="pt-2">
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {report.description || 'No description provided'}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="p-5 border-t border-base-300 flex justify-between items-center">
-                  <span className="text-xs text-base-content/50">
-                    {report.reportId}
-                  </span>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={(e) => handleViewDetails(report._id, e)}
-                      className="btn btn-ghost btn-sm"
-                      title="View details"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    {canEdit(report) && (
+                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                    <span className="text-xs text-gray-500">
+                      {formatDateTime(report.createdAt)}
+                    </span>
+                    <div className="flex space-x-2">
                       <button
-                        onClick={(e) => handleEdit(report._id, e)}
-                        className="btn btn-ghost btn-sm"
-                        title="Edit report"
+                        onClick={(e) => handleViewDetails(report._id, e)}
+                        className="p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors duration-200"
+                        title="View details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      
+                      <button
+                        onClick={(e) => handleEdit(report._id, report.status, report, e)}
+                        className={`p-2 rounded-lg transition-colors duration-200 ${
+                          canEdit 
+                            ? 'text-green-600 hover:bg-green-100' 
+                            : 'text-gray-400 cursor-not-allowed'
+                        }`}
+                        title={canEdit ? "Edit report" : isResolved ? "Resolved reports cannot be edited" : "Only the reporter can edit"}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                    )}
-                    {canDelete(report) && (
+                      
                       <button
-                        onClick={(e) => handleDelete(report, e)}
-                        disabled={deletingId === report._id}
-                        className="btn btn-ghost btn-sm text-error hover:bg-error/20"
-                        title="Delete report"
+                        onClick={(e) => handleDelete(report._id, report.status, report, e)}
+                        disabled={deletingId === report._id || !canDelete}
+                        className={`p-2 rounded-lg transition-colors duration-200 ${
+                          canDelete 
+                            ? 'text-red-600 hover:bg-red-100' 
+                            : 'text-gray-400 cursor-not-allowed'
+                        }`}
+                        title={canDelete ? "Delete report" : "Only resolved reports by the reporter can be deleted"}
                       >
                         {deletingId === report._id ? (
                           <Loader className="w-4 h-4 animate-spin" />
@@ -377,11 +625,11 @@ const PestDiseasePage = () => {
                           <Trash2 className="w-4 h-4" />
                         )}
                       </button>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

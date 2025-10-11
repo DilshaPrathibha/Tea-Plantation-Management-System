@@ -17,7 +17,12 @@ import {
   Search,
   Filter,
   X,
-  Download, // <-- added
+  Download,
+  Leaf,
+  TrendingUp,
+  UserCheck,
+  Clock,
+  BarChart3
 } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
@@ -27,6 +32,7 @@ const PluckingRecordPage = () => {
   const [filteredRecords, setFilteredRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [fieldFilter, setFieldFilter] = useState('');
@@ -42,12 +48,25 @@ const PluckingRecordPage = () => {
   useEffect(() => {
     fetchRecords();
     fetchFields();
+    fetchCurrentUser();
   }, []);
 
   useEffect(() => {
     filterRecords();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [records, searchTerm, dateFilter, fieldFilter]);
+
+  const fetchCurrentUser = () => {
+    try {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        setCurrentUser(user);
+      }
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
 
   const formatDate = (d) => {
     try {
@@ -136,14 +155,32 @@ const PluckingRecordPage = () => {
     setFieldFilter('');
   };
 
-  const handleDelete = async (id) => {
+  const canEditRecord = (record) => {
+    return currentUser && currentUser._id === record.reportedBy;
+  };
+
+  const canDeleteRecord = (record) => {
+    return currentUser && currentUser._id === record.reportedBy;
+  };
+
+  const handleDelete = async (id, record) => {
     try {
+      if (!canDeleteRecord(record)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Access Denied',
+          text: 'Only the reporter can delete this plucking record.',
+          confirmButtonColor: '#16a34a'
+        });
+        return;
+      }
+
       const result = await Swal.fire({
         title: 'Are you sure?',
         text: "You won't be able to revert this!",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#16a34a', // green-600
+        confirmButtonColor: '#16a34a',
         cancelButtonColor: '#d33',
         confirmButtonText: 'Yes, delete it!',
       });
@@ -151,8 +188,7 @@ const PluckingRecordPage = () => {
       if (result.isConfirmed) {
         const token = localStorage.getItem('token');
         await axios.delete(`${API}/api/plucking-records/${id}`, {
-          headers: { Authorization: { toString: () => `Bearer ${token}` }.toString() }, // keep header format consistent
-          // Alternatively: headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
         await fetchRecords();
         Swal.fire('Deleted!', 'The plucking record has been deleted.', 'success');
@@ -172,14 +208,15 @@ const PluckingRecordPage = () => {
     const tableRows = rows.map((r, idx) => {
       const workersCount = Array.isArray(r.workers) ? r.workers.length : 0;
       const totalPayment = Number(r.totalPayment || 0).toFixed(2);
-      const price = r.dailyPricePerKg ?? '';
+      const totalWeight = Number(r.totalWeight || 0).toFixed(2);
+      const price = r.dailyPricePerKg ? Number(r.dailyPricePerKg).toFixed(2) : '';
       return `
         <tr>
           <td>${idx + 1}</td>
           <td>${escape(r.field || '')}</td>
           <td>${escape(formatDate(r.date) || '')}</td>
           <td>${escape(r.teaGrade || '')}</td>
-          <td>${escape(String(r.totalWeight ?? ''))}</td>
+          <td>${escape(totalWeight)}</td>
           <td>${escape(String(price))}</td>
           <td>${escape(totalPayment)}</td>
           <td>${escape(String(workersCount))}</td>
@@ -264,114 +301,218 @@ const PluckingRecordPage = () => {
     };
   };
 
+  // Calculate TODAY'S statistics
+  const getTodayRecords = () => {
+    const today = new Date();
+    return records.filter(record => {
+      const recordDate = new Date(record.date);
+      return (
+        today.getFullYear() === recordDate.getFullYear() &&
+        today.getMonth() === recordDate.getMonth() &&
+        today.getDate() === recordDate.getDate()
+      );
+    });
+  };
+
+  const todayRecords = useMemo(() => getTodayRecords(), [records]);
+
+  // Today's statistics
+  const todayTotalWeight = useMemo(() => 
+    todayRecords.reduce((sum, record) => sum + (Number(record.totalWeight) || 0), 0), 
+    [todayRecords]
+  );
+  
+  const todayTotalPayment = useMemo(() => 
+    todayRecords.reduce((sum, record) => sum + (Number(record.totalPayment) || 0), 0), 
+    [todayRecords]
+  );
+  
+  const todayTotalWorkers = useMemo(() => 
+    todayRecords.reduce((sum, record) => sum + (Array.isArray(record.workers) ? record.workers.length : 0), 0), 
+    [todayRecords]
+  );
+  
+  const todayUniqueFields = useMemo(() => 
+    [...new Set(todayRecords.map(record => record.field))].length, 
+    [todayRecords]
+  );
+
+  // Format today's date for display
+  const todayFormatted = useMemo(() => {
+    return new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }, []);
+
   return (
-    <div className="min-h-screen bg-green-50 py-10 px-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-green-800 flex items-center">
-              <Scale className="mr-2 h-7 w-7" />
-              Daily Plucking Records
-            </h1>
-            <p className="text-gray-600 mt-1">Manage and track daily tea plucking activities</p>
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
+          <div className="flex-1">
+            <div className="flex items-center mb-3">
+              <div className="w-14 h-14 bg-white rounded-2xl shadow-lg flex items-center justify-center mr-4 border border-green-100">
+                <Leaf className="w-7 h-7 text-green-600" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Daily Plucking Records</h1>
+                <p className="text-gray-800 mt-2 font-medium">Manage and track daily tea plucking activities</p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex gap-3">
             <button
               onClick={exportPDF}
               disabled={filteredRecords.length === 0}
-              className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
+              className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 font-semibold ${
                 filteredRecords.length === 0
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-800'
+                  : 'bg-white border-2 border-gray-300 hover:bg-gray-50 text-gray-900 shadow-lg hover:shadow-xl'
               }`}
               title={filteredRecords.length === 0 ? 'No data to export' : 'Export current view to PDF'}
             >
-              <Download className="w-4 h-4 mr-2" />
+              <Download className="w-5 h-5 mr-2" />
               Export PDF
             </button>
 
             <Link
               to="/plucking-records/add"
-              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
             >
-              <Plus className="w-4 h-4 mr-1" />
+              <Plus className="w-5 h-5 mr-2" />
               Add New Report
             </Link>
           </div>
         </div>
 
-        {/* Search and Filter Section */}
-        <div className="mb-6 bg-white rounded-xl shadow-md p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search Input */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search by field, grade, worker name, or ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              />
+        {/* Today's Statistics Cards */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center">
+              <Clock className="w-6 h-6 mr-2 text-green-600" />
+              Today's Overview - {todayFormatted}
+            </h2>
+            <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full border-2 border-green-200">
+              {todayRecords.length} {todayRecords.length === 1 ? 'Record' : 'Records'}
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-gradient-to-br from-green-500/40 to-emerald-600/40 rounded-2xl shadow-lg p-6 text-green-100 font-bold drop-shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 font-semibold">Today's Records</p>
+                  <p className="text-2xl font-bold mt-2">{todayRecords.length}</p>
+                </div>
+                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+              </div>
             </div>
 
-            {/* Filter Toggle Button */}
+            <div className="bg-gradient-to-br from-blue-500/40 to-blue-600/40 rounded-2xl shadow-lg p-6 text-blue-100 font-bold drop-shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 font-semibold">Today's Weight</p>
+                  <p className="text-2xl font-bold mt-2">{todayTotalWeight.toFixed(2)} kg</p>
+                </div>
+                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                  <Scale className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-500/40 to-purple-600/40 rounded-2xl shadow-lg p-6 text-purple-100 font-bold drop-shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 font-semibold">Today's Payment</p>
+                  <p className="text-2xl font-bold mt-2">LKR {todayTotalPayment.toFixed(2)}</p>
+                </div>
+                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                  <DollarSign className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-500/40 to-orange-600/40 rounded-2xl shadow-lg p-6 text-orange-100 font-bold drop-shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-orange-100 font-semibold">Today's Workers</p>
+                  <p className="text-2xl font-bold mt-2">{todayTotalWorkers}</p>
+                </div>
+                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                  <UserCheck className="w-6 h-6" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Search and Filter Section */}
+        <div className="mb-6 bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+          <div className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Search Records</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search by field, grade, worker name, or ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white text-gray-900"
+                />
+              </div>
+            </div>
+
             <button
-              onClick={() => setShowFilters((v) => !v)}
-              className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-3 bg-white border-2 border-gray-300 rounded-xl text-gray-900 hover:bg-gray-50 transition-all duration-200 flex items-center font-semibold"
             >
-              <Filter className="w-4 h-4 mr-2" />
+              <Filter className="w-5 h-5 mr-2" />
               Filters
               {hasActiveFilters && (
-                <span className="ml-2 bg-green-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  !
-                </span>
+                <span className="ml-2 w-2 h-2 bg-green-500 rounded-full"></span>
               )}
             </button>
 
-            {/* Clear Filters Button */}
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="flex items-center px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
+                className="px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 flex items-center font-semibold border-2 border-red-200"
               >
-                <X className="w-4 h-4 mr-1" />
+                <X className="w-5 h-5 mr-1" />
                 Clear
               </button>
             )}
           </div>
 
-          {/* Advanced Filters */}
           {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Date Filter */}
+            <div className="mt-6 pt-6 border-t-2 border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Filter by Date
-                </label>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Filter by Date</label>
                 <input
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
                 />
               </div>
 
-              {/* Field Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Filter by Field
-                </label>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Filter by Field</label>
                 <select
                   value={fieldFilter}
                   onChange={(e) => setFieldFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
                 >
-                  <option value="">All Fields</option>
+                  <option value="" className="text-gray-500">All Fields</option>
                   {(availableFields || []).map((field) => (
-                    <option key={field._id} value={field.name}>
+                    <option key={field._id} value={field.name} className="text-gray-900">
                       {field.name}
                     </option>
                   ))}
@@ -383,7 +524,7 @@ const PluckingRecordPage = () => {
 
         {/* Results Count */}
         {hasActiveFilters && (
-          <div className="mb-4 text-sm text-gray-600">
+          <div className="mb-4 text-sm text-gray-900 font-medium bg-blue-50 rounded-xl p-4 border-2 border-blue-100">
             Showing {filteredRecords.length} of {records.length} records
             {searchTerm && ` matching "${searchTerm}"`}
             {dateFilter && ` on ${new Date(dateFilter).toLocaleDateString()}`}
@@ -393,16 +534,21 @@ const PluckingRecordPage = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg border border-red-200">
-            {error}
+          <div className="mb-6 p-4 bg-red-50 text-red-800 rounded-2xl border-2 border-red-200 shadow-sm">
+            <div className="flex items-center">
+              <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                <span className="text-red-600 text-sm font-bold">!</span>
+              </div>
+              {error}
+            </div>
           </div>
         )}
 
         {/* Loading */}
         {loading && (
-          <div className="flex items-center gap-2 text-gray-600">
-            <Loader className="w-4 h-4 animate-spin" />
-            Loading...
+          <div className="flex items-center gap-3 text-gray-900 bg-white rounded-2xl p-6 shadow-lg">
+            <Loader className="w-5 h-5 animate-spin text-green-600" />
+            <span className="font-semibold">Loading plucking records...</span>
           </div>
         )}
 
@@ -410,12 +556,12 @@ const PluckingRecordPage = () => {
         {!loading && (
           <>
             {filteredRecords.length === 0 ? (
-              <div className="bg-white rounded-xl shadow p-8 text-center">
-                <Scale className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
+                <Leaf className="mx-auto w-16 h-16 text-gray-300 mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
                   {hasActiveFilters ? 'No matching records found' : 'No plucking records yet'}
                 </h3>
-                <p className="text-gray-500 mb-4">
+                <p className="text-gray-800 mb-6 font-medium">
                   {hasActiveFilters
                     ? 'Try adjusting your search or filters'
                     : 'Get started by creating your first plucking record.'}
@@ -423,83 +569,165 @@ const PluckingRecordPage = () => {
                 {hasActiveFilters ? (
                   <button
                     onClick={clearFilters}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold shadow-lg hover:shadow-xl"
                   >
                     Clear Filters
                   </button>
                 ) : (
                   <Link
                     to="/plucking-records/add"
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
                   >
                     Create Record
                   </Link>
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6">
-                {filteredRecords.map((record) => (
-                  <div key={record._id} className="bg-white rounded-xl shadow-md p-6">
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4">
-                      <div>
-                        <h3 className="text-xl font-semibold text-green-800 mb-2">
-                          {record.field} - {formatDate(record.date)}
-                        </h3>
-                        <div className="flex items-center text-sm text-gray-600 mb-1">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          <span>Date: {formatDate(record.date)}</span>
+              // CHANGED: 2 records per row on large screens
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {filteredRecords.map((record) => {
+                  const canEdit = canEditRecord(record);
+                  const canDelete = canDeleteRecord(record);
+                  
+                  // Check if record is from today (local date)
+                  const isTodayRecord = () => {
+                    const today = new Date();
+                    const recordDate = new Date(record.date);
+                    return (
+                      today.getFullYear() === recordDate.getFullYear() &&
+                      today.getMonth() === recordDate.getMonth() &&
+                      today.getDate() === recordDate.getDate()
+                    );
+                  };
+
+                  return (
+                    <div key={record._id} className={`bg-white rounded-2xl shadow-lg border-2 transition-all duration-300 overflow-hidden hover:shadow-xl ${
+                      isTodayRecord() 
+                        ? 'border-green-300 bg-green-50' 
+                        : 'border-gray-100'
+                    }`}>
+                      {isTodayRecord() && (
+                        <div className="bg-green-500 text-white px-4 py-2 text-sm font-semibold text-center">
+                          📍 Today's Record
                         </div>
-                        <div className="flex items-center text-sm text-gray-600 mb-1">
-                          <MapPin className="w-4 h-4 mr-2" />
-                          <span>Field: {record.field}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600 mb-1">
-                          <Scale className="w-4 h-4 mr-2" />
-                          <span>Total Weight: {record.totalWeight} kg</span>
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600 mb-1">
-                          <DollarSign className="w-4 h-4 mr-2" />
-                          <span>
-                            Total Payment: LKR {Number(record.totalPayment || 0).toFixed(2)}
+                      )}
+                      
+                      {/* Card Header */}
+                      <div className="p-6 border-b border-gray-100">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-semibold text-gray-900 truncate">
+                              {record.field}
+                            </h3>
+                            <p className="text-sm text-gray-600 mt-1">{formatDate(record.date)}</p>
+                          </div>
+                          <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full border border-blue-200 flex-shrink-0 ml-3">
+                            {record.teaGrade}
                           </span>
                         </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Users className="w-4 h-4 mr-2" />
-                          <span>Workers: {Array.isArray(record.workers) ? record.workers.length : 0}</span>
+                        
+                        {/* Key Metrics */}
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex items-center justify-center mb-1">
+                              <Scale className="w-4 h-4 text-green-600 mr-1" />
+                              <span className="text-xs text-gray-600 font-medium">Weight</span>
+                            </div>
+                            <p className="text-lg font-semibold text-gray-900">
+                              {Number(record.totalWeight || 0).toFixed(2)} kg
+                            </p>
+                          </div>
+                          <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex items-center justify-center mb-1">
+                              <DollarSign className="w-4 h-4 text-green-600 mr-1" />
+                              <span className="text-xs text-gray-600 font-medium">Payment</span>
+                            </div>
+                            <p className="text-lg font-semibold text-gray-900">
+                              LKR {Number(record.totalPayment || 0).toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Detailed Information */}
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span className="text-sm text-gray-600">Field Location</span>
+                            <span className="text-sm font-medium text-gray-900">{record.field}</span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span className="text-sm text-gray-600">Price per KG</span>
+                            <span className="text-sm font-medium text-gray-900">
+                              LKR {Number(record.dailyPricePerKg || 0).toFixed(2)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                            <span className="text-sm text-gray-600">Workers Count</span>
+                            <div className="flex items-center">
+                              <Users className="w-4 h-4 text-gray-500 mr-1" />
+                              <span className="text-sm font-medium text-gray-900">
+                                {Array.isArray(record.workers) ? record.workers.length : 0}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-between items-center py-2">
+                            <span className="text-sm text-gray-600">Reported by</span>
+                            <div className="flex items-center">
+                              <span className="text-sm font-medium text-gray-900 mr-2">
+                                {record.reporterName}
+                              </span>
+                              {currentUser && currentUser._id === record.reportedBy && (
+                                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded font-medium border border-green-200">
+                                  You
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="mt-4 md:mt-0 flex space-x-2">
-                        <Link
-                          to={`/plucking-records/${record._id}`}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="View details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                        <Link
-                          to={`/plucking-records/${record._id}/edit`}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          title="Edit record"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(record._id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete record"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+
+                      {/* Action Buttons */}
+                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-600">
+                            Created: {new Date(record.createdAt).toLocaleDateString()}
+                          </span>
+                          <div className="flex space-x-2">
+                            <Link
+                              to={`/plucking-records/${record._id}`}
+                              className="p-2 text-gray-600 hover:bg-white rounded-lg transition-colors duration-200 border border-gray-300 hover:border-gray-400"
+                              title="View details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Link>
+                            
+                            {canEdit && (
+                              <Link
+                                to={`/plucking-records/${record._id}/edit`}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200 border border-blue-300 hover:border-blue-400"
+                                title="Edit record"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Link>
+                            )}
+                            
+                            {canDelete && (
+                              <button
+                                onClick={() => handleDelete(record._id, record)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 border border-red-300 hover:border-red-400"
+                                title="Delete record"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div className="pt-4 border-t border-gray-200">
-                      <span className="text-sm text-gray-500">
-                        Reported by: {record.reporterName} • Grade: {record.teaGrade} • Price: LKR{' '}
-                        {record.dailyPricePerKg}/kg
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>
