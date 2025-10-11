@@ -9,6 +9,7 @@ const LABELS = {
   reports: "Reports", 
   tools: "Tools", 
   fni: "FNI",
+  suppliers: "Suppliers",
   create: "Create",
   edit: "Edit",
   tickets: "Tickets"
