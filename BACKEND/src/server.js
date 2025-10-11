@@ -77,11 +77,12 @@ const workerRoutes = require('./routes/workerroutes');
 const toolsRoutes = require('./routes/toolsroutes'); // ✅ add for tools CRUD
 const fniRoutes = require('./routes/fniroutes'); // ✅ add for FNI CRUD
 
+//harith
 const incidenceRoutes = require('./routes/incidenceroutes');
-
-
 const pestDiseaseRoutes = require('./routes/pestdiseaseroutes');
 const pluckingRecordRoutes = require('./routes/pluckingRecordRoutes');
+
+
 const productionBatchRoutes = require('./routes/productionBatchRoutes');
 const transportRoutes = require('./routes/transportRoutes');
 const notificationRoutes = require('./routes/notificationroutes');
@@ -105,9 +106,12 @@ app.use('/api/fni', fniRoutes);      // ✅ add for FNI CRUD
 app.use('/api/worker', workerRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/tickets', ticketRoutes);
+
+//harith
 app.use('/api/incidences', incidenceRoutes);
-app.use('/api/pestdisease', pestDiseaseRoutes);
+app.use('/api/pest-diseases', pestDiseaseRoutes);
 app.use('/api/plucking-records', pluckingRecordRoutes);
+
 app.use('/api/production-batches', productionBatchRoutes);
 app.use('/api/transports', transportRoutes);
 app.use('/api/production-batch-records', productionBatchRecordRoutes);

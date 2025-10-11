@@ -3,8 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import { Calendar, MapPin, DollarSign, Scale, User, Plus, X, Save, Loader, ArrowLeft } from 'lucide-react';
-import RateLimitedUI from '../components/RateLimitedUI';
+import { Calendar, MapPin, DollarSign, Scale, User, Plus, X, Save, Loader, ArrowLeft, Leaf, CreditCard } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -27,6 +26,7 @@ const EditPluckingRecordPage = () => {
   const [saving, setSaving] = useState(false);
   const [fields, setFields] = useState([]);
   const [availableWorkers, setAvailableWorkers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
   const [formData, setFormData] = useState({
     date: '',
     field: '',
@@ -41,9 +41,9 @@ const EditPluckingRecordPage = () => {
   const [totalWeight, setTotalWeight] = useState(0);
   const [totalPayment, setTotalPayment] = useState(0);
   const [error, setError] = useState('');
-  const [isRateLimited, setIsRateLimited] = useState(false);
 
   useEffect(() => {
+    fetchCurrentUser();
     fetchRecordData();
     fetchFields();
   }, [id]);
@@ -58,6 +58,18 @@ const EditPluckingRecordPage = () => {
     calculateTotals();
   }, [formData.workers, formData.dailyPricePerKg]);
 
+  const fetchCurrentUser = () => {
+    try {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        setCurrentUser(user);
+      }
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
+
   const fetchRecordData = async () => {
     try {
       setLoading(true);
@@ -67,6 +79,18 @@ const EditPluckingRecordPage = () => {
       });
       
       const record = response.data.pluckingRecord || response.data;
+      
+      // Check if current user can edit this record
+      if (currentUser && currentUser._id !== record.reportedBy) {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Access Denied',
+          text: 'Only the reporter can edit this plucking record.',
+          confirmButtonColor: '#16a34a'
+        });
+        navigate('/plucking-records');
+        return;
+      }
       
       // Format date for input field
       const formattedDate = new Date(record.date).toISOString().split('T')[0];
@@ -83,21 +107,9 @@ const EditPluckingRecordPage = () => {
         }))
       });
 
-      // Fetch workers for this field and date after setting form data
-      await fetchFieldWorkers(record.field, formattedDate);
-
     } catch (error) {
       console.error('Error fetching plucking record:', error);
-      if (error.response?.status === 429) {
-        setIsRateLimited(true);
-        // Automatically retry after 10 seconds
-        setTimeout(() => {
-          setIsRateLimited(false);
-          fetchRecordData();
-        }, 10000);
-      } else {
-        setError('Failed to load plucking record. Please check if the record exists.');
-      }
+      setError('Failed to load plucking record. Please check if the record exists.');
     } finally {
       setLoading(false);
     }
@@ -112,74 +124,37 @@ const EditPluckingRecordPage = () => {
       setFields(response.data.items || []);
     } catch (error) {
       console.error('Error fetching fields:', error);
-      if (error.response?.status === 429) {
-        setIsRateLimited(true);
-        // Automatically retry after 10 seconds
-        setTimeout(() => {
-          setIsRateLimited(false);
-          fetchFields();
-        }, 10000);
-      } else {
-        setError('Failed to load fields');
-      }
+      setError('Failed to load fields');
     }
   };
 
-  const fetchFieldWorkers = async (field = null, date = null) => {
+  const fetchFieldWorkers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const fieldToUse = field || formData.field;
-      const dateToUse = date || formData.date;
-      
       const response = await axios.get(`${API}/api/plucking-records/field-workers`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
-          date: dateToUse,
-          field: fieldToUse,
-          includeAssigned: true // Add this parameter to include assigned workers
+          date: formData.date,
+          field: formData.field
         }
       });
-      
-      // Combine existing workers with available workers
-      const existingWorkers = formData.workers
-        .filter(w => w.workerId && w.workerName)
-        .map(w => ({
-          workerId: w.workerId,
-          workerName: w.workerName
-        }));
-
-      const newWorkers = response.data.workers || [];
-      
-      // Remove duplicates while preserving existing workers
-      const combinedWorkers = [
-        ...existingWorkers,
-        ...newWorkers.filter(nw => 
-          !existingWorkers.some(ew => ew.workerId === nw.workerId)
-        )
-      ];
-      
-      setAvailableWorkers(combinedWorkers);
+      setAvailableWorkers(response.data.workers || []);
       setError('');
     } catch (error) {
       console.error('Error fetching field workers:', error);
-      if (error.response?.status === 429) {
-        setIsRateLimited(true);
-        // Automatically retry after 10 seconds
-        setTimeout(() => {
-          setIsRateLimited(false);
-          fetchFieldWorkers(field, date);
-        }, 10000);
+      if (error.response?.status === 404) {
+        await Swal.fire({
+          icon: 'info',
+          title: 'No Attendance Found',
+          text: 'There are no attendance records for the selected field and date. Please check the attendance records first.',
+          confirmButtonColor: '#16a34a',
+          confirmButtonText: 'OK'
+        });
+        setError(error.response.data.message);
       } else {
-        // Keep existing workers even if fetch fails
-        const existingWorkers = formData.workers
-          .filter(w => w.workerId && w.workerName)
-          .map(w => ({
-            workerId: w.workerId,
-            workerName: w.workerName
-          }));
-        setAvailableWorkers(existingWorkers);
-        setError('Failed to load additional workers');
+        setError('Failed to load field workers');
       }
+      setAvailableWorkers([]);
     }
   };
 
@@ -196,6 +171,12 @@ const EditPluckingRecordPage = () => {
 
     setTotalWeight(weightTotal);
     setTotalPayment(paymentTotal);
+  };
+
+  const calculateIndividualPayment = (weight) => {
+    const price = parseFloat(formData.dailyPricePerKg) || 0;
+    const weightValue = parseFloat(weight) || 0;
+    return weightValue * price;
   };
 
   const handleInputChange = (e) => {
@@ -303,24 +284,20 @@ const EditPluckingRecordPage = () => {
     }
   };
 
-  if (isRateLimited) {
-    return <RateLimitedUI />;
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-base-200 py-6 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center mb-6">
-            <div className="animate-pulse bg-base-300 h-6 w-6 rounded mr-3"></div>
-            <div className="animate-pulse bg-base-300 h-6 w-32 rounded"></div>
+            <div className="animate-pulse bg-gray-200 h-6 w-6 rounded mr-3"></div>
+            <div className="animate-pulse bg-gray-200 h-6 w-32 rounded"></div>
           </div>
-          <div className="bg-base-100 rounded-xl shadow p-6 animate-pulse">
-            <div className="h-8 bg-base-300 rounded w-3/4 mb-6"></div>
+          <div className="bg-white rounded-xl shadow p-6 animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-3/4 mb-6"></div>
             <div className="space-y-4">
-              <div className="h-4 bg-base-300 rounded w-1/2"></div>
-              <div className="h-4 bg-base-300 rounded w-2/3"></div>
-              <div className="h-4 bg-base-300 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
             </div>
           </div>
         </div>
@@ -329,39 +306,47 @@ const EditPluckingRecordPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-200 py-6 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center mb-6">
+        <div className="flex items-center mb-8">
           <button
             onClick={() => navigate('/plucking-records')}
-            className="flex items-center text-primary hover:text-primary/80 mr-4"
+            className="flex items-center text-green-600 hover:text-green-700 mr-4 font-medium"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
+            <ArrowLeft className="w-5 h-5 mr-2" />
             Back to Records
           </button>
-          <h1 className="text-2xl font-bold text-base-content">Edit Plucking Record</h1>
+          <div className="w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center mr-4 border border-green-100">
+            <Leaf className="w-6 h-6 text-green-600" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">Edit Plucking Record</h1>
         </div>
 
         {error && (
-          <div className="alert alert-error mb-6">
-            <span>{error}</span>
+          <div className="mb-6 p-4 bg-red-50 text-red-800 rounded-2xl border border-red-200 shadow-sm">
+            <div className="flex items-center">
+              <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                <span className="text-red-600 text-sm font-bold">!</span>
+              </div>
+              {error}
+            </div>
           </div>
         )}
 
-        <div className="bg-base-100 rounded-xl shadow-md p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
           {/* Read-only fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-base-200 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 p-6 bg-gray-50 rounded-2xl border-2 border-gray-200">
             <div>
               <label className="label">
-                <span className="label-text flex items-center">
-                  <Calendar className="w-4 h-4 mr-1" />
+                <span className="label-text flex items-center text-gray-900 font-semibold text-base">
+                  <Calendar className="w-5 h-5 mr-2 text-green-600" />
                   Date
                 </span>
               </label>
               <input
                 type="text"
-                className="input input-bordered w-full bg-base-200"
+                className="input input-bordered w-full bg-gray-100 border-2 border-gray-300 rounded-xl py-3 px-4 text-gray-600 font-medium"
                 value={new Date(formData.date).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
@@ -373,34 +358,34 @@ const EditPluckingRecordPage = () => {
 
             <div>
               <label className="label">
-                <span className="label-text flex items-center">
-                  <MapPin className="w-4 h-4 mr-1" />
+                <span className="label-text flex items-center text-gray-900 font-semibold text-base">
+                  <MapPin className="w-5 h-5 mr-2 text-green-600" />
                   Field
                 </span>
               </label>
               <input
                 type="text"
-                className="input input-bordered w-full bg-base-200"
+                className="input input-bordered w-full bg-gray-100 border-2 border-gray-300 rounded-xl py-3 px-4 text-gray-600 font-medium"
                 value={formData.field}
                 disabled
               />
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
             {/* Editable fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="form-control">
                 <label className="label">
-                  <span className="label-text flex items-center">
-                    <DollarSign className="w-4 h-4 mr-1" />
+                  <span className="label-text flex items-center text-gray-900 font-semibold text-base">
+                    <DollarSign className="w-5 h-5 mr-2 text-green-600" />
                     Daily Price per KG (LKR)
                   </span>
                 </label>
                 <input
                   type="number"
                   name="dailyPricePerKg"
-                  className="input input-bordered w-full"
+                  className="input input-bordered w-full bg-white border-2 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl py-3 px-4 text-gray-900"
                   placeholder="0.00"
                   min="0"
                   max="500"
@@ -411,73 +396,73 @@ const EditPluckingRecordPage = () => {
                 />
               </div>
 
-              <div>
+              <div className="form-control">
                 <label className="label">
-                  <span className="label-text">Tea Grade</span>
+                  <span className="label-text text-gray-900 font-semibold text-base">Tea Grade</span>
                 </label>
                 <select
                   name="teaGrade"
-                  className="select select-bordered w-full"
+                  className="select select-bordered w-full bg-white border-2 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl py-3 px-4 text-gray-900"
                   value={formData.teaGrade}
                   onChange={handleInputChange}
                   required
                 >
-                  <option value="">Select tea grade</option>
+                  <option value="" className="text-gray-500">Select tea grade</option>
                   {teaGrades.map(grade => (
-                    <option key={grade} value={grade}>{grade}</option>
+                    <option key={grade} value={grade} className="text-gray-900">{grade}</option>
                   ))}
                 </select>
               </div>
             </div>
 
             {/* Workers Section */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-base-content flex items-center">
-                  <User className="w-5 h-5 mr-2" />
+            <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 bg-gray-50">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                  <User className="w-6 h-6 mr-3 text-green-600" />
                   Workers
                 </h3>
                 <button
                   type="button"
                   onClick={addWorkerField}
-                  className="btn btn-primary btn-sm"
+                  className="btn bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 font-semibold rounded-xl px-4 py-2"
                 >
-                  <Plus className="w-4 h-4 mr-1" />
+                  <Plus className="w-5 h-5 mr-2" />
                   Add Worker
                 </button>
               </div>
 
               {formData.workers.map((worker, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-base-200 rounded-lg">
-                  <div>
+                <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                  <div className="form-control">
                     <label className="label">
-                      <span className="label-text">Worker {index + 1}</span>
+                      <span className="label-text text-gray-900 font-medium">Worker {index + 1}</span>
                     </label>
                     <select
-                      className="select select-bordered w-full"
+                      className="select select-bordered w-full bg-white border-2 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl py-2 px-3 text-gray-900"
                       value={worker.workerId}
                       onChange={(e) => handleWorkerChange(index, 'workerId', e.target.value)}
                       required
                     >
-                      <option value="">Select worker</option>
+                      <option value="" className="text-gray-500">Select worker</option>
                       {getAvailableWorkerOptions(index).map(workerOption => (
-                        <option key={workerOption.workerId} value={workerOption.workerId}>
+                        <option key={workerOption.workerId} value={workerOption.workerId} className="text-gray-900">
                           {workerOption.workerName} ({workerOption.workerId})
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  <div>
+                  <div className="form-control">
                     <label className="label">
-                      <span className="label-text flex items-center">
-                        <Scale className="w-4 h-4 mr-1" />
+                      <span className="label-text flex items-center text-gray-900 font-medium">
+                        <Scale className="w-5 h-5 mr-2 text-green-600" />
                         Weight (KG)
                       </span>
                     </label>
                     <input
                       type="number"
-                      className="input input-bordered w-full"
+                      className="input input-bordered w-full bg-white border-2 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-xl py-2 px-3 text-gray-900"
                       placeholder="0.00"
                       min="0"
                       step="0.01"
@@ -487,19 +472,29 @@ const EditPluckingRecordPage = () => {
                     />
                   </div>
 
-                  <div className="flex items-end">
-                    {worker.workerId && worker.weight && formData.dailyPricePerKg && (
-                      <div className="text-sm text-success font-medium">
-                        Payment: LKR {(parseFloat(worker.weight) * parseFloat(formData.dailyPricePerKg)).toFixed(2)}
-                      </div>
-                    )}
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text flex items-center text-gray-900 font-medium">
+                        <CreditCard className="w-5 h-5 mr-2 text-green-600" />
+                        Daily Payment (LKR)
+                      </span>
+                    </label>
+                    <div className="flex items-center h-12 px-3 bg-green-50 border-2 border-green-200 rounded-xl text-gray-900 font-semibold">
+                      {calculateIndividualPayment(worker.weight).toFixed(2)}
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      {formData.dailyPricePerKg ? `${parseFloat(formData.dailyPricePerKg).toFixed(2)} × ${worker.weight || '0.00'}` : 'Set price first'}
+                    </div>
+                  </div>
+
+                  <div className="form-control flex items-end">
                     {formData.workers.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeWorkerField(index)}
-                        className="btn btn-ghost btn-sm ml-auto"
+                        className="btn btn-outline btn-error rounded-xl py-2 px-3 border-2"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-5 h-5" />
                       </button>
                     )}
                   </div>
@@ -508,35 +503,39 @@ const EditPluckingRecordPage = () => {
             </div>
 
             {/* Totals */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-primary/10 rounded-lg">
-              <div>
-                <h4 className="font-semibold text-primary">Total Tea Leaves Weight</h4>
-                <p className="text-2xl font-bold text-primary">{totalWeight.toFixed(2)} kg</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border-2 border-green-200">
+              <div className="text-center">
+                <h4 className="font-bold text-green-800 text-lg">Total Tea Leaves Weight</h4>
+                <p className="text-3xl font-bold text-green-900 mt-2">{totalWeight.toFixed(2)} kg</p>
               </div>
-              <div>
-                <h4 className="font-semibold text-primary">Total Daily Payment</h4>
-                <p className="text-2xl font-bold text-primary">LKR {totalPayment.toFixed(2)}</p>
+              <div className="text-center">
+                <h4 className="font-bold text-green-800 text-lg">Total Daily Payment</h4>
+                <p className="text-3xl font-bold text-green-900 mt-2">LKR {totalPayment.toFixed(2)}</p>
               </div>
             </div>
 
-            {/* Buttons */}
-            <div className="flex justify-end space-x-4 pt-4">
+            {/* Submit Button */}
+            <div className="flex justify-end space-x-4 pt-6 border-t-2 border-gray-100">
               <button
                 type="button"
                 onClick={() => navigate('/plucking-records')}
-                className="btn btn-ghost"
+                className="btn bg-white border-2 border-gray-300 text-gray-800 hover:bg-gray-50 px-8 py-3 rounded-xl font-semibold"
               >
                 Cancel
               </button>
               <button
                 type="submit"
+                className="btn bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
                 disabled={saving}
-                className="btn btn-primary"
               >
-                {saving && <Loader className="w-4 h-4 animate-spin mr-2" />}
-                {saving ? 'Updating...' : (
+                {saving ? (
                   <>
-                    <Save className="w-4 h-4 mr-2" />
+                    <Loader className="w-5 h-5 mr-2 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5 mr-2" />
                     Update Record
                   </>
                 )}

@@ -1,4 +1,3 @@
-// BACKEND/models/PluckingRecord.js
 const mongoose = require('mongoose');
 
 const pluckingRecordSchema = new mongoose.Schema(

@@ -2,9 +2,42 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { 
-  Camera, Upload, X, User, MapPin, Calendar, AlertCircle, 
-  FileText, CheckCircle, Map, Ruler, Loader, ArrowLeft
+  Camera, 
+  Upload, 
+  X, 
+  User, 
+  MapPin, 
+  Calendar, 
+  AlertCircle, 
+  FileText, 
+  CheckCircle, 
+  Loader,
+  Shield,
+  Map,
+  Ruler,
+  Navigation,
+  Bug,
+  Leaf,
+  Maximize2,
+  ArrowLeft
 } from 'lucide-react';
+import Swal from 'sweetalert2';
+import { uploadToSupabase, deleteFromSupabase } from '../../utils/supabaseUpload';
+
+// Leaflet imports for real map
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+// Fix default icon paths
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -14,440 +47,1079 @@ const UpdatePestDiseasePage = () => {
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [originalImageUrl, setOriginalImageUrl] = useState('');
+  const [userLocation, setUserLocation] = useState(null);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [showOtherAction, setShowOtherAction] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+
   const [form, setForm] = useState({
-    issueType: '',
-    pestDiseaseName: '',
+    reporterName: '',
+    title: '',
     location: '',
-    mapCoordinates: { lat: null, lng: null },
     date: '',
-    severity: '',
+    type: '',
+    urgency: '',
+    economicImpact: '',
     description: '',
-    affectedArea: 1,
+    affectedArea: 0.5,
     requestedActions: [],
-    status: 'Pending'
+    otherAction: '',
+    mapCoordinates: { lat: null, lng: null },
+    status: 'Pending',
+    imageUrl: ''
   });
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    setCurrentUser(user);
-    fetchData();
+    fetchCurrentUser();
+    fetchFields();
+    fetchReportData();
   }, [id]);
 
-  const fetchData = async () => {
+  const fetchCurrentUser = () => {
+    try {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        setCurrentUser(user);
+      }
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
+
+  const fetchFields = async () => {
     try {
       const token = localStorage.getItem('token');
-      const [reportResponse, fieldsResponse] = await Promise.all([
-        axios.get(`${API}/api/pestdisease/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${API}/api/fields`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ]);
+      const response = await axios.get(`${API}/api/fields`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFields(response.data.items || []);
+    } catch (error) {
+      console.error('Error fetching fields:', error);
+      setFields([]);
+    }
+  };
+
+  const fetchReportData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const reportResponse = await axios.get(`${API}/api/pest-diseases/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
       const reportData = reportResponse.data.pestDisease;
+      
+      if (currentUser && currentUser._id !== reportData.reportedBy) {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Access Denied',
+          text: 'Only the reporter can edit this pest/disease report.',
+          confirmButtonColor: '#10b981',
+          background: '#ffffff',
+          customClass: { popup: 'rounded-2xl shadow-2xl' }
+        });
+        navigate('/supervisor/pest-disease');
+        return;
+      }
+      
+      if (reportData.status === 'Resolved') {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Cannot Edit',
+          text: 'Resolved pest/disease reports cannot be edited.',
+          confirmButtonColor: '#10b981',
+          background: '#ffffff',
+          customClass: { popup: 'rounded-2xl shadow-2xl' }
+        });
+        navigate(`/supervisor/pest-disease/${id}`);
+        return;
+      }
+      
       const formattedDate = reportData.date 
         ? new Date(reportData.date).toISOString().split('T')[0]
         : '';
       
-      setForm({
-        issueType: reportData.issueType || '',
-        pestDiseaseName: reportData.pestDiseaseName || '',
-        location: reportData.location || '',
-        mapCoordinates: reportData.mapCoordinates || { lat: null, lng: null },
-        date: formattedDate,
-        severity: reportData.severity || '',
-        description: reportData.description || '',
-        affectedArea: reportData.affectedArea || 1,
-        requestedActions: reportData.requestedActions || [],
-        status: reportData.status || 'Pending'
-      });
+      setOriginalImageUrl(reportData.imageUrl || '');
+      setUserLocation(reportData.mapCoordinates || null);
+      setSelectedLocation(reportData.mapCoordinates || null);
+      setShowOtherAction(reportData.requestedActions?.includes('Other') || false);
       
-      setFields(fieldsResponse.data.items || []);
+      setForm({
+        reporterName: reportData.reporterName || '',
+        title: reportData.title || '',
+        location: reportData.location || '',
+        date: formattedDate,
+        type: reportData.type || '',
+        urgency: reportData.urgency || '',
+        economicImpact: reportData.economicImpact || '',
+        description: reportData.description || '',
+        affectedArea: reportData.affectedArea || 0.5,
+        requestedActions: reportData.requestedActions || [],
+        otherAction: reportData.otherAction || '',
+        mapCoordinates: reportData.mapCoordinates || { lat: null, lng: null },
+        status: reportData.status || 'Pending',
+        imageUrl: reportData.imageUrl || ''
+      });
+
+      if (reportData.imageUrl) {
+        setImagePreview(reportData.imageUrl);
+      }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching pest/disease data:', error);
       setError('Failed to load report data. Please try again.');
     } finally {
       setFetching(false);
     }
   };
 
-  // Modified: Anyone can edit if status is not Resolved
-  const canEdit = () => {
-    return form.status !== 'Resolved';
+  const getUserLocation = () => {
+    if (!navigator.geolocation) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Geolocation not supported',
+        text: 'Your browser does not support geolocation.',
+        confirmButtonColor: '#10b981'
+      });
+      return;
+    }
+
+    setMapLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const newLocation = { lat: latitude, lng: longitude };
+        setUserLocation(newLocation);
+        setSelectedLocation(newLocation);
+        setForm(prev => ({
+          ...prev,
+          mapCoordinates: newLocation
+        }));
+        setMapLoading(false);
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Location Updated!',
+          text: `New coordinates captured.`,
+          confirmButtonColor: '#10b981'
+        });
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        setMapLoading(false);
+        Swal.fire({
+          icon: 'error',
+          title: 'Location error',
+          text: 'Unable to retrieve your location.',
+          confirmButtonColor: '#10b981'
+        });
+      }
+    );
+  };
+
+  const handleMapClick = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    // Simulate coordinates (in real implementation, use actual map coordinates)
+    const lat = 6.9271 + (y / rect.height - 0.5) * 0.1;
+    const lng = 79.8612 + (x / rect.width - 0.5) * 0.1;
+    
+    const newLocation = { lat, lng };
+    setSelectedLocation(newLocation);
+    setForm(prev => ({
+      ...prev,
+      mapCoordinates: newLocation
+    }));
+  };
+
+  const handleActionChange = (action) => {
+    setForm(prev => {
+      const newActions = prev.requestedActions.includes(action)
+        ? prev.requestedActions.filter(a => a !== action)
+        : [...prev.requestedActions, action];
+      
+      setShowOtherAction(newActions.includes('Other'));
+      
+      return { ...prev, requestedActions: newActions };
+    });
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    const now = new Date();
+    const selectedDate = new Date(form.date);
+
+    // Reset time part for date comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    if (form.date && selectedDate > today) {
+      errors.date = 'Date cannot be in the future';
+    }
+
+    if (!form.title.trim()) errors.title = 'Title is required';
+    if (!form.location) errors.location = 'Location is required';
+    if (!form.date) errors.date = 'Date is required';
+    if (!form.type) errors.type = 'Issue type is required';
+    if (!form.urgency) errors.urgency = 'Urgency level is required';
+    if (!form.economicImpact) errors.economicImpact = 'Economic impact level is required';
+    if (!form.description.trim()) errors.description = 'Description is required';
+    
+    if (!form.affectedArea || form.affectedArea < 0.5) {
+      errors.affectedArea = 'Affected area must be at least 0.5 perch';
+    } else if (form.affectedArea > 2000) {
+      errors.affectedArea = 'Affected area cannot exceed 2000 perch';
+    }
+
+    if (form.requestedActions.includes('Other') && !form.otherAction.trim()) {
+      errors.otherAction = 'Please specify the other action required';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!canEdit()) {
-      setError('You cannot edit resolved reports.');
+    if (!validateForm()) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Validation Error',
+        text: 'Please fix the errors in the form before submitting.',
+        confirmButtonColor: '#10b981'
+      });
       return;
     }
-    
+
+    if (form.status === 'Resolved') {
+      const result = await Swal.fire({
+        title: 'Confirm Resolution',
+        text: 'Are you sure this issue has been completely resolved?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#DC2626',
+        confirmButtonText: 'Yes, mark as resolved',
+        cancelButtonText: 'Cancel'
+      });
+      
+      if (!result.isConfirmed) {
+        return;
+      }
+    }
+
     setLoading(true);
+    setUploadProgress(0);
     setError('');
+    
     try {
+      let finalImageUrl = form.imageUrl;
+
+      if (imageFile) {
+        try {
+          setUploadProgress(30);
+          finalImageUrl = await uploadToSupabase(imageFile);
+          setUploadProgress(100);
+          
+          if (originalImageUrl && originalImageUrl !== finalImageUrl) {
+            try {
+              await deleteFromSupabase(originalImageUrl);
+            } catch (deleteError) {
+              console.warn('Could not delete old image:', deleteError);
+            }
+          }
+        } catch (uploadError) {
+          console.error('Supabase upload failed:', uploadError);
+          await Swal.fire({
+            icon: 'error',
+            title: 'Image Upload Failed',
+            text: uploadError.message || 'Failed to upload image.',
+            confirmButtonColor: '#10b981'
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
       const token = localStorage.getItem('token');
-      await axios.patch(`${API}/api/pestdisease/${id}`, form, {
+      
+      const updateData = {
+        title: form.title,
+        location: form.location,
+        date: form.date,
+        type: form.type,
+        urgency: form.urgency,
+        economicImpact: form.economicImpact,
+        description: form.description,
+        affectedArea: parseFloat(form.affectedArea),
+        requestedActions: form.requestedActions,
+        otherAction: form.otherAction,
+        mapCoordinates: form.mapCoordinates,
+        status: form.status,
+        imageUrl: finalImageUrl
+      };
+
+      console.log('Updating data:', updateData);
+      
+      await axios.patch(`${API}/api/pest-diseases/${id}`, updateData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      setSuccess(true);
-      setTimeout(() => {
-        navigate('/pestdisease');
-      }, 2000);
+      
+      await Swal.fire({
+        icon: 'success',
+        title: 'Report Updated!',
+        text: 'Pest/Disease report has been updated successfully.',
+        confirmButtonColor: '#10b981'
+      });
+      
+      navigate('/supervisor/pest-disease', { state: { success: true } });
     } catch (error) {
-      console.error('Error updating report:', error);
-      setError('Failed to update report. Please try again.');
+      console.error('Error updating pest/disease report:', error);
+      
+      let errorMessage = 'Failed to update pest/disease report. Please try again.';
+      
+      if (error.response) {
+        errorMessage = error.response.data.message || errorMessage;
+        console.error('Backend error details:', error.response.data);
+      } else if (error.request) {
+        errorMessage = 'Network error: Could not connect to server.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
+      setUploadProgress(0);
     }
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        alert('File size too large. Maximum size is 10MB.');
+      if (file.size > 5 * 1024 * 1024) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'File Too Large',
+          text: 'Maximum file size is 5MB. Please choose a smaller file.',
+          confirmButtonColor: '#10b981'
+        });
         return;
       }
+      
+      if (!file.type.startsWith('image/')) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Invalid File Type',
+          text: 'Please select an image file (JPEG, PNG, GIF, etc.).',
+          confirmButtonColor: '#10b981'
+        });
+        return;
+      }
+      
+      setImageFile(file);
+      setValidationErrors(prev => ({ ...prev, image: undefined }));
+      
       const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result);
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
       reader.readAsDataURL(file);
     }
   };
 
-  const removeImage = () => setImagePreview(null);
+  const removeImage = () => {
+    if (imageFile) {
+      setImageFile(null);
+      setImagePreview(originalImageUrl || null);
+      setForm(prev => ({ ...prev, imageUrl: originalImageUrl || '' }));
+    } else if (originalImageUrl) {
+      Swal.fire({
+        title: 'Image Options',
+        text: 'What would you like to do with the current image?',
+        icon: 'question',
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Remove completely',
+        denyButtonText: 'Replace with new image',
+        cancelButtonText: 'Keep current image',
+        confirmButtonColor: '#ef4444',
+        denyButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        background: '#ffffff',
+        customClass: { popup: 'rounded-2xl shadow-2xl' }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          deleteFromSupabase(originalImageUrl).then(success => {
+            if (success) {
+              setForm(prev => ({ ...prev, imageUrl: '' }));
+              setOriginalImageUrl('');
+              setImagePreview(null);
+              Swal.fire({
+                icon: 'success',
+                title: 'Image Removed',
+                text: 'The evidence image has been removed.',
+                confirmButtonColor: '#10b981'
+              });
+            }
+          });
+        } else if (result.isDenied) {
+          setImagePreview(null);
+          setForm(prev => ({ ...prev, imageUrl: '' }));
+          setOriginalImageUrl('');
+        }
+      });
+    } else {
+      setImagePreview(null);
+      setForm(prev => ({ ...prev, imageUrl: '' }));
+    }
+  };
 
-  const handleCheckboxChange = (action) => {
-    setForm(prev => ({
-      ...prev,
-      requestedActions: prev.requestedActions.includes(action)
-        ? prev.requestedActions.filter(a => a !== action)
-        : [...prev.requestedActions, action]
-    }));
+  const handleAffectedAreaChange = (value) => {
+    const numericValue = parseFloat(value);
+    if (!isNaN(numericValue) && numericValue >= 0.5 && numericValue <= 2000) {
+      setForm(prev => ({ ...prev, affectedArea: numericValue }));
+    }
+  };
+
+  const quickAreaSelect = (area) => {
+    setForm(prev => ({ ...prev, affectedArea: area }));
+  };
+
+  const incrementAffectedArea = () => {
+    if (form.affectedArea < 2000) {
+      setForm(prev => ({ ...prev, affectedArea: Math.min(2000, prev.affectedArea + 0.5) }));
+    }
+  };
+
+  const decrementAffectedArea = () => {
+    if (form.affectedArea > 0.5) {
+      setForm(prev => ({ ...prev, affectedArea: Math.max(0.5, prev.affectedArea - 0.5) }));
+    }
+  };
+
+  const getMaxDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+   // Leaflet click component
+  const LocationSelector = () => {
+    useMapEvents({
+      click(e) {
+        const { lat, lng } = e.latlng;
+        const newLocation = { lat, lng };
+        setSelectedLocation(newLocation);
+        setForm(prev => ({ ...prev, mapCoordinates: newLocation }));
+      }
+    });
+    return null;
   };
 
   if (fetching) {
     return (
-      <div className="min-h-screen bg-base-200 py-10 px-4 flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <Loader className="w-8 h-8 animate-spin text-primary mb-4" />
-          <div className="text-lg text-base-content">Loading report data...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!canEdit()) {
-    return (
-      <div className="min-h-screen bg-base-200 py-10 px-4">
-        <div className="max-w-3xl mx-auto">
-          <button
-            onClick={() => navigate('/pestdisease')}
-            className="btn btn-ghost mb-6"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Reports
-          </button>
-          <div className="bg-base-100 rounded-xl shadow p-6 text-center">
-            <AlertCircle className="mx-auto h-12 w-12 text-warning mb-4" />
-            <h2 className="text-xl font-bold text-base-content mb-2">Cannot Edit</h2>
-            <p className="text-base-content/70 mb-4">
-              You cannot edit resolved reports.
-            </p>
-            <button
-              onClick={() => navigate('/pestdisease')}
-              className="btn btn-primary"
-            >
-              Return to Reports
-            </button>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-8 h-8 animate-spin text-green-600 mx-auto mb-4" />
+          <div className="text-lg text-gray-900">Loading report data...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-base-200 py-10 px-4">
-      <div className="max-w-3xl mx-auto">
-        <button
-          onClick={() => navigate('/pestdisease')}
-          className="btn btn-ghost mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Reports
-        </button>
-
-        <div className="bg-base-100 rounded-xl shadow-md p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-base-content mb-2">Update Pest/Disease Report</h1>
-            <p className="text-base-content/70">Update the details about this agricultural threat</p>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
+      <div className="max-w-2xl mx-auto">
+        {/* Header with Back Button */}
+        <div className="flex items-center mb-6">
+          <button
+            onClick={() => navigate(`/supervisor/pest-disease/${id}`)}
+            className="flex items-center text-gray-900 hover:text-gray-700 transition-colors mr-4"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back to Details
+          </button>
+          <div className="flex-1 text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Update Pest/Disease Report</h1>
+            <p className="text-gray-900">Update the details about this agricultural threat</p>
           </div>
-          
-          {error && (
-            <div className="alert alert-error mb-6">
-              {error}
-            </div>
-          )}
-          
-          {success && (
-            <div className="alert alert-success mb-6">
-              <CheckCircle className="w-5 h-5 mr-2" />
-              Report updated successfully! Redirecting...
-            </div>
-          )}
+        </div>
 
+        {uploadProgress > 0 && uploadProgress < 100 && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-green-900 font-medium">Uploading Image...</span>
+              <span className="text-green-800">{uploadProgress}%</span>
+            </div>
+            <div className="w-full bg-green-200 rounded-full h-2">
+              <div 
+                className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center">
+            <AlertCircle className="w-5 h-5 text-red-600 mr-3" />
+            <span className="text-red-900">{error}</span>
+          </div>
+        )}
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Reporter Name (disabled) */}
+            {/* Reporter Name */}
             <div>
-              <label className="block text-sm font-medium text-base-content mb-2 flex items-center">
-                <User className="w-4 h-4 mr-1" />
+              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+                <User className="w-4 h-4 mr-2 text-green-600" />
                 Reporter Name
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  value={form.reporterName}
+                  readOnly
+                />
+                <Shield className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+              </div>
+            </div>
+
+            {/* Report Title */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Report Title *
               </label>
               <input
                 type="text"
-                className="input input-bordered w-full bg-base-200 text-base-content"
-                value={form.reporterName || ''}
-                disabled
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
+                  validationErrors.title ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
               />
+              {validationErrors.title && (
+                <p className="text-red-600 text-sm mt-1 flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-1" />
+                  {validationErrors.title}
+                </p>
+              )}
             </div>
 
-            {/* Date of Report (disabled) */}
+            {/* Location */}
             <div>
-              <label className="block text-sm font-medium text-base-content mb-2 flex items-center">
-                <Calendar className="w-4 h-4 mr-1" />
-                Date of Report
+              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+                <MapPin className="w-4 h-4 mr-2 text-green-600" />
+                Location *
+              </label>
+              <select
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
+                  validationErrors.location ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
+                value={form.location}
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
+              >
+                <option value="" className="text-gray-500">Select a location</option>
+                <option value="full_estate" className="text-gray-900">Full Estate</option>
+                {fields.map(field => (
+                  <option key={field._id} value={field.name} className="text-gray-900">{field.name}</option>
+                ))}
+              </select>
+              {validationErrors.location && (
+                <p className="text-red-600 text-sm mt-1 flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-1" />
+                  {validationErrors.location}
+                </p>
+              )}
+            </div>
+
+            {/* Map Location */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+                <Map className="w-4 h-4 mr-2 text-green-600" />
+                Map Location
+              </label>
+              <div className="space-y-3">
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 bg-white">
+                  {selectedLocation ? (
+                    <div className="text-center">
+                      <div className="bg-green-50 rounded-lg p-3 mb-3">
+                        <p className="text-sm font-medium text-green-900">Location Set</p>
+                        <p className="text-xs text-green-800">
+                          Lat: {selectedLocation.lat?.toFixed(6)}, Lng: {selectedLocation.lng?.toFixed(6)}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          type="button"
+                          onClick={() => setShowMapModal(true)}
+                          className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm"
+                        >
+                          <Maximize2 className="w-4 h-4 mr-1" />
+                          Change on Map
+                        </button>
+                        <button
+                          type="button"
+                          onClick={getUserLocation}
+                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center text-sm"
+                        >
+                          <Navigation className="w-4 h-4 mr-1" />
+                          Use Current
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <Map className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          type="button"
+                          onClick={() => setShowMapModal(true)}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                        >
+                          <Map className="w-4 h-4 mr-2" />
+                          Select on Map
+                        </button>
+                        <button
+                          type="button"
+                          onClick={getUserLocation}
+                          disabled={mapLoading}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center"
+                        >
+                          {mapLoading ? (
+                            <Loader className="w-4 h-4 animate-spin mr-2" />
+                          ) : (
+                            <Navigation className="w-4 h-4 mr-2" />
+                          )}
+                          {mapLoading ? 'Getting...' : 'Use Current'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Map Modal with Leaflet */}
+            {showMapModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                  <div className="p-6 border-b border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-semibold text-gray-900">Select Location on Map</h3>
+                      <button
+                        onClick={() => setShowMapModal(false)}
+                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-700"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <MapContainer
+                      center={selectedLocation || { lat: 7.8731, lng: 80.7718 }} // Default: Sri Lanka
+                      zoom={8}
+                      style={{ height: "400px", width: "100%" }}
+                    >
+                      <TileLayer
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
+                      />
+                      <LocationSelector />
+                      {selectedLocation && <Marker position={selectedLocation} />}
+                    </MapContainer>
+
+                    {selectedLocation && (
+                      <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                        <p className="text-sm font-medium text-green-900">Selected Coordinates</p>
+                        <p className="text-xs text-green-800 font-mono">
+                          Latitude: {selectedLocation.lat?.toFixed(6)}, Longitude: {selectedLocation.lng?.toFixed(6)}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-3 mt-6">
+                      <button
+                        type="button"
+                        onClick={() => setShowMapModal(false)}
+                        className="px-4 py-2 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowMapModal(false)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      >
+                        Confirm Location
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+
+            {/* Date of Observation */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+                <Calendar className="w-4 h-4 mr-2 text-green-600" />
+                Date of Observation *
               </label>
               <input
                 type="date"
-                className="input input-bordered w-full bg-base-200 text-base-content"
+                max={getMaxDate()}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
+                  validationErrors.date ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
                 value={form.date}
-                disabled
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
               />
-              <p className="text-xs text-base-content/50 mt-1">Report date cannot be changed</p>
+              {validationErrors.date && (
+                <p className="text-red-600 text-sm mt-1 flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-1" />
+                  {validationErrors.date}
+                </p>
+              )}
             </div>
 
-            {/* Issue Type */}
-            <div>
-              <label className="block text-sm font-medium text-base-content mb-2 flex items-center">
-                <AlertCircle className="w-4 h-4 mr-1" />
-                Issue Type
-              </label>
-              <select
-                className="select select-bordered w-full bg-base-200 text-base-content"
-                value={form.issueType}
-                onChange={e => setForm({ ...form, issueType: e.target.value })}
-                required
-              >
-                <option value="">Select type</option>
-                <option value="Pest Infestation">Pest Infestation</option>
-                <option value="Disease">Disease</option>
-                <option value="Both">Both</option>
-                <option value="Other">Other</option>
-              </select>
+            {/* Issue Type and Status */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Issue Type *
+                </label>
+                <select
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
+                    validationErrors.type ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  value={form.type}
+                  onChange={(e) => setForm({ ...form, type: e.target.value })}
+                >
+                  <option value="Pest Infestation" className="text-gray-900">Pest Infestation</option>
+                  <option value="Disease" className="text-gray-900">Disease</option>
+                  <option value="Both" className="text-gray-900">Both</option>
+                  <option value="Other" className="text-gray-900">Other</option>
+                </select>
+                {validationErrors.type && (
+                  <p className="text-red-600 text-sm mt-1 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {validationErrors.type}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Status
+                </label>
+                <select
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900"
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                >
+                  <option value="Pending" className="text-gray-900">Pending</option>
+                  <option value="Monitoring" className="text-gray-900">Monitoring</option>
+                  <option value="Treatment Ongoing" className="text-gray-900">Treatment Ongoing</option>
+                  <option value="Resolved" className="text-gray-900">Resolved</option>
+                </select>
+              </div>
             </div>
 
-            {/* Pest/Disease Name */}
-            <div>
-              <label className="block text-sm font-medium text-base-content mb-2 flex items-center">
-                <FileText className="w-4 h-4 mr-1" />
-                Name of Pest/Disease
-              </label>
-              <input
-                type="text"
-                className="input input-bordered w-full bg-base-200 text-base-content"
-                placeholder="e.g. Red Spider Mite, Blight"
-                value={form.pestDiseaseName}
-                onChange={e => setForm({ ...form, pestDiseaseName: e.target.value })}
-                required
-              />
-            </div>
-
-            {/* Location (Field) */}
-            <div>
-              <label className="block text-sm font-medium text-base-content mb-2 flex items-center">
-                <MapPin className="w-4 h-4 mr-1" />
-                Field Location
-              </label>
-              <select
-                className="select select-bordered w-full bg-base-200 text-base-content"
-                value={form.location}
-                onChange={e => setForm({ ...form, location: e.target.value })}
-                required
-              >
-                <option value="">Select field</option>
-                {fields.map(field => (
-                  <option key={field._id} value={field.name}>{field.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Severity */}
-            <div>
-              <label className="block text-sm font-medium text-base-content mb-2 flex items-center">
-                <AlertCircle className="w-4 h-4 mr-1" />
-                Severity
-              </label>
-              <select
-                className="select select-bordered w-full bg-base-200 text-base-content"
-                value={form.severity}
-                onChange={e => setForm({ ...form, severity: e.target.value })}
-                required
-              >
-                <option value="">Select severity</option>
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-                <option value="Critical">Critical</option>
-              </select>
+            {/* Urgency and Economic Impact */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Urgency Level *
+                </label>
+                <select
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
+                    validationErrors.urgency ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  value={form.urgency}
+                  onChange={(e) => setForm({ ...form, urgency: e.target.value })}
+                >
+                  <option value="Low (Routine monitoring)" className="text-gray-900">Low (Routine monitoring)</option>
+                  <option value="Medium (Schedule treatment)" className="text-gray-900">Medium (Schedule treatment)</option>
+                  <option value="High (Immediate action needed)" className="text-gray-900">High (Immediate action needed)</option>
+                  <option value="Emergency (Critical threat)" className="text-gray-900">Emergency (Critical threat)</option>
+                </select>
+                {validationErrors.urgency && (
+                  <p className="text-red-600 text-sm mt-1 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {validationErrors.urgency}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Economic Impact Level *
+                </label>
+                <select
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
+                    validationErrors.economicImpact ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  value={form.economicImpact}
+                  onChange={(e) => setForm({ ...form, economicImpact: e.target.value })}
+                >
+                  <option value="Minimal (<5% loss)" className="text-gray-900">Minimal (&lt;5% loss)</option>
+                  <option value="Moderate (5-20% loss)" className="text-gray-900">Moderate (5-20% loss)</option>
+                  <option value="Significant (20-50% loss)" className="text-gray-900">Significant (20-50% loss)</option>
+                  <option value="Severe (>50% loss)" className="text-gray-900">Severe (&gt;50% loss)</option>
+                </select>
+                {validationErrors.economicImpact && (
+                  <p className="text-red-600 text-sm mt-1 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {validationErrors.economicImpact}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Affected Area */}
             <div>
-              <label className="block text-sm font-medium text-base-content mb-2 flex items-center">
-                <Ruler className="w-4 h-4 mr-1" />
-                Affected Area (perches, 1-5)
+              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+                <Ruler className="w-4 h-4 mr-2 text-green-600" />
+                Affected Area (Perch) *
+                <span className="ml-2 text-xs text-gray-700">0.5 - 2000 perch</span>
               </label>
-              <input
-                type="number"
-                min={1}
-                max={5}
-                className="input input-bordered w-full bg-base-200 text-base-content"
-                value={form.affectedArea}
-                onChange={e => {
-                  let val = Number(e.target.value);
-                  if (val < 1) val = 1;
-                  if (val > 5) val = 5;
-                  setForm({ ...form, affectedArea: val });
-                }}
-                required
-              />
-            </div>
+              
+              {/* Quick selection buttons */}
+              <div className="flex flex-wrap gap-2 mb-3">
+                {[0.5, 5, 10, 25, 50, 100, 500, 1000].map(area => (
+                  <button
+                    key={area}
+                    type="button"
+                    onClick={() => quickAreaSelect(area)}
+                    className={`px-3 py-1 text-sm rounded-lg border transition-colors ${
+                      form.affectedArea === area 
+                        ? 'bg-green-600 text-white border-green-600' 
+                        : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {area} P
+                  </button>
+                ))}
+              </div>
 
-            {/* Description of Symptoms */}
-            <div>
-              <label className="block text-sm font-medium text-base-content mb-2 flex items-center">
-                <FileText className="w-4 h-4 mr-1" />
-                Description of Symptoms
-              </label>
-              <textarea
-                rows={4}
-                className="textarea textarea-bordered w-full bg-base-200 text-base-content"
-                placeholder="Describe the symptoms, appearance, and any observations..."
-                value={form.description}
-                onChange={e => setForm({ ...form, description: e.target.value })}
-                required
-              />
+              <div className="flex items-center space-x-3">
+                <button
+                  type="button"
+                  onClick={decrementAffectedArea}
+                  disabled={form.affectedArea <= 0.5}
+                  className="px-4 py-3 bg-gray-100 rounded-xl hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-lg text-gray-900"
+                >
+                  -
+                </button>
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0.5"
+                    max="2000"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-center bg-white text-gray-900 ${
+                      validationErrors.affectedArea ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                    value={form.affectedArea}
+                    onChange={(e) => handleAffectedAreaChange(e.target.value)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={incrementAffectedArea}
+                  disabled={form.affectedArea >= 2000}
+                  className="px-4 py-3 bg-gray-100 rounded-xl hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-lg text-gray-900"
+                >
+                  +
+                </button>
+              </div>
+              <div className="flex justify-between text-xs text-gray-700 mt-1">
+                <span>Min: 0.5 perch</span>
+                <span>Max: 2000 perch</span>
+              </div>
+              {validationErrors.affectedArea && (
+                <p className="text-red-600 text-sm mt-1 flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-1" />
+                  {validationErrors.affectedArea}
+                </p>
+              )}
             </div>
 
             {/* Requested Actions */}
             <div>
-              <label className="block text-sm font-medium text-base-content mb-2">
+              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+                <Leaf className="w-4 h-4 mr-2 text-green-600" />
                 Requested Actions
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                {['Fertilizer', 'Insecticide', 'Fungicide', 'Manual Intervention', 'Other'].map(action => (
-                  <label key={action} className="flex items-center cursor-pointer">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {['Fertilizer', 'Insecticide', 'Fungicide', 'Manual Intervention', 'Other'].map((action) => (
+                  <label key={action} className="flex items-center space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      className="checkbox checkbox-sm mr-2"
                       checked={form.requestedActions.includes(action)}
-                      onChange={() => handleCheckboxChange(action)}
+                      onChange={() => handleActionChange(action)}
+                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500 bg-white border-gray-300"
                     />
-                    <span className="text-sm text-base-content">{action}</span>
+                    <span className="text-sm text-gray-900">{action}</span>
                   </label>
                 ))}
               </div>
+              
+              {showOtherAction && (
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                    Specify Other Action {form.requestedActions.includes('Other') && '*'}
+                  </label>
+                  <input
+                    type="text"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-gray-900 ${
+                      validationErrors.otherAction ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                    placeholder="Please specify the required action..."
+                    value={form.otherAction}
+                    onChange={(e) => setForm({ ...form, otherAction: e.target.value })}
+                  />
+                  {validationErrors.otherAction && (
+                    <p className="text-red-600 text-sm mt-1 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {validationErrors.otherAction}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Status */}
+            {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-base-content mb-2 flex items-center">
-                <AlertCircle className="w-4 h-4 mr-1" />
-                Status
+              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
+                <FileText className="w-4 h-4 mr-2 text-green-600" />
+                Description & Symptoms *
               </label>
-              <select
-                className="select select-bordered w-full bg-base-200 text-base-content"
-                value={form.status}
-                onChange={e => setForm({ ...form, status: e.target.value })}
-              >
-                <option value="Pending">Pending</option>
-                <option value="Monitoring">Monitoring</option>
-                <option value="Treatment Ongoing">Treatment Ongoing</option>
-                <option value="Resolved">Resolved</option>
-              </select>
+              <textarea
+                rows={4}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
+                  validationErrors.description ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+              {validationErrors.description && (
+                <p className="text-red-600 text-sm mt-1 flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-1" />
+                  {validationErrors.description}
+                </p>
+              )}
             </div>
 
             {/* Image Upload */}
             <div>
-              <label className="block text-sm font-medium text-base-content mb-2">
-                Upload Evidence Images (Optional)
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Update Evidence
+                <span className="text-green-600 ml-2 text-xs">✓ Supabase Storage</span>
               </label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-base-300 border-dashed rounded-lg">
-                <div className="space-y-1 text-center">
+              <div className={`border-2 border-dashed rounded-xl transition-all duration-200 bg-white ${
+                validationErrors.image ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              }`}>
+                <div className="p-6 text-center">
                   {imagePreview ? (
-                    <div className="relative">
-                      <img src={imagePreview} alt="Preview" className="mx-auto h-32 w-auto object-contain" />
+                    <div className="relative inline-block">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="max-w-full h-32 object-cover rounded-lg mx-auto" 
+                      />
                       <button
                         type="button"
                         onClick={removeImage}
-                        className="absolute -top-2 -right-2 bg-error text-base-100 rounded-full p-1"
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                        title="Remove image"
                       >
                         <X size={16} />
                       </button>
+                      <div className="text-xs text-gray-700 mt-2">
+                        {imageFile ? 'New image ready to upload' : 'Current evidence image'}
+                      </div>
+                    </div>
+                  ) : originalImageUrl ? (
+                    <div className="relative inline-block">
+                      <img 
+                        src={originalImageUrl} 
+                        alt="Current evidence" 
+                        className="max-w-full h-32 object-cover rounded-lg mx-auto" 
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'block';
+                        }}
+                      />
+                      <div className="text-center text-gray-700 p-4 hidden">
+                        <Camera className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                        <p>Image unavailable</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                        title="Remove current image"
+                      >
+                        <X size={16} />
+                      </button>
+                      <div className="text-xs text-gray-700 mt-2">Current evidence image</div>
                     </div>
                   ) : (
                     <>
-                      <Camera className="mx-auto h-12 w-12 text-base-content/40" />
-                      <div className="flex text-sm text-base-content/70">
-                        <label
-                          htmlFor="file-upload"
-                          className="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary-focus"
-                        >
-                          <span>Upload an image</span>
+                      <Camera className="mx-auto w-12 h-12 text-gray-500 mb-3" />
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                        <label className="cursor-pointer bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload Image
                           <input
-                            id="file-upload"
-                            name="file-upload"
                             type="file"
-                            className="sr-only"
+                            className="hidden"
                             accept="image/*"
                             onChange={handleImageChange}
                           />
                         </label>
+                        <span className="text-gray-700 text-sm">or drag and drop</span>
                       </div>
-                      <p className="text-xs text-base-content/50">PNG, JPG, GIF up to 10MB</p>
+                      <p className="text-xs text-gray-600 mt-2">PNG, JPG, GIF up to 5MB</p>
                     </>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Buttons */}
-            <div className="flex justify-end space-x-4 pt-4">
+            {/* Submit Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
               <button
                 type="button"
-                onClick={() => navigate('/pestdisease')}
-                className="btn btn-ghost"
+                onClick={() => navigate(`/supervisor/pest-disease/${id}`)}
+                className="flex-1 px-6 py-3 border border-gray-300 text-gray-900 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium flex items-center justify-center bg-white"
               >
-                Cancel
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Details
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="btn btn-primary"
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center justify-center"
               >
                 {loading ? (
                   <>
                     <Loader className="w-4 h-4 animate-spin mr-2" />
-                    Updating...
+                    {uploadProgress > 0 ? 'Uploading...' : 'Updating...'}
                   </>
                 ) : (
                   'Update Report'
@@ -455,6 +1127,21 @@ const UpdatePestDiseasePage = () => {
               </button>
             </div>
           </form>
+        </div>
+
+        {/* Update Guidelines */}
+        <div className="mt-6 bg-green-50 border border-green-200 rounded-xl p-4">
+          <h3 className="font-medium text-green-900 mb-2 flex items-center">
+            <AlertCircle className="w-4 h-4 mr-2" />
+            Update Guidelines
+          </h3>
+          <ul className="text-green-900 text-sm space-y-1">
+            <li>• All fields marked with * are required</li>
+            <li>• Date cannot be set to future dates</li>
+            <li>• Mark as resolved only when issue is completely fixed</li>
+            <li>• New images will replace existing evidence</li>
+            <li>• GPS coordinates help in precise location tracking</li>
+          </ul>
         </div>
       </div>
     </div>

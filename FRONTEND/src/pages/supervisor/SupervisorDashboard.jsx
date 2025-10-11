@@ -81,9 +81,9 @@ export default function SupervisorDashboard() {
           />
           <Tile
             icon={<Bug className="w-6 h-6" />}
-            title="Pest & Disease"
-            desc="Report and review pest or disease issues."
-            onClick={() => navigate('/supervisor/pestdisease')}
+            title="Pest & Disease Report"
+            desc="Report and view pest/disease issues in the field."
+            onClick={() => navigate('/supervisor/pest-disease')}  
           />
           <Tile
             icon={<Leaf className="w-6 h-6" />}

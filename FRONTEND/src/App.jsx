@@ -152,10 +152,10 @@ export default function App() {
           <Route path="incidences/:id/edit" element={<UpdateIncidencePage />} />
 
           {/* Pest & Disease (scoped) */}
-          <Route path="pestdisease" element={<PestDiseasePage />} />
-          <Route path="pestdisease/add" element={<AddPestDiseasePage />} />
-          <Route path="pestdisease/:id" element={<PestDiseaseDetailPage />} />
-          <Route path="pestdisease/:id/edit" element={<UpdatePestDiseasePage />} />
+          <Route path="pest-disease" element={<PestDiseasePage />} />
+          <Route path="pest-disease/add" element={<AddPestDiseasePage />} />
+          <Route path="pest-disease/:id" element={<PestDiseaseDetailPage />} />
+          <Route path="pest-disease/:id/edit" element={<UpdatePestDiseasePage />} />
 
           {/* Plucking Records (scoped) */}
           <Route path="plucking-records" element={<PluckingRecordPage />} />
@@ -171,10 +171,10 @@ export default function App() {
         <Route path="/incidences/:id" element={<RequireAuth><IncidenceDetailPage /></RequireAuth>} />
         <Route path="/incidences/:id/edit" element={<RequireAuth><UpdateIncidencePage /></RequireAuth>} />
 
-        <Route path="/pestdisease" element={<RequireAuth><PestDiseasePage /></RequireAuth>} />
-        <Route path="/pestdisease/add" element={<RequireAuth><AddPestDiseasePage /></RequireAuth>} />
-        <Route path="/pestdisease/:id" element={<RequireAuth><PestDiseaseDetailPage /></RequireAuth>} />
-        <Route path="/pestdisease/:id/edit" element={<RequireAuth><UpdatePestDiseasePage /></RequireAuth>} />
+        <Route path="pest-disease" element={<PestDiseasePage />} />
+        <Route path="pest-disease/add" element={<AddPestDiseasePage />} />
+        <Route path="pest-disease/:id" element={<PestDiseaseDetailPage />} />
+        <Route path="pest-disease/:id/edit" element={<UpdatePestDiseasePage />} />
 
         <Route path="/plucking-records" element={<RequireAuth><PluckingRecordPage /></RequireAuth>} />
         <Route path="/plucking-records/add" element={<RequireAuth><AddPluckingRecordPage /></RequireAuth>} />
