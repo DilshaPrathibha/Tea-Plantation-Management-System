@@ -76,6 +76,7 @@ const taskRoutes = require('./routes/taskroutes');
 const workerRoutes = require('./routes/workerroutes');
 const toolsRoutes = require('./routes/toolsroutes'); // ✅ add for tools CRUD
 const fniRoutes = require('./routes/fniroutes'); // ✅ add for FNI CRUD
+const suppliersRoutes = require('./routes/suppliersroutes'); // ✅ add for suppliers CRUD
 
 const incidenceRoutes = require('./routes/incidenceroutes');
 
@@ -101,6 +102,8 @@ app.use('/api/people', peopleRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/tools', toolsRoutes);  // ✅ add for tools CRUD           
 app.use('/api/fni', fniRoutes);      // ✅ add for FNI CRUD
+app.use('/api/suppliers', suppliersRoutes); // ✅ add for suppliers CRUD
+app.use('/api/suppliers', suppliersRoutes); // ✅ add for suppliers CRUD
 
 app.use('/api/worker', workerRoutes);
 app.use('/api/notifications', notificationRoutes);

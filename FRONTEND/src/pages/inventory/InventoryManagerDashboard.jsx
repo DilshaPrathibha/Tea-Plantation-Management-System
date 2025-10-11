@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 // Removed: InventoryManagerNavbar and global Navbar (provided by RootLayout)
-import { Truck, BarChart2, AlertTriangle, Clock, TrendingUp, Wrench, FlaskConical, Download, Printer, RefreshCw, Ticket } from 'lucide-react';
+import { Truck, BarChart2, AlertTriangle, Clock, TrendingUp, Wrench, FlaskConical, Download, Printer, RefreshCw, Ticket, Users } from 'lucide-react';
 import useToolsStats from '../../hooks/useToolsStats';
 import useFNIStats from '../../hooks/useFNIStats';
 import useDashboardStats from '../../hooks/useDashboardStats';
@@ -251,6 +251,50 @@ const InventoryManagerDashboard = () => {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Suppliers Management Section */}
+        <div className="bg-base-100 p-4 sm:p-6 rounded-lg shadow mb-6 sm:mb-8 border border-gray-700">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3 sm:gap-0">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-indigo-900 text-indigo-200 flex items-center justify-center">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-white">
+                  Suppliers Management
+                </h2>
+                <p className="text-sm text-gray-400">
+                  Manage supplier relationships and contacts
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link to="/inventory/suppliers" className="btn btn-primary btn-sm">
+                <span className="hidden sm:inline">Manage Suppliers</span>
+                <span className="sm:hidden">Suppliers</span>
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-base-200 rounded-lg">
+              <div className="text-xs text-base-content/60 mb-1">Total Suppliers</div>
+              <div className="font-bold text-2xl text-white">-</div>
+            </div>
+            <div className="text-center p-4 bg-base-200 rounded-lg">
+              <div className="text-xs text-base-content/60 mb-1">Active</div>
+              <div className="font-bold text-2xl text-success">-</div>
+            </div>
+            <div className="text-center p-4 bg-base-200 rounded-lg">
+              <div className="text-xs text-base-content/60 mb-1">Pending</div>
+              <div className="font-bold text-2xl text-warning">-</div>
+            </div>
+            <div className="text-center p-4 bg-base-200 rounded-lg">
+              <div className="text-xs text-base-content/60 mb-1">Suspended</div>
+              <div className="font-bold text-2xl text-error">-</div>
+            </div>
+          </div>
         </div>
 
         {/* Low Stock Alerts and Quick Actions Grid */}

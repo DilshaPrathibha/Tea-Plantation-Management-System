@@ -100,6 +100,7 @@ const getRoleNavLinks = (role) => {
         { label: 'Dashboard', href: '/inventory', icon: Home, exact: true },
         { label: 'Tools', href: '/inventory/tools', icon: Wrench },
         { label: 'FNI', href: '/inventory/fni', icon: FlaskConical },
+        { label: 'Suppliers', href: '/inventory/suppliers', icon: Users },
         { label: 'Tickets', href: '/inventory/tickets', icon: Ticket },
         { label: 'Reports', href: '/inventory/reports', icon: BarChart2 },
       ];

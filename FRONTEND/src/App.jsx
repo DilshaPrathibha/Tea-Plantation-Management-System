@@ -70,6 +70,7 @@ import ToolDetailPage from './pages/ToolDetailPage.jsx';
 import FNIPage from './pages/FNIPage.jsx';
 import FNICreate from './pages/FNICreate.jsx';
 import FNIEditPage from './pages/FNIEditPage.jsx';
+import Suppliers from './pages/Suppliers.jsx';
 import PrivacyPage from './pages/PrivacyPage.jsx';
 import TermsPage from './pages/TermsPage.jsx';
 import SupportPage from './pages/SupportPage.jsx';
@@ -304,6 +305,10 @@ export default function App() {
           <Route path="fni" element={<FNIPage />} />
           <Route path="fni/create" element={<FNICreate />} />
           <Route path="fni/:id/edit" element={<FNIEditPage />} />
+          
+          {/* Suppliers */}
+          <Route path="suppliers" element={<Suppliers />} />
+          
           <Route path="tickets" element={<MyTicketsPage title="Inventory Support Tickets" />} />
         </Route>
 
