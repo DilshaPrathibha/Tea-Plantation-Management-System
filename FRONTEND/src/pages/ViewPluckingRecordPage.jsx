@@ -3,11 +3,117 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import { Calendar, MapPin, DollarSign, Scale, User, Edit, Trash2, ArrowLeft, Users, FileText, Leaf } from 'lucide-react';
+import { ArrowLeft, Leaf, Users, Edit, Trash2, Loader, Share, Download, Calendar, MapPin, DollarSign, Scale } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 const ViewPluckingRecordPage = () => {
+  // Share report logic
+  const shareReport = async () => {
+    if (!record) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Plucking Record: ${record.field} - ${formatDate(record.date)}`,
+          text: `Plucking Record for ${record.field} on ${formatDate(record.date)}. Total Weight: ${Number(record.totalWeight).toFixed(2)} kg.`,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log('Sharing cancelled or failed', err);
+      }
+    }
+  };
+
+  // PDF download logic
+  const exportPDFRecord = () => {
+    if (!record) return;
+    const escapeHTML = (str) => {
+      if (!str) return '';
+      return String(str).replace(/[&<>"]'/g, function(tag) {
+        const charsToReplace = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        };
+        return charsToReplace[tag] || tag;
+      });
+    };
+    const printableHTML = `
+      <html>
+        <head>
+          <title>Plucking Record PDF</title>
+          <style>
+            body { font-family: Arial, sans-serif; background: #f8fafc; color: #222; margin: 0; padding: 0; }
+            .container { max-width: 700px; margin: 40px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 32px; }
+            h1 { font-size: 2rem; margin-bottom: 8px; }
+            .meta { margin-bottom: 24px; }
+            .meta span { display: inline-block; margin-right: 16px; font-size: 1rem; color: #555; }
+            .section { margin-bottom: 24px; }
+            .section-title { font-weight: bold; margin-bottom: 8px; color: #059669; }
+            .desc { background: #f1f5f9; border-radius: 8px; padding: 16px; }
+            .footer { text-align: right; color: #888; font-size: 0.9rem; margin-top: 32px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+            th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+            th { background: #f3f4f6; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Plucking Record</h1>
+            <div class="meta">
+              <span><b>Field:</b> ${escapeHTML(record.field)}</span>
+              <span><b>Date:</b> ${formatDate(record.date)}</span>
+              <span><b>Tea Grade:</b> ${escapeHTML(record.teaGrade)}</span>
+            </div>
+            <div class="section">
+              <div class="section-title">Reported by</div>
+              <div>${escapeHTML(record.reporterName)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Workers</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>ID</th>
+                    <th>Weight (kg)</th>
+                    <th>Payment (LKR)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${record.workers.map(worker => `
+                    <tr>
+                      <td>${escapeHTML(worker.workerName)}</td>
+                      <td>${escapeHTML(worker.workerId)}</td>
+                      <td>${Number(worker.weight).toFixed(2)}</td>
+                      <td>${(Number(worker.weight) * Number(record.dailyPricePerKg)).toFixed(2)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            <div class="section">
+              <div class="section-title">Totals</div>
+              <div><b>Total Weight:</b> ${Number(record.totalWeight).toFixed(2)} kg</div>
+              <div><b>Total Payment:</b> LKR ${Number(record.totalPayment).toFixed(2)}</div>
+            </div>
+            <div class="footer">Generated on ${formatDate(new Date())}</div>
+          </div>
+        </body>
+      </html>
+    `;
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(printableHTML);
+      win.document.close();
+      win.focus();
+      win.print();
+    } else {
+      alert('Popup blocked! Please allow popups for this site to download PDF.');
+    }
+  };
   const navigate = useNavigate();
   const { id } = useParams();
   const [record, setRecord] = useState(null);
@@ -167,28 +273,6 @@ const ViewPluckingRecordPage = () => {
     );
   }
 
-  if (!record) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-10 px-4">
-        <div className="max-w-4xl mx-auto">
-          <Link to="/plucking-records" className="inline-flex items-center text-green-600 hover:text-green-700 mb-6">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Records
-          </Link>
-          <div className="bg-white rounded-xl shadow p-6 text-center">
-            <div className="text-gray-600 mb-4">Plucking record not found</div>
-            <Link
-              to="/plucking-records"
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              View All Records
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-10 px-4">
       <div className="max-w-4xl mx-auto">
@@ -205,6 +289,23 @@ const ViewPluckingRecordPage = () => {
             <Leaf className="w-5 h-5 text-green-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Plucking Record Details</h1>
+          <div className="flex items-center space-x-2 ml-auto">
+            {/* Refresh button removed as requested */}
+            <button
+              onClick={shareReport}
+              className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+              title="Share Report"
+            >
+              <Share className="w-5 h-5" />
+            </button>
+            <button
+              onClick={exportPDFRecord}
+              className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+              title="Download PDF Report"
+            >
+              <Download className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Main Content */}
