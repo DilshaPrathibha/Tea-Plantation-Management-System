@@ -489,7 +489,7 @@ const ToolsPage = () => {
                       } else if (!isAssigned) {
                         return (
                           <button
-                            className={`btn btn-xs btn-success flex-1 min-w-0 ${isRepair ? 'btn-disabled opacity-50 cursor-not-allowed' : ''}`}
+                            className={`btn btn-xs btn-success flex-1 min-w-0 ${isRepair ? 'btn-disabled opacity-70 cursor-not-allowed !text-base-content/90' : ''}`}
                             disabled={isRepair}
                             title={isRepair ? 'Disabled: tool needs repair' : 'Assign this tool'}
                             onClick={() => {
@@ -577,7 +577,7 @@ const ToolsPage = () => {
                               } else if (!isAssigned) {
                                 return (
                                   <button
-                                    className={`btn btn-sm btn-success w-full text-xs ${isRepair ? 'btn-disabled opacity-50 cursor-not-allowed' : ''}`}
+                                    className={`btn btn-sm btn-success w-full text-xs ${isRepair ? 'btn-disabled opacity-70 cursor-not-allowed !text-base-content/90' : ''}`}
                                     disabled={isRepair}
                                     title={isRepair ? 'Disabled: tool needs repair' : 'Assign this tool'}
                                     onClick={() => {

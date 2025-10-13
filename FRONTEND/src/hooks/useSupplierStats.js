@@ -62,8 +62,9 @@ const useSupplierStats = () => {
 
   useEffect(() => {
     fetchSuppliers();
-    const interval = setInterval(fetchSuppliers, 30000);
-    return () => clearInterval(interval);
+    // Temporarily disabled auto-refresh
+    // const interval = setInterval(fetchSuppliers, 30000);
+    // return () => clearInterval(interval);
   }, [fetchSuppliers]);
 
   return {

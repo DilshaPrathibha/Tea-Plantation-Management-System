@@ -108,9 +108,10 @@ const useFNIStats = () => {
   useEffect(() => {
     fetchStats();
     
-    const interval = setInterval(fetchStats, 30000);
+    // Temporarily disabled auto-refresh
+    // const interval = setInterval(fetchStats, 30000);
     
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [fetchStats]);
 
   const refreshStats = () => {

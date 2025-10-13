@@ -161,9 +161,10 @@ const useDashboardStats = () => {
   useEffect(() => {
     fetchDashboardStats();
     
-    const interval = setInterval(fetchDashboardStats, 30000);
+    // Temporarily disabled auto-refresh
+    // const interval = setInterval(fetchDashboardStats, 30000);
     
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [fetchDashboardStats]);
 
   const refreshStats = () => {
