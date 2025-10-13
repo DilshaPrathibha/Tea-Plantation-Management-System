@@ -72,6 +72,7 @@ export default function FNIPage() {
       const res = await listItems(params);
       setItems(res.data);
     } catch (err) {
+      console.error('Failed to load FNI items', err);
       Toast.error('Failed to load items');
     } finally {
       setLoading(false);
@@ -100,7 +101,7 @@ export default function FNIPage() {
   // Export CSV
   const exportCSV = () => {
     const rows = [
-      ['Name', 'Category', 'Unit', 'Qty On Hand', 'Min Qty', 'Avg Cost', 'Total Value', 'Note'],
+      ['Name', 'Category', 'Unit', 'Suppliers', 'Qty On Hand', 'Min Qty', 'Avg Cost', 'Total Value', 'Note'],
       ...items.map(i => {
         let avgCost = 0, totalValue = 0, totalQty = 0;
         if (Array.isArray(i.batches) && i.batches.length > 0) {
@@ -108,10 +109,23 @@ export default function FNIPage() {
           totalQty = i.batches.reduce((sum, b) => sum + b.qty, 0);
           avgCost = totalQty > 0 ? (totalValue / totalQty) : 0;
         }
+        const supplierNames = Array.isArray(i.suppliers)
+          ? i.suppliers
+              .map(s => {
+                if (typeof s === 'string') return s;
+                if (s && typeof s === 'object') {
+                  return s.name || s.supplierId || '';
+                }
+                return '';
+              })
+              .filter(Boolean)
+              .join('; ')
+          : '';
         return [
           i.name,
           i.category,
           i.unit,
+          supplierNames,
           i.qtyOnHand,
           i.minQty,
           avgCost.toFixed(2),
@@ -205,21 +219,34 @@ export default function FNIPage() {
           totalQty = i.batches.reduce((sum, b) => sum + b.qty, 0);
           avgCost = totalQty > 0 ? (totalValue / totalQty) : 0;
         }
+        const supplierNames = Array.isArray(i.suppliers)
+          ? i.suppliers
+              .map(s => {
+                if (typeof s === 'string') return s;
+                if (s && typeof s === 'object') {
+                  return s.name || s.supplierId || '';
+                }
+                return '';
+              })
+              .filter(Boolean)
+              .join(', ')
+          : '';
         return [
           i.name || '-',
           i.category || '-',
           i.unit || '-',
-          i.qtyOnHand ?? '-',
-          i.minQty ?? '-',
+          supplierNames || '-',
+          Number(i.qtyOnHand ?? 0).toFixed(2),
+          Number(i.minQty ?? 0).toFixed(2),
           avgCost.toFixed(2),
           totalValue.toFixed(2),
           i.note || ''
         ];
       });
-      if (body.length === 0) body.push(['-', '-', '-', '-', '-', '-', '-', '-']);
+      if (body.length === 0) body.push(['-', '-', '-', '-', '-', '-', '-', '-', '-']);
 
       autoTable(doc, {
-        head: [['Name', 'Category', 'Unit', 'Qty On Hand', 'Min Qty', 'Avg Cost', 'Total Value', 'Note']],
+        head: [['Name', 'Category', 'Unit', 'Suppliers', 'Qty On Hand', 'Min Qty', 'Avg Cost', 'Total Value', 'Note']],
         body,
         startY: doc.lastAutoTable.finalY + 10,
         styles: { fontSize: 10 },
@@ -227,10 +254,10 @@ export default function FNIPage() {
         alternateRowStyles: { fillColor: [240, 253, 244] },
         margin: { left: 40, right: 40 },
         didParseCell: function (data) {
-          // Qty On Hand column index is 3
-          if (data.section === 'body' && data.column.index === 3) {
+          // Qty On Hand column index is 4
+          if (data.section === 'body' && data.column.index === 4) {
             const qty = Number(data.cell.raw);
-            const minQty = Number(data.row.raw[4]);
+            const minQty = Number(data.row.raw[5]);
             if (!isNaN(qty) && !isNaN(minQty) && qty < minQty) {
               data.cell.styles.textColor = [220, 38, 38]; // Tailwind red-600
               data.cell.styles.fontStyle = 'bold';
@@ -363,6 +390,25 @@ export default function FNIPage() {
                 totalQty = item.batches.reduce((sum, b) => sum + b.qty, 0);
                 avgCost = totalQty > 0 ? (totalValue / totalQty) : 0;
               }
+              const supplierBadges = Array.isArray(item.suppliers)
+                ? item.suppliers
+                    .map((s, idx) => {
+                      if (!s) return null;
+                      if (typeof s === 'string') {
+                        return { key: `${s}-${idx}`, label: s };
+                      }
+                      const key = s._id || s.supplierId || `${s.name ?? 'supplier'}-${idx}`;
+                      let label = s.name || '';
+                      if (s.supplierId) {
+                        label = label ? `${label} (${s.supplierId})` : s.supplierId;
+                      }
+                      if (s.status && s.status !== 'active') {
+                        label = label ? `${label} - ${s.status}` : s.status;
+                      }
+                      return label ? { key, label } : null;
+                    })
+                    .filter(Boolean)
+                : [];
               return (
                 <div
                   key={item._id}
@@ -381,6 +427,20 @@ export default function FNIPage() {
                   {item.note && (
                     <div className="mb-2 text-xs sm:text-sm text-base-content/70">{item.note}</div>
                   )}
+                  <div className="mb-2">
+                    <div className="text-xs text-base-content/60 font-semibold uppercase tracking-wide">Suppliers</div>
+                    {supplierBadges.length > 0 ? (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {supplierBadges.map((badge) => (
+                          <span key={badge.key} className="badge badge-ghost badge-xs sm:badge-sm">
+                            {badge.label}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-base-content/60 mt-1">Not assigned</div>
+                    )}
+                  </div>
                   {Array.isArray(item.batches) && item.batches.length > 0 && (
                     <details className="mb-2">
                       <summary className="cursor-pointer text-xs text-base-content/60">Batch History</summary>

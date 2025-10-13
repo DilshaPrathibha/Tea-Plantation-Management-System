@@ -2,14 +2,44 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Sweet, Toast } from "../utils/sweet";
 import { getItem, updateItem } from "../api/fni";
+import { listSuppliers } from "../api/suppliers";
 
 export default function FNIEditPage() {
   const { id } = useParams();
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [supplierOptions, setSupplierOptions] = useState([]);
+  const [selectedSuppliers, setSelectedSuppliers] = useState([]);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+  const [supplierFetchError, setSupplierFetchError] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchSuppliers() {
+      setLoadingSuppliers(true);
+      setSupplierFetchError('');
+      try {
+        const res = await listSuppliers();
+        if (!isMounted) return;
+        const data = Array.isArray(res.data) ? res.data : [];
+        const filtered = data.filter(s => s.status !== 'suspended');
+        setSupplierOptions(filtered);
+      } catch (err) {
+        console.error('Failed to load suppliers', err);
+        if (!isMounted) return;
+        setSupplierFetchError('Failed to load suppliers. Existing assignments will remain unchanged.');
+        Toast.error('Failed to load suppliers');
+      } finally {
+        if (isMounted) setLoadingSuppliers(false);
+      }
+    }
+    fetchSuppliers();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     async function fetchItem() {
@@ -17,7 +47,12 @@ export default function FNIEditPage() {
       try {
         const res = await getItem(id);
         setItem(res.data);
+        const supplierIds = Array.isArray(res.data?.suppliers)
+          ? res.data.suppliers.map(s => s._id?.toString()).filter(Boolean)
+          : [];
+        setSelectedSuppliers(supplierIds);
       } catch (err) {
+        console.error('Failed to load FNI item', err);
         setLoading(false);
         Sweet.fire({
           icon: 'error',
@@ -43,8 +78,33 @@ export default function FNIEditPage() {
     fetchItem();
   }, [id, navigate]);
 
+  useEffect(() => {
+    if (!item?.category || supplierOptions.length === 0) return;
+    setSelectedSuppliers((current) => {
+      const allowedIds = new Set(
+        supplierOptions
+          .filter(s => s.type === item.category || s.type === 'other')
+          .map(s => s._id?.toString())
+          .filter(Boolean)
+      );
+      const filtered = current.filter(id => allowedIds.has(id));
+      return filtered.length === current.length ? current : filtered;
+    });
+  }, [item?.category, supplierOptions]);
+
   const handleChange = (e) => {
     setItem({ ...item, [e.target.name]: e.target.value });
+  };
+
+  const handleSupplierToggle = (supplierId) => {
+    const idStr = supplierId?.toString();
+    if (!idStr) return;
+    setSelectedSuppliers((current) => {
+      if (current.includes(idStr)) {
+        return current.filter(id => id !== idStr);
+      }
+      return [...current, idStr];
+    });
   };
 
   const handleSave = async (e) => {
@@ -54,8 +114,9 @@ export default function FNIEditPage() {
       await updateItem(id, {
         name: item.name,
         unit: item.unit,
-        minQty: item.minQty,
+        minQty: Number(item.minQty ?? 0),
         note: item.note,
+        suppliers: selectedSuppliers
       });
       Toast.success("Item updated successfully");
       navigate("/inventory/fni");
@@ -66,7 +127,7 @@ export default function FNIEditPage() {
     }
   };
 
-  if (loading) {
+  if (loading || !item) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
         <span className="loading loading-spinner loading-lg"></span>
@@ -115,6 +176,65 @@ export default function FNIEditPage() {
               value={item.minQty}
               onChange={handleChange}
             />
+          </div>
+          <div>
+            <label className="block mb-1 font-semibold">Suppliers</label>
+            <p className="text-xs text-base-content/60 mb-2">Category: {item.category}</p>
+            {supplierFetchError ? (
+              <div className="alert alert-warning mb-3 text-sm">
+                {supplierFetchError}
+              </div>
+            ) : null}
+            {loadingSuppliers ? (
+              <div className="flex items-center gap-2 text-sm text-base-content/60">
+                <span className="loading loading-spinner loading-sm" />
+                Loading suppliers...
+              </div>
+            ) : (
+              (() => {
+                const compatibleSuppliers = supplierOptions.filter(
+                  (s) => s.type === item.category || s.type === 'other'
+                );
+                if (compatibleSuppliers.length === 0) {
+                  return (
+                    <p className="text-sm text-base-content/60">
+                      No compatible suppliers found. You can assign suppliers once they are added.
+                    </p>
+                  );
+                }
+                return (
+                  <div className="space-y-2 max-h-40 overflow-y-auto border border-base-300 rounded-lg p-3 bg-base-100">
+                    {compatibleSuppliers.map((supplier) => {
+                      const supplierId = supplier._id?.toString();
+                      const checked = selectedSuppliers.includes(supplierId);
+                      const statusNote = supplier.status && supplier.status !== 'active'
+                        ? ` (${supplier.status})`
+                        : '';
+                      return (
+                        <label
+                          key={supplier._id}
+                          className="flex items-start gap-3 p-2 rounded-lg hover:bg-base-200 transition-colors cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm mt-1"
+                            checked={checked}
+                            onChange={() => handleSupplierToggle(supplierId)}
+                          />
+                          <div className="text-sm leading-tight">
+                            <div className="font-semibold text-base-content">{supplier.name}</div>
+                            <div className="text-xs text-base-content/60">
+                              {supplier.supplierId} - {supplier.contactPerson || supplier.contactNumber || 'No contact'}
+                              {statusNote}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                );
+              })()
+            )}
           </div>
           <div>
             <label className="block mb-1 font-semibold">Note</label>

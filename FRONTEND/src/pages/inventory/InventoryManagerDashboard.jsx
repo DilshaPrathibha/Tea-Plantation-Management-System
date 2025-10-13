@@ -5,6 +5,7 @@ import { Truck, BarChart2, AlertTriangle, Clock, TrendingUp, Wrench, FlaskConica
 import useToolsStats from '../../hooks/useToolsStats';
 import useFNIStats from '../../hooks/useFNIStats';
 import useDashboardStats from '../../hooks/useDashboardStats';
+import useSupplierStats from '../../hooks/useSupplierStats';
 
 const InventoryManagerDashboard = () => {
   const {
@@ -13,7 +14,6 @@ const InventoryManagerDashboard = () => {
     assignedTools,
     needsRepairTools,
     retiredTools,
-    uniqueTypes,
     isLoading: toolsLoading,
     error: toolsError,
     refreshStats,
@@ -35,12 +35,22 @@ const InventoryManagerDashboard = () => {
   } = useFNIStats();
 
   const {
-    lowStockAlerts,
     recentActivities,
     isLoading: dashboardLoading,
     error: dashboardError,
     refreshStats: refreshDashboardStats
   } = useDashboardStats();
+
+  const {
+    totalSuppliers,
+    activeSuppliers,
+    pendingSuppliers,
+    suspendedSuppliers,
+    uniqueTypes: supplierTypes,
+    isLoading: suppliersLoading,
+    error: suppliersError,
+    refreshStats: refreshSupplierStats
+  } = useSupplierStats();
 
   const quickActions = [
     {
@@ -261,15 +271,29 @@ const InventoryManagerDashboard = () => {
                 <Users className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-white">
+                <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
                   Suppliers Management
+                  {suppliersLoading && (
+                    <span className="loading loading-spinner loading-sm text-primary" />
+                  )}
                 </h2>
                 <p className="text-sm text-gray-400">
                   Manage supplier relationships and contacts
+                  {!suppliersLoading && !suppliersError && (
+                    <span className="text-green-400 ml-2">Updated</span>
+                  )}
                 </p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
+              <button
+                onClick={refreshSupplierStats}
+                className="btn btn-ghost btn-sm text-gray-400 hover:text-white"
+                disabled={suppliersLoading}
+              >
+                <RefreshCw className={`w-4 h-4 ${suppliersLoading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline ml-1">Refresh</span>
+              </button>
               <Link to="/inventory/suppliers" className="btn btn-primary btn-sm">
                 <span className="hidden sm:inline">Manage Suppliers</span>
                 <span className="sm:hidden">Suppliers</span>
@@ -277,24 +301,45 @@ const InventoryManagerDashboard = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-base-200 rounded-lg">
-              <div className="text-xs text-base-content/60 mb-1">Total Suppliers</div>
-              <div className="font-bold text-2xl text-white">-</div>
+          {suppliersError ? (
+            <div className="bg-red-900/20 border border-red-500 rounded-lg p-4 text-red-200">
+              <p>Error loading suppliers data: {suppliersError}</p>
             </div>
-            <div className="text-center p-4 bg-base-200 rounded-lg">
-              <div className="text-xs text-base-content/60 mb-1">Active</div>
-              <div className="font-bold text-2xl text-success">-</div>
-            </div>
-            <div className="text-center p-4 bg-base-200 rounded-lg">
-              <div className="text-xs text-base-content/60 mb-1">Pending</div>
-              <div className="font-bold text-2xl text-warning">-</div>
-            </div>
-            <div className="text-center p-4 bg-base-200 rounded-lg">
-              <div className="text-xs text-base-content/60 mb-1">Suspended</div>
-              <div className="font-bold text-2xl text-error">-</div>
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-base-200 rounded-lg">
+                  <div className="text-xs text-base-content/60 mb-1">Total Suppliers</div>
+                  <div className="font-bold text-2xl text-white">
+                    {suppliersLoading ? '...' : (totalSuppliers ?? 0)}
+                  </div>
+                </div>
+                <div className="text-center p-4 bg-base-200 rounded-lg">
+                  <div className="text-xs text-base-content/60 mb-1">Active</div>
+                  <div className="font-bold text-2xl text-success">
+                    {suppliersLoading ? '...' : (activeSuppliers ?? 0)}
+                  </div>
+                </div>
+                <div className="text-center p-4 bg-base-200 rounded-lg">
+                  <div className="text-xs text-base-content/60 mb-1">Pending</div>
+                  <div className="font-bold text-2xl text-warning">
+                    {suppliersLoading ? '...' : (pendingSuppliers ?? 0)}
+                  </div>
+                </div>
+                <div className="text-center p-4 bg-base-200 rounded-lg">
+                  <div className="text-xs text-base-content/60 mb-1">Suspended</div>
+                  <div className="font-bold text-2xl text-error">
+                    {suppliersLoading ? '...' : (suspendedSuppliers ?? 0)}
+                  </div>
+                </div>
+              </div>
+              {!suppliersLoading && (
+                <p className="text-xs text-base-content/60 mt-3 text-center sm:text-left">
+                  Unique supplier types: {supplierTypes}
+                </p>
+              )}
+            </>
+          )}
         </div>
 
         {/* Low Stock Alerts and Quick Actions Grid */}
