@@ -22,9 +22,12 @@ import {
   Package,
   Truck,
   User,
-  Ticket
+  Ticket,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { Sweet } from '../utils/sweet';
+import { useTheme } from '../context/ThemeContext';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -145,6 +148,7 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const { theme, toggleTheme } = useTheme();
   const ackRef = useRef({});
   const userId = user?._id || user?.id;
   const ackStorageKey = useMemo(
@@ -368,8 +372,8 @@ const Navbar = () => {
               <div className="absolute -inset-1 rounded-xl bg-emerald-500/20 blur-sm opacity-0 group-hover:opacity-100 transition" />
               <Leaf className="relative w-6 h-6 sm:w-8 sm:h-8 text-emerald-400 group-hover:text-emerald-300 transition" />
             </div>
-            <span className="text-lg sm:text-2xl font-extrabold tracking-tight text-white">
-              <span className="text-emerald-400">Ceylon</span>Leaf
+            <span className="text-lg sm:text-2xl font-extrabold tracking-tight">
+              <span className="text-emerald-400">Ceylon</span><span className="text-emerald-400">Leaf</span>
             </span>
           </Link>
 
@@ -431,7 +435,7 @@ const Navbar = () => {
                   <div
                     tabIndex={0}
                     role="button"
-                    className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                    className="relative flex h-11 w-11 items-center justify-center rounded-full border border-base-content/10 bg-base-content/5 transition hover:bg-base-content/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                     aria-label="Notifications"
                     onClick={handleNotificationsOpen}
                   >
@@ -507,16 +511,24 @@ const Navbar = () => {
                 </div>
                 {/* User chip with responsive styling */}
                 <div className="dropdown dropdown-end">
-                  <div tabIndex={0} role="button" className="flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-2 sm:px-3 py-1.5 hover:bg-white/10 transition cursor-pointer">
+                  <div
+                    tabIndex={0}
+                    role="button"
+                    className={`flex items-center gap-2 rounded-full px-2 sm:px-3 py-1.5 transition cursor-pointer ${
+                      theme === 'tea-light'
+                        ? 'bg-white border border-slate-200 shadow-sm hover:bg-emerald-50 text-base-content'
+                        : 'bg-base-content/5 border border-base-content/10 hover:bg-base-content/10 text-white'
+                    }`}
+                  >
                     <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 grid place-items-center text-white font-bold">
                       <span className="text-xs sm:text-sm leading-none">{initialsOf(user)}</span>
                       <div className="absolute -inset-0.5 rounded-full ring-1 ring-white/10"></div>
                     </div>
                     <div className="hidden sm:flex flex-col leading-tight">
-                      <span className="text-white text-sm font-semibold">
+                      <span className={`text-sm font-semibold ${theme === 'tea-light' ? 'text-base-content' : 'text-white'}`}>
                         {user?.name || user?.email || 'User'}
                       </span>
-                      <span className="text-xs text-white/70 sm:truncate max-w-[180px]">
+                      <span className={`text-xs sm:truncate max-w-[180px] ${theme === 'tea-light' ? 'text-base-content/60' : 'text-white/70'}`}>
                         {getRoleTitle(user?.role)}
                       </span>
                     </div>
@@ -534,6 +546,23 @@ const Navbar = () => {
                           {getRoleTitle(user?.role)}
                         </span>
                       </div>
+                    </li>
+                    <div className="divider my-1"></div>
+                    <li>
+                      <button
+                        onClick={() => {
+                          toggleTheme();
+                          document.activeElement?.blur();
+                        }}
+                        className="flex items-center gap-2 w-full"
+                      >
+                        {theme === 'tea-dark' ? (
+                          <Sun className="w-4 h-4" />
+                        ) : (
+                          <Moon className="w-4 h-4" />
+                        )}
+                        {theme === 'tea-dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+                      </button>
                     </li>
                     <div className="divider my-1"></div>
                     {/* Dashboard shortcut in dropdown - always show for authenticated users */}

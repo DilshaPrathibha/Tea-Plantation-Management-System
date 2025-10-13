@@ -4,8 +4,8 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Sweet, Toast } from '../utils/sweet';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../config/api.js';
+import { useTheme } from '../context/ThemeContext';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -73,6 +73,8 @@ const Suppliers = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [addModal, setAddModal] = useState({ open: false });
   const [editModal, setEditModal] = useState({ open: false, supplier: null });
+  const { theme } = useTheme();
+  const isLightTheme = theme === 'tea-light';
   
   // Form data for add/edit modals
   const [formData, setFormData] = useState({
@@ -402,52 +404,52 @@ const Suppliers = () => {
         </div>
 
         {/* Suppliers Overview Section */}
-        <div className="bg-base-100 rounded-lg shadow border border-gray-700/30 p-3 sm:p-4 mb-4">
+        <div className={`rounded-lg shadow p-3 sm:p-4 mb-4 ${isLightTheme ? 'bg-white border border-slate-200' : 'bg-base-100 border border-gray-700/30'}`}>
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h2 className="text-sm sm:text-base font-semibold text-white">Suppliers Overview</h2>
-              <p className="text-xs text-base-content/60 hidden sm:block">Current suppliers statistics</p>
+              <h2 className="text-sm sm:text-base font-semibold text-base-content">Suppliers Overview</h2>
+              <p className="text-xs text-base-content/70 hidden sm:block">Current suppliers statistics</p>
             </div>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 sm:gap-2">
-            <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-md p-2 flex items-center gap-2 border border-gray-700/50 hover:shadow-md transition-all duration-200">
-              <div className="bg-blue-500/20 p-1.5 rounded-full flex-shrink-0">
-                <Package className="w-3 h-3 text-blue-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-white border-slate-200 text-slate-700' : 'bg-gradient-to-r from-slate-800 to-slate-900 border-gray-700/50 text-slate-100'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-300'}`}>
+                <Package className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Total Suppliers</div>
-                <div className="font-bold text-base sm:text-lg text-blue-400">{totalSuppliers}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Total Suppliers</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-slate-900' : 'text-blue-300'}`}>{totalSuppliers}</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-green-800/20 to-green-900/30 rounded-md p-2 flex items-center gap-2 border border-green-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-green-500/20 p-1.5 rounded-full flex-shrink-0">
-                <CheckCircle className="w-3 h-3 text-green-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-gradient-to-r from-green-800/20 to-green-900/30 border-green-700/30 text-emerald-300'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-emerald-100 text-emerald-600' : 'bg-green-500/20 text-green-200'}`}>
+                <CheckCircle className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Active</div>
-                <div className="font-bold text-base sm:text-lg text-green-400">{activeSuppliers}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Active</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-emerald-700' : 'text-green-200'}`}>{activeSuppliers}</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-amber-800/20 to-amber-900/30 rounded-md p-2 flex items-center gap-2 border border-amber-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-amber-500/20 p-1.5 rounded-full flex-shrink-0">
-                <Clock className="w-3 h-3 text-amber-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-gradient-to-r from-amber-800/20 to-amber-900/30 border-amber-700/30 text-amber-300'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-amber-100 text-amber-600' : 'bg-amber-500/20 text-amber-200'}`}>
+                <Clock className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Pending</div>
-                <div className="font-bold text-base sm:text-lg text-amber-400">{pendingSuppliers}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Pending</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-amber-700' : 'text-amber-200'}`}>{pendingSuppliers}</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-red-800/20 to-red-900/30 rounded-md p-2 flex items-center gap-2 border border-red-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-red-500/20 p-1.5 rounded-full flex-shrink-0">
-                <AlertTriangle className="w-3 h-3 text-red-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-gradient-to-r from-red-800/20 to-red-900/30 border-red-700/30 text-rose-200'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-rose-100 text-rose-600' : 'bg-red-500/20 text-red-200'}`}>
+                <AlertTriangle className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Suspended</div>
-                <div className="font-bold text-base sm:text-lg text-red-400">{suspendedSuppliers}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Suspended</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-rose-700' : 'text-red-200'}`}>{suspendedSuppliers}</div>
               </div>
             </div>
           </div>
@@ -456,6 +458,10 @@ const Suppliers = () => {
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : suppliers.length === 0 ? (
+          <div className="bg-base-100 border border-base-content/10 rounded-lg p-8 text-center text-base-content/70">
+            No suppliers found for these filters. Try searching with different terms.
           </div>
         ) : (
           <>
@@ -847,3 +853,6 @@ const Suppliers = () => {
 };
 
 export default Suppliers;
+
+
+

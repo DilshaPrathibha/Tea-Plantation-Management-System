@@ -309,6 +309,10 @@ export default function App() {
           {/* Suppliers */}
           <Route path="suppliers" element={<Suppliers />} />
           
+          {/* Pest & Disease - View Only */}
+          <Route path="pest-disease" element={<PestDiseasePage viewOnly={true} />} />
+          <Route path="pest-disease/:id" element={<PestDiseaseDetailPage viewOnly={true} />} />
+          
           <Route path="tickets" element={<MyTicketsPage title="Inventory Support Tickets" />} />
         </Route>
 
