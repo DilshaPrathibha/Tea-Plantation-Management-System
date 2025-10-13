@@ -214,35 +214,98 @@ const PestDiseaseDetailPage = () => {
     }
   };
 
-  const downloadReport = () => {
+  // PDF download logic
+  const exportPDFReport = () => {
     if (!report) return;
-    const reportData = {
-      title: report.title,
-      reporter: report.reporterName,
-      location: report.location,
-      date: report.date,
-      type: report.type,
-      urgency: report.urgency,
-      economicImpact: report.economicImpact,
-      affectedArea: report.affectedArea,
-      description: report.description,
-      status: report.status,
-      requestedActions: report.requestedActions,
-      otherAction: report.otherAction,
-      mapCoordinates: report.mapCoordinates,
-      reportedOn: report.createdAt
-    };
-    
-    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `pest-disease-report-${report._id}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const printableHTML = `
+      <html>
+        <head>
+          <title>Pest/Disease Report PDF</title>
+          <style>
+            body { font-family: Arial, sans-serif; background: #f8fafc; color: #222; margin: 0; padding: 0; }
+            .container { max-width: 700px; margin: 40px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 32px; }
+            h1 { font-size: 2rem; margin-bottom: 8px; }
+            .meta { margin-bottom: 24px; }
+            .meta span { display: inline-block; margin-right: 16px; font-size: 1rem; color: #555; }
+            .section { margin-bottom: 24px; }
+            .section-title { font-weight: bold; margin-bottom: 8px; color: #059669; }
+            .desc { background: #f1f5f9; border-radius: 8px; padding: 16px; }
+            .evidence { text-align: center; margin-top: 16px; }
+            .evidence img { max-width: 100%; max-height: 300px; border-radius: 8px; margin: 0 auto; display: block; }
+            .footer { text-align: right; color: #888; font-size: 0.9rem; margin-top: 32px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Pest/Disease Report</h1>
+            <div class="meta">
+              <span><b>Report ID:</b> ${report._id}</span>
+              <span><b>Status:</b> ${report.status}</span>
+              <span><b>Urgency:</b> ${report.urgency}</span>
+            </div>
+            <div class="section">
+              <div class="section-title">Title</div>
+              <div>${escapeHTML(report.title)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Reporter</div>
+              <div>${escapeHTML(report.reporterName)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Location</div>
+              <div>${escapeHTML(report.location)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Date of Observation</div>
+              <div>${formatDate(report.date)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Type</div>
+              <div>${escapeHTML(report.type)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Economic Impact</div>
+              <div>${escapeHTML(report.economicImpact)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Affected Area</div>
+              <div>${escapeHTML(report.affectedArea)} perch</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Description & Symptoms</div>
+              <div class="desc">${escapeHTML(report.description)}</div>
+            </div>
+            ${report.imageUrl ? `<div class="evidence"><img src="${report.imageUrl}" alt="Evidence" /></div>` : ''}
+            <div class="footer">Generated on ${formatDateTime(new Date())}</div>
+          </div>
+        </body>
+      </html>
+    `;
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(printableHTML);
+      win.document.close();
+      win.focus();
+      win.print();
+    } else {
+      alert('Popup blocked! Please allow popups for this site to download PDF.');
+    }
   };
+
+  // Escape HTML utility
+  function escapeHTML(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, function(tag) {
+      const charsToReplace = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      };
+      return charsToReplace[tag] || tag;
+    });
+  }
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -427,9 +490,9 @@ const PestDiseaseDetailPage = () => {
                   <Share className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={downloadReport}
+                  onClick={exportPDFReport}
                   className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                  title="Download Report"
+                  title="Download PDF Report"
                 >
                   <Download className="w-5 h-5" />
                 </button>

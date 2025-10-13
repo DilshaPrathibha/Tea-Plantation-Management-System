@@ -295,7 +295,7 @@ const AddIncidencePage = () => {
               <div className="relative">
                 <input
                   type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-600"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-900"
                   value={form.reporterName}
                   readOnly
                   disabled
@@ -312,7 +312,7 @@ const AddIncidencePage = () => {
               </label>
               <input
                 type="text"
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
                   validationErrors.title ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 placeholder="Brief title describing the incident"
@@ -334,7 +334,7 @@ const AddIncidencePage = () => {
                 Location *
               </label>
               <select
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
                   validationErrors.location ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 value={form.location}
@@ -364,7 +364,7 @@ const AddIncidencePage = () => {
                 <input
                   type="date"
                   max={currentDate}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
                     validationErrors.date ? 'border-red-300 bg-red-50' : 'border-gray-300'
                   }`}
                   value={form.date}
@@ -385,7 +385,7 @@ const AddIncidencePage = () => {
                 <input
                   type="time"
                   max={form.date === currentDate ? currentTime : undefined}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
                     validationErrors.time ? 'border-red-300 bg-red-50' : 'border-gray-300'
                   }`}
                   value={form.time}
@@ -408,9 +408,9 @@ const AddIncidencePage = () => {
                   Type of Incident *
                 </label>
                 <select
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                    validationErrors.type ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                }`}
+          className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
+            validationErrors.type ? 'border-red-300 bg-red-50' : 'border-gray-300'
+          }`}
                   value={form.type}
                   onChange={(e) => setForm({ ...form, type: e.target.value })}
                 >
@@ -432,9 +432,9 @@ const AddIncidencePage = () => {
                   Severity Level *
                 </label>
                 <select
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                    validationErrors.severity ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
+                      validationErrors.severity ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
                   value={form.severity}
                   onChange={(e) => setForm({ ...form, severity: e.target.value })}
                 >
@@ -461,7 +461,7 @@ const AddIncidencePage = () => {
               </label>
               <textarea
                 rows={4}
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
                   validationErrors.description ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 placeholder="Provide detailed information about what happened..."
@@ -531,7 +531,7 @@ const AddIncidencePage = () => {
                 Status
               </label>
               <select
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900"
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
               >

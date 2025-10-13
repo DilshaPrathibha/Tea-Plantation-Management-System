@@ -207,31 +207,90 @@ const IncidenceDetailPage = () => {
     }
   };
 
-  const downloadReport = () => {
-    // Simple download functionality - could be enhanced with PDF generation
-    const reportData = {
-      title: incidence.title,
-      reporter: incidence.reporterName,
-      location: incidence.location,
-      date: incidence.date,
-      time: incidence.time,
-      type: incidence.type,
-      severity: incidence.severity,
-      description: incidence.description,
-      status: incidence.status,
-      reportedOn: incidence.createdAt
-    };
-    
-    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `incidence-report-${incidence._id}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // PDF download logic (copied from previous standardized exportPDFIncidences)
+  const exportPDFIncidence = () => {
+    if (!incidence) return;
+    const printableHTML = `
+      <html>
+        <head>
+          <title>Incidence Report PDF</title>
+          <style>
+            body { font-family: Arial, sans-serif; background: #f8fafc; color: #222; margin: 0; padding: 0; }
+            .container { max-width: 700px; margin: 40px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 32px; }
+            h1 { font-size: 2rem; margin-bottom: 8px; }
+            .meta { margin-bottom: 24px; }
+            .meta span { display: inline-block; margin-right: 16px; font-size: 1rem; color: #555; }
+            .section { margin-bottom: 24px; }
+            .section-title { font-weight: bold; margin-bottom: 8px; color: #2563eb; }
+            .desc { background: #f1f5f9; border-radius: 8px; padding: 16px; }
+            .evidence { text-align: center; margin-top: 16px; }
+            .evidence img { max-width: 100%; max-height: 300px; border-radius: 8px; margin: 0 auto; display: block; }
+            .footer { text-align: right; color: #888; font-size: 0.9rem; margin-top: 32px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Incidence Report</h1>
+            <div class="meta">
+              <span><b>Report ID:</b> ${incidence._id}</span>
+              <span><b>Status:</b> ${incidence.status}</span>
+              <span><b>Severity:</b> ${incidence.severity}</span>
+            </div>
+            <div class="section">
+              <div class="section-title">Title</div>
+              <div>${escapeHTML(incidence.title)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Reporter</div>
+              <div>${escapeHTML(incidence.reporterName)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Location</div>
+              <div>${escapeHTML(incidence.location === 'full_estate' ? 'Full Estate' : incidence.location)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Date & Time</div>
+              <div>${formatDate(incidence.date)} ${incidence.time}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Type</div>
+              <div>${escapeHTML(incidence.type)}</div>
+            </div>
+            <div class="section">
+              <div class="section-title">Description</div>
+              <div class="desc">${escapeHTML(incidence.description)}</div>
+            </div>
+            ${incidence.imageUrl ? `<div class="evidence"><img src="${incidence.imageUrl}" alt="Evidence" /></div>` : ''}
+            <div class="footer">Generated on ${formatDateTime(new Date())}</div>
+          </div>
+        </body>
+      </html>
+    `;
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(printableHTML);
+      win.document.close();
+      win.focus();
+      win.print();
+    } else {
+      alert('Popup blocked! Please allow popups for this site to download PDF.');
+    }
   };
+
+  // Escape HTML utility
+  function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"']/g, function(tag) {
+      const charsToReplace = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      };
+      return charsToReplace[tag] || tag;
+    });
+  }
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -408,9 +467,9 @@ const IncidenceDetailPage = () => {
                   <Share className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={downloadReport}
+                  onClick={exportPDFIncidence}
                   className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                  title="Download Report"
+                  title="Download PDF Report"
                 >
                   <Download className="w-5 h-5" />
                 </button>
@@ -516,14 +575,14 @@ const IncidenceDetailPage = () => {
                   <ImageIcon className="w-5 h-5 text-primary mr-2" />
                   <h3 className="text-lg font-semibold">Evidence</h3>
                 </div>
-                <div className="bg-base-200 rounded-lg p-4">
+                <div className="bg-white rounded-lg p-4 flex flex-col items-center justify-center">
                   <img 
                     src={incidence.imageUrl} 
                     alt="Incidence evidence" 
-                    className="max-w-full h-auto rounded-lg max-h-64 object-contain"
+                    className="max-w-full h-auto rounded-lg max-h-64 object-contain mx-auto"
+                    style={{ display: 'block' }}
                     onError={(e) => {
                       e.target.style.display = 'none';
-                      // Show error message
                       const errorDiv = e.target.nextElementSibling;
                       if (errorDiv) errorDiv.style.display = 'block';
                     }}
@@ -575,7 +634,6 @@ const IncidenceDetailPage = () => {
                 )}
                 {canEdit ? "Edit Report" : "View Only"}
               </button>
-              
               <button
                 onClick={handleDelete}
                 disabled={deleting || !canDelete}

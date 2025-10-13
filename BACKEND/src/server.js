@@ -82,6 +82,7 @@ const suppliersRoutes = require('./routes/suppliersroutes'); // ✅ add for supp
 const incidenceRoutes = require('./routes/incidenceroutes');
 const pestDiseaseRoutes = require('./routes/pestdiseaseroutes');
 const pluckingRecordRoutes = require('./routes/pluckingRecordRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 
 const productionBatchRoutes = require('./routes/productionBatchRoutes');
@@ -114,6 +115,7 @@ app.use('/api/tickets', ticketRoutes);
 app.use('/api/incidences', incidenceRoutes);
 app.use('/api/pest-diseases', pestDiseaseRoutes);
 app.use('/api/plucking-records', pluckingRecordRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.use('/api/production-batches', productionBatchRoutes);
 app.use('/api/transports', transportRoutes);

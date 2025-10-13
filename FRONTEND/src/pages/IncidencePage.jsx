@@ -70,6 +70,89 @@ const weatherIcons = {
 };
 
 const IncidencePage = () => {
+  // ---- ZERO-DEPENDENCY PDF (print) ----
+  const exportPDFIncidences = () => {
+    const w = window.open('', '_blank');
+    if (!w) {
+      // Use SweetAlert for error
+      Swal.fire({ icon: 'error', title: 'Please allow popups to export.' });
+      return;
+    }
+
+    const escapeHTML = (s) =>
+      String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    const style = `
+      <style>
+        * { font-family: Arial, Helvetica, sans-serif; }
+        .header { display:flex; justify-content:space-between; align-items:center; }
+        .title { font-size:20px; font-weight:bold; margin:0; }
+        .meta { font-size:12px; color:#444; text-align:right; }
+        .hr { border:0; border-top:1px solid #ddd; margin:12px 0; }
+        table { width:100%; border-collapse:collapse; font-size:12px; }
+        th, td { border:1px solid #ddd; padding:6px 8px; }
+        th { background:#f3f3f3; text-align:left; }
+      </style>
+    `;
+    const now = new Date();
+
+    const rowsHtml = filteredIncidences.map((r, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${escapeHTML(r.title)}</td>
+        <td>${escapeHTML(r.type)}</td>
+        <td>${escapeHTML(r.severity)}</td>
+        <td>${escapeHTML(r.location)}</td>
+        <td>${escapeHTML(formatDate(r.date))}</td>
+        <td>${escapeHTML(r.time)}</td>
+        <td>${escapeHTML(r.status)}</td>
+        <td>${escapeHTML(r.reporterName)}</td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <!doctype html><html><head><meta charset="utf-8">${style}</head><body>
+        <div class="header">
+          <div>
+            <h1 class="title">CeylonLeaf</h1>
+            <div class="meta">Incidence Report</div>
+          </div>
+          <div class="meta">
+            Generated: ${now.toLocaleString()}<br/>
+            ${searchTerm ? `Search: "${escapeHTML(searchTerm)}"<br/>` : ''}
+            ${typeFilter ? `Type: ${escapeHTML(typeFilter)}<br/>` : ''}
+            ${statusFilter ? `Status: ${escapeHTML(statusFilter)}<br/>` : ''}
+            ${dateFilter ? `Date: ${escapeHTML(dateFilter)}` : ''}
+          </div>
+        </div>
+        <hr class="hr"/>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>Location</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th>Reporter</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml || `<tr><td colspan="9" style="text-align:center;color:#666;">No data</td></tr>`}
+          </tbody>
+        </table>
+      </body></html>
+    `;
+    w.document.open(); w.document.write(html); w.document.close();
+    w.onload = () => { w.focus(); w.print(); };
+    // Optionally, show a success toast if you use Toast.fire
+  };
   const [incidences, setIncidences] = useState([]);
   const [filteredIncidences, setFilteredIncidences] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -487,6 +570,15 @@ const IncidencePage = () => {
               Refresh
             </button>
             <button
+              onClick={exportPDFIncidences}
+              disabled={filteredIncidences.length === 0}
+              className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 font-semibold ${filteredIncidences.length === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-900 shadow-lg hover:shadow-xl'}`}
+              title={filteredIncidences.length === 0 ? 'No data to export' : 'Export current view to PDF'}
+            >
+              <Info className="w-4 h-4 mr-2" />
+              Export PDF
+            </button>
+            <button
               onClick={handleAddNew}
               className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center shadow-lg hover:shadow-xl"
             >
@@ -592,7 +684,7 @@ const IncidencePage = () => {
                   placeholder="Search by title, reporter, or location..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900"
                 />
               </div>
             </div>
