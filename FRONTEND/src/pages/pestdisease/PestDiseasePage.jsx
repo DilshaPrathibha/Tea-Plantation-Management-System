@@ -22,6 +22,7 @@ import {
   Map
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import AIChatBot from '../../components/AIChatBot';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -47,6 +48,90 @@ const typeIcons = {
 };
 
 const PestDiseasePage = () => {
+  // ---- ZERO-DEPENDENCY PDF (print) ----
+  const exportPDFReports = () => {
+    const w = window.open('', '_blank');
+    if (!w) {
+      Swal.fire({ icon: 'error', title: 'Please allow popups to export.' });
+      return;
+    }
+
+    const escapeHTML = (s) =>
+      String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    const style = `
+      <style>
+        * { font-family: Arial, Helvetica, sans-serif; }
+        .header { display:flex; justify-content:space-between; align-items:center; }
+        .title { font-size:20px; font-weight:bold; margin:0; }
+        .meta { font-size:12px; color:#444; text-align:right; }
+        .hr { border:0; border-top:1px solid #ddd; margin:12px 0; }
+        table { width:100%; border-collapse:collapse; font-size:12px; }
+        th, td { border:1px solid #ddd; padding:6px 8px; }
+        th { background:#f3f3f3; text-align:left; }
+      </style>
+    `;
+    const now = new Date();
+
+    const rowsHtml = filteredReports.map((r, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${escapeHTML(r.title || 'Untitled')}</td>
+        <td>${escapeHTML(r.type || '')}</td>
+        <td>${escapeHTML(r.urgency ? r.urgency.split(' (')[0] : '')}</td>
+        <td>${escapeHTML(r.status || '')}</td>
+        <td>${escapeHTML(r.location || '')}</td>
+        <td>${escapeHTML(formatDate(r.date))}</td>
+        <td>${escapeHTML(r.affectedArea || '')}</td>
+        <td>${escapeHTML(r.reporterName || '')}</td>
+        <td>${escapeHTML(r.description || '')}</td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <!doctype html><html><head><meta charset="utf-8">${style}</head><body>
+        <div class="header">
+          <div>
+            <h1 class="title">CeylonLeaf</h1>
+            <div class="meta">Pest & Disease Report</div>
+          </div>
+          <div class="meta">
+            Generated: ${now.toLocaleString()}<br/>
+            ${searchTerm ? `Search: "${escapeHTML(searchTerm)}"<br/>` : ''}
+            ${typeFilter ? `Type: ${escapeHTML(typeFilter)}<br/>` : ''}
+            ${statusFilter ? `Status: ${escapeHTML(statusFilter)}<br/>` : ''}
+            ${urgencyFilter ? `Urgency: ${escapeHTML(urgencyFilter)}<br/>` : ''}
+            ${dateFilter ? `Date: ${escapeHTML(dateFilter)}` : ''}
+          </div>
+        </div>
+        <hr class="hr"/>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Urgency</th>
+              <th>Status</th>
+              <th>Location</th>
+              <th>Date</th>
+              <th>Affected Area</th>
+              <th>Reporter</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml || `<tr><td colspan="10" style="text-align:center;color:#666;">No data</td></tr>`}
+          </tbody>
+        </table>
+      </body></html>
+    `;
+    w.document.open(); w.document.write(html); w.document.close();
+    w.onload = () => { w.focus(); w.print(); };
+  };
   const [reports, setReports] = useState([]);
   const [filteredReports, setFilteredReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -374,6 +459,15 @@ const PestDiseasePage = () => {
               Refresh
             </button>
             <button
+              onClick={exportPDFReports}
+              disabled={filteredReports.length === 0}
+              className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 font-semibold ${filteredReports.length === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-900 shadow-lg hover:shadow-xl'}`}
+              title={filteredReports.length === 0 ? 'No data to export' : 'Export current view to PDF'}
+            >
+              <Leaf className="w-4 h-4 mr-2" />
+              Export PDF
+            </button>
+            <button
               onClick={handleAddNew}
               className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center shadow-lg hover:shadow-xl"
             >
@@ -633,6 +727,8 @@ const PestDiseasePage = () => {
           </div>
         )}
       </div>
+     
+      <AIChatBot />
     </div>
   );
 };

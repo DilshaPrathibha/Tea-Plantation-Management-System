@@ -22,7 +22,8 @@ import {
   TrendingUp,
   UserCheck,
   Clock,
-  BarChart3
+  BarChart3,
+  RefreshCw
 } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
@@ -200,12 +201,35 @@ const PluckingRecordPage = () => {
   };
 
   // ============= PDF Export (no dependencies) =============
+  // ---- ZERO-DEPENDENCY PDF (print) ----
+  const exportPDF = () => {
+    const w = window.open('', '_blank');
+    if (!w) {
+      Swal.fire({ icon: 'error', title: 'Please allow popups to export.' });
+      return;
+    }
 
-  const printableHTML = (rows) => {
-    const escape = (v) => String(v ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-    const now = new Date().toLocaleString();
+    const escapeHTML = (s) =>
+      String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 
-    const tableRows = rows.map((r, idx) => {
+    const style = `
+      <style>
+        * { font-family: Arial, Helvetica, sans-serif; }
+        .header { display:flex; justify-content:space-between; align-items:center; }
+        .title { font-size:20px; font-weight:bold; margin:0; }
+        .meta { font-size:12px; color:#444; text-align:right; }
+        .hr { border:0; border-top:1px solid #ddd; margin:12px 0; }
+        table { width:100%; border-collapse:collapse; font-size:12px; }
+        th, td { border:1px solid #ddd; padding:6px 8px; }
+        th { background:#f3f3f3; text-align:left; }
+      </style>
+    `;
+    const now = new Date();
+
+    const rowsHtml = filteredRecords.map((r, idx) => {
       const workersCount = Array.isArray(r.workers) ? r.workers.length : 0;
       const totalPayment = Number(r.totalPayment || 0).toFixed(2);
       const totalWeight = Number(r.totalWeight || 0).toFixed(2);
@@ -213,92 +237,55 @@ const PluckingRecordPage = () => {
       return `
         <tr>
           <td>${idx + 1}</td>
-          <td>${escape(r.field || '')}</td>
-          <td>${escape(formatDate(r.date) || '')}</td>
-          <td>${escape(r.teaGrade || '')}</td>
-          <td>${escape(totalWeight)}</td>
-          <td>${escape(String(price))}</td>
-          <td>${escape(totalPayment)}</td>
-          <td>${escape(String(workersCount))}</td>
-          <td>${escape(r.reporterName || '')}</td>
+          <td>${escapeHTML(r.field || '')}</td>
+          <td>${escapeHTML(formatDate(r.date) || '')}</td>
+          <td>${escapeHTML(r.teaGrade || '')}</td>
+          <td>${escapeHTML(totalWeight)}</td>
+          <td>${escapeHTML(String(price))}</td>
+          <td>${escapeHTML(totalPayment)}</td>
+          <td>${escapeHTML(String(workersCount))}</td>
+          <td>${escapeHTML(r.reporterName || '')}</td>
         </tr>
       `;
     }).join('');
 
-    return `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Daily Plucking Records</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { font-family: Arial, Helvetica, sans-serif; padding: 24px; color: #111; }
-    h1 { margin: 0 0 6px; }
-    .meta { font-size: 12px; color: #555; margin-bottom: 16px; }
-    .filters { font-size: 12px; color: #333; margin-bottom: 16px; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th, td { border: 1px solid #ddd; padding: 8px; vertical-align: top; }
-    th { background: #f3f4f6; text-align: left; }
-    tfoot td { border: none; padding-top: 12px; font-size: 12px; color: #555; }
-    .count { margin: 8px 0 16px; font-weight: bold; }
-    @media print { @page { size: A4 landscape; margin: 12mm; } .noprint { display: none; } }
-  </style>
-</head>
-<body>
-  <h1>Daily Plucking Records</h1>
-  <div class="meta">Generated at: ${escape(now)}</div>
-  <div class="filters">
-    <div><strong>Search:</strong> ${escape(searchTerm || '—')}</div>
-    <div><strong>Date:</strong> ${escape(dateFilter ? new Date(dateFilter).toLocaleDateString() : 'All')}</div>
-    <div><strong>Field:</strong> ${escape(fieldFilter || 'All')}</div>
-  </div>
-  <div class="count">Total: ${rows.length}</div>
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Field</th>
-        <th>Date</th>
-        <th>Tea Grade</th>
-        <th>Total Weight (kg)</th>
-        <th>Price (LKR/kg)</th>
-        <th>Total Payment (LKR)</th>
-        <th># Workers</th>
-        <th>Reporter</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${tableRows || `<tr><td colspan="9" style="text-align:center;color:#666;">No data for current filters</td></tr>`}
-    </tbody>
-    <tfoot>
-      <tr><td colspan="9">Tip: In the print dialog, choose <em>Save as PDF</em>.</td></tr>
-    </tfoot>
-  </table>
-  <div class="noprint" style="margin-top:16px;">
-    <button onclick="window.print()">Print / Save as PDF</button>
-  </div>
-</body>
-</html>`;
-  };
-
-  const exportPDF = () => {
-    const html = printableHTML(filteredRecords);
-    const w = window.open('', '_blank', 'noopener,noreferrer');
-    if (!w) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Popup Blocked',
-        text: 'Please allow popups for this site to export PDF.',
-        confirmButtonColor: '#16a34a',
-      });
-      return;
-    }
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-    w.onload = () => {
-      try { w.focus(); w.print(); } catch (_) {}
-    };
+    const html = `
+      <!doctype html><html><head><meta charset="utf-8">${style}</head><body>
+        <div class="header">
+          <div>
+            <h1 class="title">CeylonLeaf</h1>
+            <div class="meta">Daily Plucking Records</div>
+          </div>
+          <div class="meta">
+            Generated: ${now.toLocaleString()}<br/>
+            ${searchTerm ? `Search: "${escapeHTML(searchTerm)}"<br/>` : ''}
+            ${fieldFilter ? `Field: ${escapeHTML(fieldFilter)}<br/>` : ''}
+            ${dateFilter ? `Date: ${escapeHTML(dateFilter)}` : ''}
+          </div>
+        </div>
+        <hr class="hr"/>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Field</th>
+              <th>Date</th>
+              <th>Tea Grade</th>
+              <th>Total Weight (kg)</th>
+              <th>Price (LKR/kg)</th>
+              <th>Total Payment (LKR)</th>
+              <th># Workers</th>
+              <th>Reporter</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml || `<tr><td colspan="9" style="text-align:center;color:#666;">No data</td></tr>`}
+          </tbody>
+        </table>
+      </body></html>
+    `;
+    w.document.open(); w.document.write(html); w.document.close();
+    w.onload = () => { w.focus(); w.print(); };
   };
 
   // Calculate TODAY'S statistics
@@ -366,6 +353,17 @@ const PluckingRecordPage = () => {
 
           <div className="flex gap-3">
             <button
+              onClick={() => {
+                fetchRecords();
+                fetchFields();
+              }}
+              className="px-4 py-3 bg-white border-2 border-gray-300 rounded-xl text-gray-900 hover:bg-gray-50 transition-all duration-200 flex items-center shadow-sm hover:shadow-md font-semibold"
+              title="Refresh records and fields"
+            >
+              <RefreshCw className="w-5 h-5 mr-2" />
+              Refresh
+            </button>
+            <button
               onClick={exportPDF}
               disabled={filteredRecords.length === 0}
               className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 font-semibold ${
@@ -378,7 +376,6 @@ const PluckingRecordPage = () => {
               <Download className="w-5 h-5 mr-2" />
               Export PDF
             </button>
-
             <Link
               to="/plucking-records/add"
               className="flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
@@ -402,52 +399,52 @@ const PluckingRecordPage = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-gradient-to-br from-green-500/40 to-emerald-600/40 rounded-2xl shadow-lg p-6 text-green-100 font-bold drop-shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100 font-semibold">Today's Records</p>
-                  <p className="text-2xl font-bold mt-2">{todayRecords.length}</p>
-                </div>
-                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6" />
-                </div>
+            {/* Card 1: Today's Records */}
+            <div className="rounded-2xl shadow-xl p-6 bg-white border-2 border-green-200 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200">
+              <div className="flex items-center justify-between mb-2">
+                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 shadow-lg">
+                  <TrendingUp className="w-7 h-7 text-white" />
+                </span>
+                <span className="text-green-700 font-bold text-lg">Records</span>
               </div>
+              <div className="mt-4 text-3xl font-extrabold text-green-900 text-center">{todayRecords.length}</div>
+              <div className="mt-2 text-sm text-green-600 text-center">Today's Records</div>
             </div>
 
-            <div className="bg-gradient-to-br from-blue-500/40 to-blue-600/40 rounded-2xl shadow-lg p-6 text-blue-100 font-bold drop-shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 font-semibold">Today's Weight</p>
-                  <p className="text-2xl font-bold mt-2">{todayTotalWeight.toFixed(2)} kg</p>
-                </div>
-                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-                  <Scale className="w-6 h-6" />
-                </div>
+            {/* Card 2: Today's Weight */}
+            <div className="rounded-2xl shadow-xl p-6 bg-white border-2 border-blue-200 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200">
+              <div className="flex items-center justify-between mb-2">
+                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg">
+                  <Scale className="w-7 h-7 text-white" />
+                </span>
+                <span className="text-blue-700 font-bold text-lg">Weight</span>
               </div>
+              <div className="mt-4 text-3xl font-extrabold text-blue-900 text-center">{todayTotalWeight.toFixed(2)} kg</div>
+              <div className="mt-2 text-sm text-blue-600 text-center">Today's Weight</div>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-500/40 to-purple-600/40 rounded-2xl shadow-lg p-6 text-purple-100 font-bold drop-shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 font-semibold">Today's Payment</p>
-                  <p className="text-2xl font-bold mt-2">LKR {todayTotalPayment.toFixed(2)}</p>
-                </div>
-                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-                  <DollarSign className="w-6 h-6" />
-                </div>
+            {/* Card 3: Today's Payment */}
+            <div className="rounded-2xl shadow-xl p-6 bg-white border-2 border-purple-200 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200">
+              <div className="flex items-center justify-between mb-2">
+                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 shadow-lg">
+                  <DollarSign className="w-7 h-7 text-white" />
+                </span>
+                <span className="text-purple-700 font-bold text-lg">Payment</span>
               </div>
+              <div className="mt-4 text-3xl font-extrabold text-purple-900 text-center">LKR {todayTotalPayment.toFixed(2)}</div>
+              <div className="mt-2 text-sm text-purple-600 text-center">Today's Payment</div>
             </div>
 
-            <div className="bg-gradient-to-br from-orange-500/40 to-orange-600/40 rounded-2xl shadow-lg p-6 text-orange-100 font-bold drop-shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-100 font-semibold">Today's Workers</p>
-                  <p className="text-2xl font-bold mt-2">{todayTotalWorkers}</p>
-                </div>
-                <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-                  <UserCheck className="w-6 h-6" />
-                </div>
+            {/* Card 4: Today's Workers */}
+            <div className="rounded-2xl shadow-xl p-6 bg-white border-2 border-orange-200 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200">
+              <div className="flex items-center justify-between mb-2">
+                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg">
+                  <UserCheck className="w-7 h-7 text-white" />
+                </span>
+                <span className="text-orange-700 font-bold text-lg">Workers</span>
               </div>
+              <div className="mt-4 text-3xl font-extrabold text-orange-900 text-center">{todayTotalWorkers}</div>
+              <div className="mt-2 text-sm text-orange-600 text-center">Today's Workers</div>
             </div>
           </div>
         </div>
