@@ -335,18 +335,18 @@ const PluckingRecordPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
+    <div className="min-h-screen bg-base-100 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
           <div className="flex-1">
             <div className="flex items-center mb-3">
-              <div className="w-14 h-14 bg-white rounded-2xl shadow-lg flex items-center justify-center mr-4 border border-green-100">
-                <Leaf className="w-7 h-7 text-green-600" />
+              <div className="w-14 h-14 bg-base-200 rounded-2xl shadow-lg flex items-center justify-center mr-4 border border-base-content/10">
+                <Leaf className="w-7 h-7 text-primary" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Daily Plucking Records</h1>
-                <p className="text-gray-800 mt-2 font-medium">Manage and track daily tea plucking activities</p>
+                <h1 className="text-3xl font-bold text-base-content">Daily Plucking Records</h1>
+                <p className="text-base-content mt-2 font-medium">Manage and track daily tea plucking activities</p>
               </div>
             </div>
           </div>
@@ -357,7 +357,7 @@ const PluckingRecordPage = () => {
                 fetchRecords();
                 fetchFields();
               }}
-              className="px-4 py-3 bg-white border-2 border-gray-300 rounded-xl text-gray-900 hover:bg-gray-50 transition-all duration-200 flex items-center shadow-sm hover:shadow-md font-semibold"
+              className="px-4 py-3 bg-base-200 border-2 border-base-content/10 rounded-xl text-base-content hover:bg-base-300 transition-all duration-200 flex items-center shadow-sm hover:shadow-md font-semibold"
               title="Refresh records and fields"
             >
               <RefreshCw className="w-5 h-5 mr-2" />
@@ -368,8 +368,8 @@ const PluckingRecordPage = () => {
               disabled={filteredRecords.length === 0}
               className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 font-semibold ${
                 filteredRecords.length === 0
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-white border-2 border-gray-300 hover:bg-gray-50 text-gray-900 shadow-lg hover:shadow-xl'
+                  ? 'bg-base-300 text-base-content/50 cursor-not-allowed'
+                  : 'bg-base-200 border-2 border-base-content/10 hover:bg-base-300 text-base-content shadow-lg hover:shadow-xl'
               }`}
               title={filteredRecords.length === 0 ? 'No data to export' : 'Export current view to PDF'}
             >
@@ -378,7 +378,7 @@ const PluckingRecordPage = () => {
             </button>
             <Link
               to="/plucking-records/add"
-              className="flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
+              className="flex items-center px-6 py-3 bg-primary hover:bg-primary-focus text-white rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
             >
               <Plus className="w-5 h-5 mr-2" />
               Add New Report
@@ -389,8 +389,8 @@ const PluckingRecordPage = () => {
         {/* Today's Statistics Cards */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center">
-              <Clock className="w-6 h-6 mr-2 text-green-600" />
+            <h2 className="text-xl font-bold text-base-content flex items-center">
+              <Clock className="w-6 h-6 mr-2 text-primary" />
               Today's Overview - {todayFormatted}
             </h2>
             <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-semibold rounded-full border-2 border-green-200">
@@ -400,7 +400,7 @@ const PluckingRecordPage = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Card 1: Today's Records */}
-            <div className="rounded-2xl shadow-xl p-6 bg-white border-2 border-green-200 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200">
+            <div className="rounded-2xl shadow-xl p-6 bg-base-200 border-2 border-green-200 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200">
               <div className="flex items-center justify-between mb-2">
                 <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 shadow-lg">
                   <TrendingUp className="w-7 h-7 text-white" />
@@ -408,11 +408,11 @@ const PluckingRecordPage = () => {
                 <span className="text-green-700 font-bold text-lg">Records</span>
               </div>
               <div className="mt-4 text-3xl font-extrabold text-green-900 text-center">{todayRecords.length}</div>
-              <div className="mt-2 text-sm text-green-600 text-center">Today's Records</div>
+              <div className="mt-2 text-sm text-primary text-center">Today's Records</div>
             </div>
 
             {/* Card 2: Today's Weight */}
-            <div className="rounded-2xl shadow-xl p-6 bg-white border-2 border-blue-200 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200">
+            <div className="rounded-2xl shadow-xl p-6 bg-base-200 border-2 border-blue-200 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200">
               <div className="flex items-center justify-between mb-2">
                 <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg">
                   <Scale className="w-7 h-7 text-white" />
@@ -420,11 +420,11 @@ const PluckingRecordPage = () => {
                 <span className="text-blue-700 font-bold text-lg">Weight</span>
               </div>
               <div className="mt-4 text-3xl font-extrabold text-blue-900 text-center">{todayTotalWeight.toFixed(2)} kg</div>
-              <div className="mt-2 text-sm text-blue-600 text-center">Today's Weight</div>
+              <div className="mt-2 text-sm text-primary text-center">Today's Weight</div>
             </div>
 
             {/* Card 3: Today's Payment */}
-            <div className="rounded-2xl shadow-xl p-6 bg-white border-2 border-purple-200 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200">
+            <div className="rounded-2xl shadow-xl p-6 bg-base-200 border-2 border-purple-200 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200">
               <div className="flex items-center justify-between mb-2">
                 <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 shadow-lg">
                   <DollarSign className="w-7 h-7 text-white" />
@@ -436,7 +436,7 @@ const PluckingRecordPage = () => {
             </div>
 
             {/* Card 4: Today's Workers */}
-            <div className="rounded-2xl shadow-xl p-6 bg-white border-2 border-orange-200 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200">
+            <div className="rounded-2xl shadow-xl p-6 bg-base-200 border-2 border-orange-200 hover:scale-[1.03] hover:shadow-2xl transition-transform duration-200">
               <div className="flex items-center justify-between mb-2">
                 <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 shadow-lg">
                   <UserCheck className="w-7 h-7 text-white" />
@@ -450,25 +450,25 @@ const PluckingRecordPage = () => {
         </div>
 
         {/* Search and Filter Section */}
-        <div className="mb-6 bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+        <div className="mb-6 bg-base-200 rounded-2xl shadow-lg border border-gray-100 p-6">
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-900 mb-2">Search Records</label>
+              <label className="block text-sm font-semibold text-base-content mb-2">Search Records</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/60 w-5 h-5" />
                 <input
                   type="text"
                   placeholder="Search by field, grade, worker name, or ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white text-gray-900"
+                  className="w-full pl-10 pr-4 py-3 border-2 border-base-content/10 rounded-xl focus:ring-2 focus:ring-primary focus:border-green-500 transition-all duration-200 bg-base-200 text-base-content"
                 />
               </div>
             </div>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="px-4 py-3 bg-white border-2 border-gray-300 rounded-xl text-gray-900 hover:bg-gray-50 transition-all duration-200 flex items-center font-semibold"
+              className="px-4 py-3 bg-base-200 border-2 border-base-content/10 rounded-xl text-base-content hover:bg-base-300 transition-all duration-200 flex items-center font-semibold"
             >
               <Filter className="w-5 h-5 mr-2" />
               Filters
@@ -491,25 +491,25 @@ const PluckingRecordPage = () => {
           {showFilters && (
             <div className="mt-6 pt-6 border-t-2 border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Filter by Date</label>
+                <label className="block text-sm font-semibold text-base-content mb-2">Filter by Date</label>
                 <input
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
+                  className="w-full px-4 py-3 border-2 border-base-content/10 rounded-xl focus:ring-2 focus:ring-primary focus:border-green-500 bg-base-200 text-base-content"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Filter by Field</label>
+                <label className="block text-sm font-semibold text-base-content mb-2">Filter by Field</label>
                 <select
                   value={fieldFilter}
                   onChange={(e) => setFieldFilter(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
+                  className="w-full px-4 py-3 border-2 border-base-content/10 rounded-xl focus:ring-2 focus:ring-primary focus:border-green-500 bg-base-200 text-base-content"
                 >
-                  <option value="" className="text-gray-500">All Fields</option>
+                  <option value="" className="text-base-content/60">All Fields</option>
                   {(availableFields || []).map((field) => (
-                    <option key={field._id} value={field.name} className="text-gray-900">
+                    <option key={field._id} value={field.name} className="text-base-content">
                       {field.name}
                     </option>
                   ))}
@@ -521,7 +521,7 @@ const PluckingRecordPage = () => {
 
         {/* Results Count */}
         {hasActiveFilters && (
-          <div className="mb-4 text-sm text-gray-900 font-medium bg-blue-50 rounded-xl p-4 border-2 border-blue-100">
+          <div className="mb-4 text-sm text-base-content font-medium bg-blue-50 rounded-xl p-4 border-2 border-blue-100">
             Showing {filteredRecords.length} of {records.length} records
             {searchTerm && ` matching "${searchTerm}"`}
             {dateFilter && ` on ${new Date(dateFilter).toLocaleDateString()}`}
@@ -543,8 +543,8 @@ const PluckingRecordPage = () => {
 
         {/* Loading */}
         {loading && (
-          <div className="flex items-center gap-3 text-gray-900 bg-white rounded-2xl p-6 shadow-lg">
-            <Loader className="w-5 h-5 animate-spin text-green-600" />
+          <div className="flex items-center gap-3 text-base-content bg-base-200 rounded-2xl p-6 shadow-lg">
+            <Loader className="w-5 h-5 animate-spin text-primary" />
             <span className="font-semibold">Loading plucking records...</span>
           </div>
         )}
@@ -553,12 +553,12 @@ const PluckingRecordPage = () => {
         {!loading && (
           <>
             {filteredRecords.length === 0 ? (
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
-                <Leaf className="mx-auto w-16 h-16 text-gray-300 mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <div className="bg-base-200 rounded-2xl shadow-lg border border-base-content/10 p-12 text-center">
+                <Leaf className="mx-auto w-16 h-16 text-base-content/30 mb-4" />
+                <h3 className="text-xl font-bold text-base-content mb-2">
                   {hasActiveFilters ? 'No matching records found' : 'No plucking records yet'}
                 </h3>
-                <p className="text-gray-800 mb-6 font-medium">
+                <p className="text-base-content/70 mb-6 font-medium">
                   {hasActiveFilters
                     ? 'Try adjusting your search or filters'
                     : 'Get started by creating your first plucking record.'}
@@ -566,14 +566,14 @@ const PluckingRecordPage = () => {
                 {hasActiveFilters ? (
                   <button
                     onClick={clearFilters}
-                    className="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold shadow-lg hover:shadow-xl"
+                    className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary-focus transition-colors font-semibold shadow-lg hover:shadow-xl"
                   >
                     Clear Filters
                   </button>
                 ) : (
                   <Link
                     to="/plucking-records/add"
-                    className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+                    className="px-6 py-3 bg-gradient-to-r from-primary to-primary-focus text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
                   >
                     Create Record
                   </Link>
@@ -598,7 +598,7 @@ const PluckingRecordPage = () => {
                   };
 
                   return (
-                    <div key={record._id} className={`bg-white rounded-2xl shadow-lg border-2 transition-all duration-300 overflow-hidden hover:shadow-xl ${
+                    <div key={record._id} className={`bg-base-200 rounded-2xl shadow-lg border-2 transition-all duration-300 overflow-hidden hover:shadow-xl ${
                       isTodayRecord() 
                         ? 'border-green-300 bg-green-50' 
                         : 'border-gray-100'
@@ -613,10 +613,10 @@ const PluckingRecordPage = () => {
                       <div className="p-6 border-b border-gray-100">
                         <div className="flex justify-between items-start mb-4">
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-gray-900 truncate">
+                            <h3 className="text-lg font-semibold text-base-content truncate">
                               {record.field}
                             </h3>
-                            <p className="text-sm text-gray-600 mt-1">{formatDate(record.date)}</p>
+                            <p className="text-sm text-base-content/70 mt-1">{formatDate(record.date)}</p>
                           </div>
                           <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full border border-blue-200 flex-shrink-0 ml-3">
                             {record.teaGrade}
@@ -625,21 +625,21 @@ const PluckingRecordPage = () => {
                         
                         {/* Key Metrics */}
                         <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="text-center p-3 bg-base-300 rounded-lg border border-base-content/10">
                             <div className="flex items-center justify-center mb-1">
-                              <Scale className="w-4 h-4 text-green-600 mr-1" />
-                              <span className="text-xs text-gray-600 font-medium">Weight</span>
+                              <Scale className="w-4 h-4 text-primary mr-1" />
+                              <span className="text-xs text-base-content/70 font-medium">Weight</span>
                             </div>
-                            <p className="text-lg font-semibold text-gray-900">
+                            <p className="text-lg font-semibold text-base-content">
                               {Number(record.totalWeight || 0).toFixed(2)} kg
                             </p>
                           </div>
-                          <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="text-center p-3 bg-base-300 rounded-lg border border-base-content/10">
                             <div className="flex items-center justify-center mb-1">
-                              <DollarSign className="w-4 h-4 text-green-600 mr-1" />
-                              <span className="text-xs text-gray-600 font-medium">Payment</span>
+                              <DollarSign className="w-4 h-4 text-primary mr-1" />
+                              <span className="text-xs text-base-content/70 font-medium">Payment</span>
                             </div>
-                            <p className="text-lg font-semibold text-gray-900">
+                            <p className="text-lg font-semibold text-base-content">
                               LKR {Number(record.totalPayment || 0).toFixed(2)}
                             </p>
                           </div>
@@ -648,31 +648,31 @@ const PluckingRecordPage = () => {
                         {/* Detailed Information */}
                         <div className="space-y-3">
                           <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                            <span className="text-sm text-gray-600">Field Location</span>
-                            <span className="text-sm font-medium text-gray-900">{record.field}</span>
+                            <span className="text-sm text-base-content/70">Field Location</span>
+                            <span className="text-sm font-medium text-base-content">{record.field}</span>
                           </div>
                           
                           <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                            <span className="text-sm text-gray-600">Price per KG</span>
-                            <span className="text-sm font-medium text-gray-900">
+                            <span className="text-sm text-base-content/70">Price per KG</span>
+                            <span className="text-sm font-medium text-base-content">
                               LKR {Number(record.dailyPricePerKg || 0).toFixed(2)}
                             </span>
                           </div>
                           
                           <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                            <span className="text-sm text-gray-600">Workers Count</span>
+                            <span className="text-sm text-base-content/70">Workers Count</span>
                             <div className="flex items-center">
-                              <Users className="w-4 h-4 text-gray-500 mr-1" />
-                              <span className="text-sm font-medium text-gray-900">
+                              <Users className="w-4 h-4 text-base-content/60 mr-1" />
+                              <span className="text-sm font-medium text-base-content">
                                 {Array.isArray(record.workers) ? record.workers.length : 0}
                               </span>
                             </div>
                           </div>
                           
                           <div className="flex justify-between items-center py-2">
-                            <span className="text-sm text-gray-600">Reported by</span>
+                            <span className="text-sm text-base-content/70">Reported by</span>
                             <div className="flex items-center">
-                              <span className="text-sm font-medium text-gray-900 mr-2">
+                              <span className="text-sm font-medium text-base-content mr-2">
                                 {record.reporterName}
                               </span>
                               {currentUser && currentUser._id === record.reportedBy && (
@@ -686,15 +686,15 @@ const PluckingRecordPage = () => {
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                      <div className="px-6 py-4 bg-base-300 border-t border-gray-100">
                         <div className="flex justify-between items-center">
-                          <span className="text-xs text-gray-600">
+                          <span className="text-xs text-base-content/70">
                             Created: {new Date(record.createdAt).toLocaleDateString()}
                           </span>
                           <div className="flex space-x-2">
                             <Link
                               to={`/plucking-records/${record._id}`}
-                              className="p-2 text-gray-600 hover:bg-white rounded-lg transition-colors duration-200 border border-gray-300 hover:border-gray-400"
+                              className="p-2 text-base-content/70 hover:bg-base-200 rounded-lg transition-colors duration-200 border border-base-content/10 hover:border-gray-400"
                               title="View details"
                             >
                               <Eye className="w-4 h-4" />
@@ -703,7 +703,7 @@ const PluckingRecordPage = () => {
                             {canEdit && (
                               <Link
                                 to={`/plucking-records/${record._id}/edit`}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200 border border-blue-300 hover:border-blue-400"
+                                className="p-2 text-primary hover:bg-blue-50 rounded-lg transition-colors duration-200 border border-blue-300 hover:border-blue-400"
                                 title="Edit record"
                               >
                                 <Edit className="w-4 h-4" />

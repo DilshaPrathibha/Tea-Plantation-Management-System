@@ -25,11 +25,11 @@ function Breadcrumbs() {
   });
 
   return (
-    <nav className="text-sm text-white/70">
+    <nav className="text-sm text-base-content/70">
       {crumbs.map((c, i) => (
         <span key={c.path}>
-          {i > 0 && <span className="mx-2 text-white/40">/</span>}
-          <NavLink to={c.path} className="hover:text-white">{c.label}</NavLink>
+          {i > 0 && <span className="mx-2 text-base-content/40">/</span>}
+          <NavLink to={c.path} className="hover:text-base-content">{c.label}</NavLink>
         </span>
       ))}
     </nav>
@@ -42,8 +42,8 @@ const Tab = ({ to, children }) => (
     className={({ isActive }) =>
       `px-3 py-1.5 rounded-full border transition ${
         isActive
-          ? "border-emerald-400/60 bg-emerald-400/10 text-emerald-200"
-          : "border-white/10 text-white/80 hover:bg-white/5"
+          ? "border-emerald-400/60 bg-emerald-400/10 text-emerald-400"
+          : "border-base-content/10 text-base-content/80 hover:bg-base-content/5"
       }`
     }
   >
@@ -57,7 +57,7 @@ export default function SupervisorLayout() {
   return (
     <>
       {/* Sub-navbar under your global Navbar */}
-      <div className="sticky top-16 z-20 bg-base-300/80 backdrop-blur border-b border-white/10">
+      <div className="sticky top-16 z-20 bg-base-300/80 backdrop-blur border-b border-base-content/10">
         <div className="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             {/* Removed "Back to Dashboard" button since Dashboard is already in main navbar */}

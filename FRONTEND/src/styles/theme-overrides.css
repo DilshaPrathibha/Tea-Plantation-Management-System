@@ -1,0 +1,124 @@
+/* Theme-aware button hover states */
+
+/* DaisyUI btn-outline hover states for light theme */
+[data-theme="tea-light"] .btn-outline:hover {
+  background-color: rgba(22, 163, 74, 0.1); /* primary color with opacity */
+  border-color: rgba(22, 163, 74, 0.5);
+  color: rgb(31, 41, 55) !important; /* Keep text dark/black for visibility */
+}
+
+/* DaisyUI btn-ghost hover states for light theme */
+[data-theme="tea-light"] .btn-ghost:hover {
+  background-color: rgba(31, 41, 55, 0.05); /* base-content with low opacity */
+  color: rgb(31, 41, 55) !important; /* Keep text dark/black for visibility */
+}
+
+/* DaisyUI menu items hover states for light theme */
+[data-theme="tea-light"] .menu li > *:not(.menu-title):not(.btn):hover,
+[data-theme="tea-light"] .menu li > button:hover {
+  background-color: rgba(31, 41, 55, 0.05); /* base-content with low opacity */
+  color: rgb(31, 41, 55) !important; /* Keep text dark/black for visibility */
+}
+
+/* DaisyUI menu items active states for light theme */
+[data-theme="tea-light"] .menu li > *:not(.menu-title):not(.btn):active,
+[data-theme="tea-light"] .menu li > button:active {
+  background-color: rgba(31, 41, 55, 0.1);
+  color: rgb(31, 41, 55) !important; /* Keep text dark/black for visibility */
+}
+
+/* DaisyUI btn-outline hover states for dark theme */
+[data-theme="tea-dark"] .btn-outline:hover {
+  background-color: rgba(34, 197, 94, 0.1); /* primary color with opacity */
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+/* DaisyUI btn-ghost hover states for dark theme */
+[data-theme="tea-dark"] .btn-ghost:hover {
+  background-color: rgba(248, 250, 252, 0.05); /* base-content with low opacity */
+}
+
+/* DaisyUI menu items hover states for dark theme */
+[data-theme="tea-dark"] .menu li > *:not(.menu-title):not(.btn):hover,
+[data-theme="tea-dark"] .menu li > button:hover {
+  background-color: rgba(248, 250, 252, 0.05); /* base-content with low opacity */
+}
+
+/* DaisyUI menu items active states for dark theme */
+[data-theme="tea-dark"] .menu li > *:not(.menu-title):not(.btn):active,
+[data-theme="tea-dark"] .menu li > button:active {
+  background-color: rgba(248, 250, 252, 0.1);
+}
+
+/* Dropdown menu background for light theme */
+[data-theme="tea-light"] .dropdown-content.menu {
+  background-color: #FFFFFF;
+  border: 1px solid rgba(31, 41, 55, 0.1);
+}
+
+/* Dropdown menu background for dark theme */
+[data-theme="tea-dark"] .dropdown-content.menu {
+  background-color: #182541;
+  border: 1px solid rgba(248, 250, 252, 0.1);
+}
+
+/* ===================================
+   SWEETALERT2 THEME OVERRIDES
+   =================================== */
+
+/* Light theme SweetAlert2 */
+[data-theme="tea-light"] .swal2-popup {
+  background-color: #ffffff !important;
+  color: rgb(31, 41, 55) !important;
+}
+
+[data-theme="tea-light"] .swal2-title {
+  color: rgb(31, 41, 55) !important;
+}
+
+[data-theme="tea-light"] .swal2-html-container {
+  color: rgb(75, 85, 99) !important;
+}
+
+[data-theme="tea-light"] .swal2-confirm {
+  background-color: #16a34a !important;
+}
+
+[data-theme="tea-light"] .swal2-cancel {
+  background-color: #6b7280 !important;
+}
+
+/* Dark theme SweetAlert2 */
+[data-theme="tea-dark"] .swal2-popup {
+  background-color: #182541 !important;
+  color: #F8FAFC !important;
+  border: 1px solid rgba(248, 250, 252, 0.1);
+}
+
+[data-theme="tea-dark"] .swal2-title {
+  color: #F8FAFC !important;
+}
+
+[data-theme="tea-dark"] .swal2-html-container {
+  color: rgba(248, 250, 252, 0.8) !important;
+}
+
+[data-theme="tea-dark"] .swal2-confirm {
+  background-color: #22c55e !important;
+}
+
+[data-theme="tea-dark"] .swal2-cancel {
+  background-color: #4b5563 !important;
+}
+
+[data-theme="tea-dark"] .swal2-input,
+[data-theme="tea-dark"] .swal2-textarea {
+  background-color: #1e293b !important;
+  color: #F8FAFC !important;
+  border: 1px solid rgba(248, 250, 252, 0.2);
+}
+
+[data-theme="tea-dark"] .swal2-validation-message {
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+}

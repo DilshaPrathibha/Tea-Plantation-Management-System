@@ -12,11 +12,13 @@ const initialStats = {
   lastUpdated: null
 };
 
-const useSupplierStats = () => {
+const useSupplierStats = (shouldLoad = true) => {
   const [stats, setStats] = useState(initialStats);
   const [suppliers, setSuppliers] = useState([]);
 
-  const fetchSuppliers = useCallback(async () => {
+  const fetchSuppliers = useCallback(async (retryCount = 0) => {
+    const MAX_RETRIES = 2;
+    
     try {
       setStats(prev => ({ ...prev, isLoading: true, error: null }));
       const response = await listSuppliers();
@@ -51,20 +53,43 @@ const useSupplierStats = () => {
         lastUpdated: new Date()
       });
     } catch (error) {
+      // Determine if error is retryable
+      const isNetworkError = !error.response || error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK';
+      const shouldRetry = isNetworkError && retryCount < MAX_RETRIES;
+      
+      if (shouldRetry) {
+        console.log(`Retrying suppliers fetch... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+        return fetchSuppliers(retryCount + 1);
+      }
+      
+      let errorMessage = 'Failed to fetch suppliers data';
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout - server may be slow';
+      } else if (error.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error - check connection';
+      }
+      
       console.error('Failed to fetch suppliers:', error);
       setStats(prev => ({
         ...prev,
         isLoading: false,
-        error: 'Failed to fetch suppliers data'
+        error: errorMessage
       }));
     }
   }, []);
 
   useEffect(() => {
+    if (!shouldLoad) {
+      setStats(prev => ({ ...prev, isLoading: true }));
+      return;
+    }
+    
     fetchSuppliers();
-    const interval = setInterval(fetchSuppliers, 30000);
-    return () => clearInterval(interval);
-  }, [fetchSuppliers]);
+    // Temporarily disabled auto-refresh
+    // const interval = setInterval(fetchSuppliers, 30000);
+    // return () => clearInterval(interval);
+  }, [fetchSuppliers, shouldLoad]);
 
   return {
     ...stats,

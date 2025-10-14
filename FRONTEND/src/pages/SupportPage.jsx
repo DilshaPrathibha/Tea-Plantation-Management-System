@@ -4,7 +4,7 @@ const SupportPage = () => {
   return (
     <div className="min-h-screen bg-base-200">
       <div className="container mx-auto p-6 max-w-4xl">
-        <h1 className="text-3xl font-bold text-white mb-6">Support Center</h1>
+        <h1 className="text-3xl font-bold text-base-content mb-6">Support Center</h1>
         
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Contact Support */}

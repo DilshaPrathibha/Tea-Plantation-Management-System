@@ -64,17 +64,17 @@ const LoginPage = () => {
         <div className="relative z-10 w-full max-w-md px-4">
         {/* Single button to go to Home (always visible) */}
         <button
-          className="btn btn-outline w-full mb-4"
+          className="btn btn-outline w-full mb-4 text-white border-white/60 hover:bg-white/20 hover:border-white"
           type="button"
           onClick={() => navigate('/')}
         >
-          ← Home
+          Home
         </button>
 
         <div className="rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl p-6 sm:p-8">
           <div className="flex items-center justify-center gap-3 mb-2">
             <img src="/favicon.png" alt="CeylonLeaf" className="w-9 h-9 rounded" />
-            <span className="text-white text-2xl font-semibold tracking-tight">CeylonLeaf</span>
+            <span className="text-emerald-300 text-2xl font-semibold tracking-tight">CeylonLeaf</span>
           </div>
           <p className="text-center text-white/80 mb-6">
             Sign in to manage fields, workers, and factory handovers.
@@ -175,3 +175,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+

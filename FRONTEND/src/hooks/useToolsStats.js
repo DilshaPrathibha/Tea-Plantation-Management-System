@@ -5,7 +5,7 @@ import autoTable from 'jspdf-autotable';
 
 const api = axios.create({
   baseURL: 'http://localhost:5001/api',
-  timeout: 5000,
+  timeout: 15000, // Increased from 5s to 15s for slow connections
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -52,7 +52,7 @@ const svgToPngDataUrl = (svgMarkup, targetPx = 28) =>
     img.src = svgDataUrl;
   });
 
-const useToolsStats = () => {
+const useToolsStats = (shouldLoad = true) => {
   const [stats, setStats] = useState({
     totalTools: 0,
     availableTools: 0,
@@ -67,7 +67,9 @@ const useToolsStats = () => {
   
   const [tools, setTools] = useState([]);
 
-  const fetchTools = async () => {
+  const fetchTools = async (retryCount = 0) => {
+    const MAX_RETRIES = 2;
+    
     try {
       setStats(prev => ({ ...prev, isLoading: true, error: null }));
       
@@ -103,11 +105,32 @@ const useToolsStats = () => {
         lastUpdated: new Date()
       });
     } catch (error) {
+      // Determine if error is retryable
+      const isNetworkError = !error.response || error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK';
+      const shouldRetry = isNetworkError && retryCount < MAX_RETRIES;
+      
+      if (shouldRetry) {
+        console.log(`Retrying tools fetch... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        // Exponential backoff: wait 1s, then 2s
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+        return fetchTools(retryCount + 1);
+      }
+      
+      // Determine error message
+      let errorMessage = 'Failed to fetch tools data';
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout - server may be slow';
+      } else if (error.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error - check connection';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
       console.error('Error fetching tools:', error);
       setStats(prev => ({
         ...prev,
         isLoading: false,
-        error: 'Failed to fetch tools data'
+        error: errorMessage
       }));
     }
   };
@@ -245,13 +268,18 @@ const useToolsStats = () => {
   };
 
   useEffect(() => {
+    if (!shouldLoad) {
+      setStats(prev => ({ ...prev, isLoading: true }));
+      return;
+    }
+    
     fetchTools();
     
     // Refresh data every 30 seconds for live updates
     const interval = setInterval(fetchTools, 30000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [shouldLoad]);
 
   return {
     ...stats,

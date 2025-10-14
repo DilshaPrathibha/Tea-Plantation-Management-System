@@ -4,12 +4,12 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Sweet, Toast } from '../utils/sweet';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../config/api.js';
+import { useTheme } from '../context/ThemeContext';
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 5000,
+  timeout: 15000, // Increased from 5s to 15s for slow connections
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -73,6 +73,8 @@ const Suppliers = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [addModal, setAddModal] = useState({ open: false });
   const [editModal, setEditModal] = useState({ open: false, supplier: null });
+  const { theme } = useTheme();
+  const isLightTheme = theme === 'tea-light';
   
   // Form data for add/edit modals
   const [formData, setFormData] = useState({
@@ -87,7 +89,8 @@ const Suppliers = () => {
     emergencyContact: ''
   });
 
-  const fetchSuppliers = useCallback(async () => {
+  const fetchSuppliers = useCallback(async (retryCount = 0) => {
+    const MAX_RETRIES = 2;
     setLoading(true);
     try {
       const params = {};
@@ -97,8 +100,25 @@ const Suppliers = () => {
       const response = await api.get('/suppliers', { params });
       setSuppliers(response.data);
     } catch (error) {
+      // Determine if error is retryable
+      const isNetworkError = !error.response || error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK';
+      const shouldRetry = isNetworkError && retryCount < MAX_RETRIES;
+      
+      if (shouldRetry) {
+        console.log(`Retrying suppliers fetch... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        setLoading(false);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+        return fetchSuppliers(retryCount + 1);
+      }
+      
       console.error('Failed to fetch suppliers', error);
-      Toast.error('Could not load suppliers.');
+      let errorMessage = 'Could not load suppliers.';
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout - server may be slow';
+      } else if (error.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error - check your connection';
+      }
+      Toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -182,7 +202,7 @@ const Suppliers = () => {
           { content: `Total Suppliers: ${totalSuppliers}`, styles: { textColor: [30, 41, 59] } },
           { content: `Active: ${activeSuppliers}`, styles: { textColor: [34, 197, 94] } },
           { content: `Pending: ${pendingSuppliers}`, styles: { textColor: [202, 138, 4] } },
-          { content: `Suspended: ${suspendedSuppliers}`, styles: { textColor: [220, 38, 38] } },
+          { content: `Suspended: ${suspendedSuppliers}`, styles: { textColor: [107, 114, 128] } },
           { content: `Types: ${uniqueTypes}`, styles: { textColor: [30, 41, 59] } }
         ]],
         startY: titleY + 12,
@@ -214,13 +234,14 @@ const Suppliers = () => {
         didParseCell: function (data) {
           // Status column styling
           if (data.section === 'body' && data.column.index === 5) {
-            if (data.cell.raw === 'suspended') {
-              data.cell.styles.textColor = [220, 38, 38];
+            const raw = String(data.cell.raw || '').toLowerCase();
+            if (raw === 'suspended') {
+              data.cell.styles.textColor = [107, 114, 128]; // Slate grey
               data.cell.styles.fontStyle = 'bold';
-            } else if (data.cell.raw === 'pending') {
+            } else if (raw === 'pending') {
               data.cell.styles.textColor = [202, 138, 4];
               data.cell.styles.fontStyle = 'bold';
-            } else if (data.cell.raw === 'active') {
+            } else if (raw === 'active') {
               data.cell.styles.textColor = [34, 197, 94];
               data.cell.styles.fontStyle = 'bold';
             }
@@ -314,13 +335,100 @@ const Suppliers = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Phone number validation - only allow digits
+    if (name === 'contactNumber' || name === 'emergencyContact') {
+      // Remove all non-digit characters
+      const cleaned = value.replace(/\D/g, '');
+      setFormData(prev => ({ ...prev, [name]: cleaned }));
+      return;
+    }
+    
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddSupplier = async () => {
-    if (!formData.name || !formData.type || !formData.contactNumber) {
-      return Toast.error('Please fill in all required fields');
+  // Validation helper functions
+  const validatePhoneNumber = (phone) => {
+    if (!phone) return { valid: false, message: '' }; // Allow empty for optional fields
+    if (phone.length !== 10) {
+      return { valid: false, message: 'Phone number must be exactly 10 digits' };
     }
+    if (!/^\d{10}$/.test(phone)) {
+      return { valid: false, message: 'Phone number must contain only digits' };
+    }
+    return { valid: true, message: '' };
+  };
+
+  const validateEmail = (email) => {
+    if (!email) return { valid: true, message: '' }; // Email is optional
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return { valid: false, message: 'Please enter a valid email address' };
+    }
+    return { valid: true, message: '' };
+  };
+
+  const validateForm = () => {
+    // Required field validations
+    if (!formData.name.trim()) {
+      Toast.error('Supplier name is required');
+      return false;
+    }
+    
+    if (formData.name.trim().length < 2) {
+      Toast.error('Supplier name must be at least 2 characters');
+      return false;
+    }
+    
+    if (!formData.type) {
+      Toast.error('Supplier type is required');
+      return false;
+    }
+    
+    if (!formData.contactNumber) {
+      Toast.error('Contact number is required');
+      return false;
+    }
+    
+    // Phone number validation
+    const phoneValidation = validatePhoneNumber(formData.contactNumber);
+    if (!phoneValidation.valid) {
+      Toast.error(phoneValidation.message);
+      return false;
+    }
+    
+    // Email validation (optional field)
+    if (formData.email) {
+      const emailValidation = validateEmail(formData.email);
+      if (!emailValidation.valid) {
+        Toast.error(emailValidation.message);
+        return false;
+      }
+    }
+    
+    // Emergency contact validation (optional but if provided must be valid)
+    if (formData.emergencyContact) {
+      const emergencyValidation = validatePhoneNumber(formData.emergencyContact);
+      if (!emergencyValidation.valid) {
+        Toast.error('Emergency contact: ' + emergencyValidation.message);
+        return false;
+      }
+    }
+    
+    // Contact person name validation
+    if (formData.contactPerson && formData.contactPerson.trim().length < 2) {
+      Toast.error('Contact person name must be at least 2 characters');
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleAddSupplier = async () => {
+    if (!validateForm()) {
+      return;
+    }
+    
     setActionLoading(true);
     try {
       await api.post('/suppliers', formData);
@@ -336,9 +444,10 @@ const Suppliers = () => {
   };
 
   const handleEditSupplier = async () => {
-    if (!formData.name || !formData.type || !formData.contactNumber) {
-      return Toast.error('Please fill in all required fields');
+    if (!validateForm()) {
+      return;
     }
+    
     setActionLoading(true);
     try {
       await api.put(`/suppliers/${editModal.supplier._id}`, formData);
@@ -402,52 +511,52 @@ const Suppliers = () => {
         </div>
 
         {/* Suppliers Overview Section */}
-        <div className="bg-base-100 rounded-lg shadow border border-gray-700/30 p-3 sm:p-4 mb-4">
+        <div className={`rounded-lg shadow p-3 sm:p-4 mb-4 ${isLightTheme ? 'bg-white border border-slate-200' : 'bg-base-100 border border-gray-700/30'}`}>
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h2 className="text-sm sm:text-base font-semibold text-white">Suppliers Overview</h2>
-              <p className="text-xs text-base-content/60 hidden sm:block">Current suppliers statistics</p>
+              <h2 className="text-sm sm:text-base font-semibold text-base-content">Suppliers Overview</h2>
+              <p className="text-xs text-base-content/70 hidden sm:block">Current suppliers statistics</p>
             </div>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 sm:gap-2">
-            <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-md p-2 flex items-center gap-2 border border-gray-700/50 hover:shadow-md transition-all duration-200">
-              <div className="bg-blue-500/20 p-1.5 rounded-full flex-shrink-0">
-                <Package className="w-3 h-3 text-blue-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-white border-slate-200 text-slate-700' : 'bg-gradient-to-r from-slate-800 to-slate-900 border-gray-700/50 text-slate-100'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-300'}`}>
+                <Package className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Total Suppliers</div>
-                <div className="font-bold text-base sm:text-lg text-blue-400">{totalSuppliers}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Total Suppliers</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-slate-900' : 'text-blue-300'}`}>{totalSuppliers}</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-green-800/20 to-green-900/30 rounded-md p-2 flex items-center gap-2 border border-green-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-green-500/20 p-1.5 rounded-full flex-shrink-0">
-                <CheckCircle className="w-3 h-3 text-green-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-gradient-to-r from-green-800/20 to-green-900/30 border-green-700/30 text-emerald-300'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-emerald-100 text-emerald-600' : 'bg-green-500/20 text-green-200'}`}>
+                <CheckCircle className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Active</div>
-                <div className="font-bold text-base sm:text-lg text-green-400">{activeSuppliers}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Active</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-emerald-700' : 'text-green-200'}`}>{activeSuppliers}</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-amber-800/20 to-amber-900/30 rounded-md p-2 flex items-center gap-2 border border-amber-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-amber-500/20 p-1.5 rounded-full flex-shrink-0">
-                <Clock className="w-3 h-3 text-amber-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-gradient-to-r from-amber-800/20 to-amber-900/30 border-amber-700/30 text-amber-300'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-amber-100 text-amber-600' : 'bg-amber-500/20 text-amber-200'}`}>
+                <Clock className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Pending</div>
-                <div className="font-bold text-base sm:text-lg text-amber-400">{pendingSuppliers}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Pending</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-amber-700' : 'text-amber-200'}`}>{pendingSuppliers}</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-red-800/20 to-red-900/30 rounded-md p-2 flex items-center gap-2 border border-red-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-red-500/20 p-1.5 rounded-full flex-shrink-0">
-                <AlertTriangle className="w-3 h-3 text-red-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-gradient-to-r from-slate-700/30 to-slate-900/40 border-slate-600/30 text-slate-200'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-slate-200 text-slate-600' : 'bg-slate-500/30 text-slate-200'}`}>
+                <AlertTriangle className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Suspended</div>
-                <div className="font-bold text-base sm:text-lg text-red-400">{suspendedSuppliers}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Suspended</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-slate-700' : 'text-slate-200'}`}>{suspendedSuppliers}</div>
               </div>
             </div>
           </div>
@@ -456,6 +565,10 @@ const Suppliers = () => {
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : suppliers.length === 0 ? (
+          <div className="bg-base-100 border border-base-content/10 rounded-lg p-8 text-center text-base-content/70">
+            No suppliers found for these filters. Try searching with different terms.
           </div>
         ) : (
           <>
@@ -471,7 +584,7 @@ const Suppliers = () => {
                     <div className="text-right">
                       {supplier.status === 'active' && <span className="badge badge-success badge-sm">Active</span>}
                       {supplier.status === 'pending' && <span className="badge badge-warning badge-sm">Pending</span>}
-                      {supplier.status === 'suspended' && <span className="badge badge-error badge-sm">Suspended</span>}
+                      {supplier.status === 'suspended' && <span className="badge bg-slate-600 text-white border-slate-600 badge-sm">Suspended</span>}
                     </div>
                   </div>
                   
@@ -507,7 +620,7 @@ const Suppliers = () => {
                       </button>
                     ) : (
                       <button
-                        className="btn btn-xs btn-warning flex-1 min-w-0"
+                        className="btn btn-xs bg-slate-600 hover:bg-slate-700 text-white border-slate-600 flex-1 min-w-0"
                         onClick={() => suspendSupplier(supplier._id)}
                         disabled={actionLoading}
                       >
@@ -515,7 +628,7 @@ const Suppliers = () => {
                       </button>
                     )}
                     <button 
-                      className="btn btn-xs btn-info flex-1 min-w-0" 
+                      className="btn btn-xs btn-warning flex-1 min-w-0" 
                       onClick={() => openEditModal(supplier)}
                     >
                       <Edit size={10}/> Edit
@@ -560,7 +673,7 @@ const Suppliers = () => {
                       <td>
                         {supplier.status === 'active' && <span className="badge badge-success gap-1">Active</span>}
                         {supplier.status === 'pending' && <span className="badge badge-warning gap-1">Pending</span>}
-                        {supplier.status === 'suspended' && <span className="badge badge-error gap-1">Suspended</span>}
+                        {supplier.status === 'suspended' && <span className="badge bg-slate-600 text-white border-slate-600 gap-1">Suspended</span>}
                       </td>
                       <td>
                         <div className="flex items-center gap-1">
@@ -574,7 +687,7 @@ const Suppliers = () => {
                             </button>
                           ) : (
                             <button
-                              className="btn btn-sm btn-warning text-xs"
+                              className="btn btn-sm bg-slate-600 hover:bg-slate-700 text-white border-slate-600 text-xs"
                               onClick={() => suspendSupplier(supplier._id)}
                               disabled={actionLoading}
                             >
@@ -582,7 +695,7 @@ const Suppliers = () => {
                             </button>
                           )}
                           <button 
-                            className="btn btn-sm btn-info flex-shrink-0 text-xs" 
+                            className="btn btn-sm btn-warning flex-shrink-0 text-xs" 
                             onClick={() => openEditModal(supplier)}
                           >
                             <Edit size={12}/> Edit
@@ -622,7 +735,12 @@ const Suppliers = () => {
                     onChange={handleInputChange}
                     className="input input-bordered w-full"
                     placeholder="Supplier name"
+                    minLength={2}
+                    required
                   />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Minimum 2 characters</span>
+                  </label>
                 </div>
                 
                 <div>
@@ -634,6 +752,7 @@ const Suppliers = () => {
                     value={formData.type}
                     onChange={handleInputChange}
                     className="select select-bordered w-full"
+                    required
                   >
                     <option value="">Select type</option>
                     <option value="fertilizer">Fertilizer</option>
@@ -654,8 +773,14 @@ const Suppliers = () => {
                     value={formData.contactNumber}
                     onChange={handleInputChange}
                     className="input input-bordered w-full"
-                    placeholder="Contact number"
+                    placeholder="0771234567"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    required
                   />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Must be exactly 10 digits</span>
+                  </label>
                 </div>
                 
                 <div>
@@ -668,8 +793,62 @@ const Suppliers = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     className="input input-bordered w-full"
-                    placeholder="Email address"
+                    placeholder="supplier@example.com"
                   />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Optional - valid email format</span>
+                  </label>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Contact Person</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="contactPerson"
+                    value={formData.contactPerson}
+                    onChange={handleInputChange}
+                    className="input input-bordered w-full"
+                    placeholder="Contact person name"
+                    minLength={2}
+                  />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Optional - minimum 2 characters</span>
+                  </label>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Emergency Contact</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="emergencyContact"
+                    value={formData.emergencyContact}
+                    onChange={handleInputChange}
+                    className="input input-bordered w-full"
+                    placeholder="0777654321"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                  />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Optional - must be 10 digits if provided</span>
+                  </label>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Address</span>
+                  </label>
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className="textarea textarea-bordered w-full"
+                    placeholder="Full address"
+                    rows={2}
+                  ></textarea>
                 </div>
                 
                 <div>
@@ -741,7 +920,197 @@ const Suppliers = () => {
                     onChange={handleInputChange}
                     className="input input-bordered w-full"
                     placeholder="Supplier name"
+                    minLength={2}
+                    required
                   />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Minimum 2 characters</span>
+                  </label>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Type *</span>
+                  </label>
+                  <select
+                    name="type"
+                    value={formData.type}
+                    onChange={handleInputChange}
+                    className="select select-bordered w-full"
+                    required
+                  >
+                    <option value="">Select type</option>
+                    <option value="fertilizer">Fertilizer</option>
+                    <option value="insecticide">Insecticide</option>
+                    <option value="tools">Tools</option>
+                    <option value="equipment">Equipment</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Contact Number *</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="contactNumber"
+                    value={formData.contactNumber}
+                    onChange={handleInputChange}
+                    className="input input-bordered w-full"
+                    placeholder="0771234567"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    required
+                  />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Must be exactly 10 digits</span>
+                  </label>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Email</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="input input-bordered w-full"
+                    placeholder="supplier@example.com"
+                  />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Optional - valid email format</span>
+                  </label>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Contact Person</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="contactPerson"
+                    value={formData.contactPerson}
+                    onChange={handleInputChange}
+                    className="input input-bordered w-full"
+                    placeholder="Contact person name"
+                    minLength={2}
+                  />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Optional - minimum 2 characters</span>
+                  </label>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Emergency Contact</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="emergencyContact"
+                    value={formData.emergencyContact}
+                    onChange={handleInputChange}
+                    className="input input-bordered w-full"
+                    placeholder="0777654321"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                  />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Optional - must be 10 digits if provided</span>
+                  </label>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Address</span>
+                  </label>
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className="textarea textarea-bordered w-full"
+                    placeholder="Full address"
+                    rows={2}
+                  ></textarea>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Status</span>
+                  </label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    className="select select-bordered w-full"
+                  >
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Notes</span>
+                  </label>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    className="textarea textarea-bordered w-full"
+                    placeholder="Additional notes"
+                    rows={3}
+                  ></textarea>
+                </div>
+              </div>
+              
+              <div className="flex gap-2 justify-end mt-6">
+                <button 
+                  className="btn" 
+                  onClick={() => setEditModal({ open: false, supplier: null })}
+                  disabled={actionLoading}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="btn btn-primary" 
+                  disabled={actionLoading} 
+                  onClick={handleEditSupplier}
+                >
+                  {actionLoading ? 'Updating...' : 'Update Supplier'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Supplier Modal */}
+        {editModal.open && (
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+            <div className="bg-base-100 rounded-xl shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl font-bold mb-4">Edit Supplier</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="label">
+                    <span className="label-text">Name *</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="input input-bordered w-full"
+                    placeholder="Supplier name"
+                    minLength={2}
+                    required
+                  />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Minimum 2 characters</span>
+                  </label>
                 </div>
                 
                 <div>
@@ -773,8 +1142,14 @@ const Suppliers = () => {
                     value={formData.contactNumber}
                     onChange={handleInputChange}
                     className="input input-bordered w-full"
-                    placeholder="Contact number"
+                    placeholder="0771234567"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    required
                   />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Must be exactly 10 digits</span>
+                  </label>
                 </div>
                 
                 <div>
@@ -787,8 +1162,62 @@ const Suppliers = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     className="input input-bordered w-full"
-                    placeholder="Email address"
+                    placeholder="supplier@example.com"
                   />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Optional - valid email format</span>
+                  </label>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Contact Person</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="contactPerson"
+                    value={formData.contactPerson}
+                    onChange={handleInputChange}
+                    className="input input-bordered w-full"
+                    placeholder="Contact person name"
+                    minLength={2}
+                  />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Optional - minimum 2 characters</span>
+                  </label>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Emergency Contact</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="emergencyContact"
+                    value={formData.emergencyContact}
+                    onChange={handleInputChange}
+                    className="input input-bordered w-full"
+                    placeholder="0777654321"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                  />
+                  <label className="label">
+                    <span className="label-text-alt text-base-content/60">Optional - must be 10 digits if provided</span>
+                  </label>
+                </div>
+                
+                <div>
+                  <label className="label">
+                    <span className="label-text">Address</span>
+                  </label>
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className="textarea textarea-bordered w-full"
+                    placeholder="Full address"
+                    rows={2}
+                  ></textarea>
                 </div>
                 
                 <div>
@@ -847,3 +1276,6 @@ const Suppliers = () => {
 };
 
 export default Suppliers;
+
+
+
