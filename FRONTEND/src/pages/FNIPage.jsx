@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Download, Printer, CandlestickChart, Pencil, Trash, Package, Leaf, Bug, TrendingDown, DollarSign } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -6,6 +6,7 @@ import { Sweet, Toast } from '../utils/sweet';
 import { useNavigate } from 'react-router-dom';
 import { listItems, deleteItem } from '../api/fni';
 import FNIAdjustModal from '../components/FNIAdjustModal';
+import { useTheme } from '../context/ThemeContext';
 
 const CEYLONLEAF_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
@@ -41,6 +42,8 @@ const svgToPngDataUrl = (svgMarkup, targetPx = 28) =>
 
 export default function FNIPage() {
   const [items, setItems] = useState([]);
+  const { theme } = useTheme();
+  const isLightTheme = theme === 'tea-light';
   // Summary metrics (after items is defined)
   const totalItems = items.length;
   const lowStockCount = items.filter(i => Number(i.qtyOnHand) < Number(i.minQty)).length;
@@ -63,7 +66,8 @@ export default function FNIPage() {
   const [category, setCategory] = useState('');
   const navigate = useNavigate();
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async (retryCount = 0) => {
+    const MAX_RETRIES = 2;
     setLoading(true);
     try {
       const params = {};
@@ -72,15 +76,33 @@ export default function FNIPage() {
       const res = await listItems(params);
       setItems(res.data);
     } catch (err) {
-      Toast.error('Failed to load items');
+      // Determine if error is retryable
+      const isNetworkError = !err.response || err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK';
+      const shouldRetry = isNetworkError && retryCount < MAX_RETRIES;
+      
+      if (shouldRetry) {
+        console.log(`Retrying FNI fetch... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        setLoading(false);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+        return fetchItems(retryCount + 1);
+      }
+      
+      console.error('Failed to load FNI items', err);
+      let errorMessage = 'Failed to load items';
+      if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout - server may be slow';
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error - check your connection';
+      }
+      Toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [category, search]);
 
   useEffect(() => {
     fetchItems();
-  }, [category, search]);
+  }, [fetchItems]);
 
   const handleDelete = async (item) => {
     if (item.qtyOnHand > 0) {
@@ -100,7 +122,7 @@ export default function FNIPage() {
   // Export CSV
   const exportCSV = () => {
     const rows = [
-      ['Name', 'Category', 'Unit', 'Qty On Hand', 'Min Qty', 'Avg Cost', 'Total Value', 'Note'],
+      ['Name', 'Category', 'Unit', 'Suppliers', 'Qty On Hand', 'Min Qty', 'Avg Cost', 'Total Value', 'Note'],
       ...items.map(i => {
         let avgCost = 0, totalValue = 0, totalQty = 0;
         if (Array.isArray(i.batches) && i.batches.length > 0) {
@@ -108,10 +130,23 @@ export default function FNIPage() {
           totalQty = i.batches.reduce((sum, b) => sum + b.qty, 0);
           avgCost = totalQty > 0 ? (totalValue / totalQty) : 0;
         }
+        const supplierNames = Array.isArray(i.suppliers)
+          ? i.suppliers
+              .map(s => {
+                if (typeof s === 'string') return s;
+                if (s && typeof s === 'object') {
+                  return s.name || s.supplierId || '';
+                }
+                return '';
+              })
+              .filter(Boolean)
+              .join('; ')
+          : '';
         return [
           i.name,
           i.category,
           i.unit,
+          supplierNames,
           i.qtyOnHand,
           i.minQty,
           avgCost.toFixed(2),
@@ -205,21 +240,34 @@ export default function FNIPage() {
           totalQty = i.batches.reduce((sum, b) => sum + b.qty, 0);
           avgCost = totalQty > 0 ? (totalValue / totalQty) : 0;
         }
+        const supplierNames = Array.isArray(i.suppliers)
+          ? i.suppliers
+              .map(s => {
+                if (typeof s === 'string') return s;
+                if (s && typeof s === 'object') {
+                  return s.name || s.supplierId || '';
+                }
+                return '';
+              })
+              .filter(Boolean)
+              .join(', ')
+          : '';
         return [
           i.name || '-',
           i.category || '-',
           i.unit || '-',
-          i.qtyOnHand ?? '-',
-          i.minQty ?? '-',
+          supplierNames || '-',
+          Number(i.qtyOnHand ?? 0).toFixed(2),
+          Number(i.minQty ?? 0).toFixed(2),
           avgCost.toFixed(2),
           totalValue.toFixed(2),
           i.note || ''
         ];
       });
-      if (body.length === 0) body.push(['-', '-', '-', '-', '-', '-', '-', '-']);
+      if (body.length === 0) body.push(['-', '-', '-', '-', '-', '-', '-', '-', '-']);
 
       autoTable(doc, {
-        head: [['Name', 'Category', 'Unit', 'Qty On Hand', 'Min Qty', 'Avg Cost', 'Total Value', 'Note']],
+        head: [['Name', 'Category', 'Unit', 'Suppliers', 'Qty On Hand', 'Min Qty', 'Avg Cost', 'Total Value', 'Note']],
         body,
         startY: doc.lastAutoTable.finalY + 10,
         styles: { fontSize: 10 },
@@ -227,10 +275,10 @@ export default function FNIPage() {
         alternateRowStyles: { fillColor: [240, 253, 244] },
         margin: { left: 40, right: 40 },
         didParseCell: function (data) {
-          // Qty On Hand column index is 3
-          if (data.section === 'body' && data.column.index === 3) {
+          // Qty On Hand column index is 4
+          if (data.section === 'body' && data.column.index === 4) {
             const qty = Number(data.cell.raw);
-            const minQty = Number(data.row.raw[4]);
+            const minQty = Number(data.row.raw[5]);
             if (!isNaN(qty) && !isNaN(minQty) && qty < minQty) {
               data.cell.styles.textColor = [220, 38, 38]; // Tailwind red-600
               data.cell.styles.fontStyle = 'bold';
@@ -287,62 +335,62 @@ export default function FNIPage() {
         </div>
 
         {/* FNI Summary Section */}
-        <div className="bg-base-100 rounded-lg shadow border border-gray-700/30 p-3 sm:p-4 mb-4">
+        <div className={`rounded-lg shadow p-3 sm:p-4 mb-4 ${isLightTheme ? 'bg-white border border-slate-200' : 'bg-base-100 border border-gray-700/30'}`}>
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h2 className="text-sm sm:text-base font-semibold text-white">FNI Overvi</h2>
-              <p className="text-xs text-base-content/60 hidden sm:block">Fertilizers & Insecticides statistics</p>
+              <h2 className="text-sm sm:text-base font-semibold text-base-content">FNI Overview</h2>
+              <p className="text-xs text-base-content/70 hidden sm:block">Fertilizers & Insecticides statistics</p>
             </div>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-1 sm:gap-2">
-            <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-md p-2 flex items-center gap-2 border border-gray-700/50 hover:shadow-md transition-all duration-200">
-              <div className="bg-blue-500/20 p-1.5 rounded-full flex-shrink-0">
-                <Package className="w-3 h-3 text-blue-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-white border-slate-200 text-slate-700' : 'bg-gradient-to-r from-slate-800 to-slate-900 border-gray-700/50 text-slate-100'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-300'}`}>
+                <Package className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Total Items</div>
-                <div className="font-bold text-base sm:text-lg text-blue-400">{totalItems}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Total Items</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-slate-900' : 'text-blue-300'}`}>{totalItems}</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-green-800/20 to-green-900/30 rounded-md p-2 flex items-center gap-2 border border-green-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-green-500/20 p-1.5 rounded-full flex-shrink-0">
-                <Leaf className="w-3 h-3 text-green-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-gradient-to-r from-green-800/20 to-green-900/30 border-green-700/30 text-emerald-300'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-emerald-100 text-emerald-600' : 'bg-green-500/20 text-green-300'}`}>
+                <Leaf className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Fertilizer Available</div>
-                <div className="font-bold text-xs sm:text-sm text-green-400">{fertilizerKg} kg, {fertilizerL} L</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Fertilizer Available</div>
+                <div className={`font-bold text-xs sm:text-sm ${isLightTheme ? 'text-emerald-700' : 'text-green-200'}`}>{fertilizerKg} kg, {fertilizerL} L</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-cyan-800/20 to-cyan-900/30 rounded-md p-2 flex items-center gap-2 border border-cyan-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-cyan-500/20 p-1.5 rounded-full flex-shrink-0">
-                <Bug className="w-3 h-3 text-cyan-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-sky-50 border-sky-200 text-sky-700' : 'bg-gradient-to-r from-cyan-800/20 to-cyan-900/30 border-cyan-700/30 text-cyan-300'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-sky-100 text-sky-600' : 'bg-cyan-500/20 text-cyan-200'}`}>
+                <Bug className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Insecticide Available</div>
-                <div className="font-bold text-xs sm:text-sm text-cyan-400">{insecticideKg} kg, {insecticideL} L</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Insecticide Available</div>
+                <div className={`font-bold text-xs sm:text-sm ${isLightTheme ? 'text-sky-700' : 'text-cyan-200'}`}>{insecticideKg} kg, {insecticideL} L</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-red-800/20 to-red-900/30 rounded-md p-2 flex items-center gap-2 border border-red-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-red-500/20 p-1.5 rounded-full flex-shrink-0">
-                <TrendingDown className="w-3 h-3 text-red-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-gradient-to-r from-red-800/20 to-red-900/30 border-red-700/30 text-rose-200'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-rose-100 text-rose-600' : 'bg-red-500/20 text-red-200'}`}>
+                <TrendingDown className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Low Stock Items</div>
-                <div className="font-bold text-base sm:text-lg text-red-400">{lowStockCount}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Low Stock Items</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-rose-700' : 'text-red-200'}`}>{lowStockCount}</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-emerald-800/20 to-emerald-900/30 rounded-md p-2 flex items-center gap-2 border border-emerald-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-emerald-500/20 p-1.5 rounded-full flex-shrink-0">
-                <DollarSign className="w-3 h-3 text-emerald-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-lime-50 border-lime-200 text-lime-700' : 'bg-gradient-to-r from-emerald-800/20 to-emerald-900/30 border-emerald-700/30 text-emerald-200'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-lime-100 text-lime-600' : 'bg-emerald-500/20 text-emerald-200'}`}>
+                <DollarSign className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Total Inventory Value</div>
-                <div className="font-bold text-xs sm:text-sm text-emerald-400">LKR {sumTotalValue.toFixed(2)}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Total Inventory Value</div>
+                <div className={`font-bold text-xs sm:text-sm ${isLightTheme ? 'text-lime-700' : 'text-emerald-200'}`}>LKR {sumTotalValue.toFixed(2)}</div>
               </div>
             </div>
           </div>
@@ -351,6 +399,10 @@ export default function FNIPage() {
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="bg-base-100 border border-base-content/10 rounded-lg p-8 text-center text-base-content/70">
+            No FNI items match your current filters. Try adjusting the search or category.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -363,10 +415,35 @@ export default function FNIPage() {
                 totalQty = item.batches.reduce((sum, b) => sum + b.qty, 0);
                 avgCost = totalQty > 0 ? (totalValue / totalQty) : 0;
               }
+              const supplierBadges = Array.isArray(item.suppliers)
+                ? item.suppliers
+                    .map((s, idx) => {
+                      if (!s) return null;
+                      if (typeof s === 'string') {
+                        return { key: `${s}-${idx}`, label: s };
+                      }
+                      const key = s._id || s.supplierId || `${s.name ?? 'supplier'}-${idx}`;
+                      let label = s.name || '';
+                      if (s.supplierId) {
+                        label = label ? `${label} (${s.supplierId})` : s.supplierId;
+                      }
+                      if (s.status && s.status !== 'active') {
+                        label = label ? `${label} - ${s.status}` : s.status;
+                      }
+                      return label ? { key, label } : null;
+                    })
+                    .filter(Boolean)
+                : [];
               return (
                 <div
                   key={item._id}
-                  className={`card shadow-md p-3 sm:p-4 ${isLow ? 'bg-red-900/70 border border-red-700' : 'bg-base-100'}`}
+                  className={`card shadow-md p-3 sm:p-4 border transition-colors ${isLow
+                    ? (isLightTheme
+                      ? 'bg-rose-100 border-rose-300 text-rose-900'
+                      : 'bg-red-900/70 border-red-700 text-red-100')
+                    : (isLightTheme
+                      ? 'bg-white border-slate-200 text-slate-800'
+                      : 'bg-base-100 border-gray-700/40 text-base-content')}`}
                 >
                   <div className="font-bold text-base sm:text-lg mb-1">{item.name}</div>
                   <div className="mb-1 text-sm text-base-content/70">{item.category} &bull; {item.unit}</div>
@@ -381,6 +458,20 @@ export default function FNIPage() {
                   {item.note && (
                     <div className="mb-2 text-xs sm:text-sm text-base-content/70">{item.note}</div>
                   )}
+                  <div className="mb-2">
+                    <div className="text-xs text-base-content/60 font-semibold uppercase tracking-wide">Suppliers</div>
+                    {supplierBadges.length > 0 ? (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {supplierBadges.map((badge) => (
+                          <span key={badge.key} className="badge badge-ghost badge-xs sm:badge-sm">
+                            {badge.label}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-base-content/60 mt-1">Not assigned</div>
+                    )}
+                  </div>
                   {Array.isArray(item.batches) && item.batches.length > 0 && (
                     <details className="mb-2">
                       <summary className="cursor-pointer text-xs text-base-content/60">Batch History</summary>

@@ -34,13 +34,16 @@ exports.createTicket = async (req, res) => {
     }
 
     const trimmedDescription = (description || '').trim();
-    if (!fieldId || !trimmedDescription) {
-      return res.status(400).json({ message: 'Field and problem description are required' });
+    if (!trimmedDescription) {
+      return res.status(400).json({ message: 'Problem description is required' });
     }
 
-    const field = await Field.findById(fieldId).select('name');
-    if (!field) {
-      return res.status(404).json({ message: 'Field not found' });
+    let field = null;
+    if (fieldId) {
+      field = await Field.findById(fieldId).select('name');
+      if (!field) {
+        return res.status(404).json({ message: 'Field not found' });
+      }
     }
 
     const ticket = await Ticket.create({
@@ -48,8 +51,8 @@ exports.createTicket = async (req, res) => {
       category: normaliseCategory(category, 'other'),
       priority: normalisePriority(priority, 'medium'),
       description: trimmedDescription,
-      field: field._id,
-      fieldName: field.name,
+      field: field ? field._id : null,
+      fieldName: field ? field.name : '',
       createdBy: user._id,
       createdByRole: user.role,
       status: 'pending'

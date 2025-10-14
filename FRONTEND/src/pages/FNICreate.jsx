@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Toast } from '../utils/sweet';
 import { createItem } from '../api/fni';
+import { listSuppliers } from '../api/suppliers';
 
 export default function FNICreate() {
   const [form, setForm] = useState({
@@ -11,15 +12,68 @@ export default function FNICreate() {
     openingQty: '',
     minQty: '',
     note: '',
-    cost: ''
+    cost: '',
+    suppliers: []
   });
+  const [supplierOptions, setSupplierOptions] = useState([]);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+  const [supplierFetchError, setSupplierFetchError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchSuppliers() {
+      setLoadingSuppliers(true);
+      setSupplierFetchError('');
+      try {
+        const res = await listSuppliers();
+        if (!isMounted) return;
+        const data = Array.isArray(res.data) ? res.data : [];
+        const filtered = data.filter(s => s.status !== 'suspended');
+        setSupplierOptions(filtered);
+      } catch (err) {
+        console.error('Failed to load suppliers', err);
+        if (!isMounted) return;
+        setSupplierFetchError('Failed to load suppliers. You can still create the item and assign suppliers later.');
+        Toast.error('Failed to load suppliers');
+      } finally {
+        if (isMounted) setLoadingSuppliers(false);
+      }
+    }
+    fetchSuppliers();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleChange = e => {
     const { name, value } = e.target;
-    setForm(f => ({ ...f, [name]: value }));
+    setForm(f => {
+      if (name === 'category') {
+        const allowedIds = new Set(
+          supplierOptions
+            .filter(s => s.status !== 'suspended' && (s.type === value || s.type === 'other'))
+            .map(s => s._id?.toString())
+        );
+        const nextSuppliers = f.suppliers.filter(id => allowedIds.has(id));
+        return { ...f, category: value, suppliers: nextSuppliers };
+      }
+      return { ...f, [name]: value };
+    });
+  };
+
+  const handleSupplierToggle = (supplierId) => {
+    const id = supplierId?.toString();
+    if (!id) return;
+    setForm(f => {
+      const hasId = f.suppliers.includes(id);
+      const nextSuppliers = hasId
+        ? f.suppliers.filter(existingId => existingId !== id)
+        : [...f.suppliers, id];
+      return { ...f, suppliers: nextSuppliers };
+    });
   };
 
   const validate = () => {
@@ -46,7 +100,8 @@ export default function FNICreate() {
         openingQty: Number(form.openingQty),
         minQty: form.minQty === '' ? 0 : Number(form.minQty),
         note: form.note?.trim() || '',
-        cost: form.openingQty > 0 ? Number(form.cost) : 0
+        cost: form.openingQty > 0 ? Number(form.cost) : 0,
+        suppliers: form.suppliers
       };
       await createItem(data);
       Toast.success('Item created');
@@ -92,6 +147,61 @@ export default function FNICreate() {
               <option value="fertilizer">Fertilizer</option>
               <option value="insecticide">Insecticide</option>
             </select>
+          </div>
+          <div>
+            <label className="block mb-1 font-semibold">Suppliers</label>
+            {supplierFetchError ? (
+              <div className="alert alert-warning mb-3 text-sm">
+                {supplierFetchError}
+              </div>
+            ) : null}
+            {!form.category ? (
+              <p className="text-sm text-base-content/60">Select a category to view compatible suppliers.</p>
+            ) : loadingSuppliers ? (
+              <div className="flex items-center gap-2 text-sm text-base-content/60">
+                <span className="loading loading-spinner loading-sm" />
+                Loading suppliers...
+              </div>
+            ) : (
+              (() => {
+                const compatibleSuppliers = supplierOptions.filter(
+                  s => s.type === form.category || s.type === 'other'
+                );
+                if (compatibleSuppliers.length === 0) {
+                  return (
+                    <p className="text-sm text-base-content/60">
+                      No suppliers found for the selected category. You can add suppliers later.
+                    </p>
+                  );
+                }
+                return (
+                  <div className="space-y-2 max-h-40 overflow-y-auto border border-base-300 rounded-lg p-3 bg-base-100">
+                    {compatibleSuppliers.map((supplier) => {
+                      const supplierId = supplier._id?.toString();
+                      return (
+                        <label
+                          key={supplier._id}
+                          className="flex items-start gap-3 p-2 rounded-lg hover:bg-base-200 transition-colors cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm mt-1"
+                            checked={form.suppliers.includes(supplierId)}
+                            onChange={() => handleSupplierToggle(supplierId)}
+                          />
+                          <div className="text-sm leading-tight">
+                            <div className="font-semibold text-base-content">{supplier.name}</div>
+                            <div className="text-xs text-base-content/60">
+                              {supplier.supplierId} - {supplier.contactPerson || supplier.contactNumber || 'No contact'}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                );
+              })()
+            )}
           </div>
           <div>
             <label className="block mb-1 font-semibold">Unit <span className="text-error">*</span></label>

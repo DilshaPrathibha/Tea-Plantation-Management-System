@@ -35,7 +35,7 @@ function Breadcrumbs() {
   }
   
   return (
-    <nav className="text-sm text-white/70 whitespace-nowrap overflow-x-auto no-scrollbar">
+    <nav className="text-sm text-base-content/70 whitespace-nowrap overflow-x-auto no-scrollbar">
       {filteredParts.map((p, i) => {
         const originalIndex = originalIndexMap[i];
         const acc = "/" + parts.slice(0, originalIndex + 1).join("/");
@@ -44,8 +44,8 @@ function Breadcrumbs() {
         
         return (
           <span key={acc}>
-            {i > 0 && <span className="mx-2 text-white/40">/</span>}
-            <NavLink to={acc} className="hover:text-white">{label}</NavLink>
+            {i > 0 && <span className="mx-2 text-base-content/40">/</span>}
+            <NavLink to={acc} className="hover:text-base-content">{label}</NavLink>
           </span>
         );
       })}
@@ -58,8 +58,8 @@ const Tab = ({ to, children }) => (
     to={to}
     className={({ isActive }) =>
       `px-3 py-1.5 rounded-full border transition ${
-        isActive ? "border-emerald-400/60 bg-emerald-400/10 text-emerald-200"
-                 : "border-white/10 text-white/80 hover:bg-white/5"}`
+        isActive ? "border-emerald-400/60 bg-emerald-400/10 text-emerald-400"
+                 : "border-base-content/10 text-base-content/80 hover:bg-base-content/5"}`
     }
   >
     {children}
@@ -71,7 +71,7 @@ export default function InventoryLayout() {
   return (
     <>
       {/* sub-navbar under global navbar */}
-      <div className="sticky top-16 z-20 bg-base-300/80 backdrop-blur border-b border-white/10">
+      <div className="sticky top-16 z-20 bg-base-300/80 backdrop-blur border-b border-base-content/10">
         <div className="mx-auto max-w-6xl px-4 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <Breadcrumbs />

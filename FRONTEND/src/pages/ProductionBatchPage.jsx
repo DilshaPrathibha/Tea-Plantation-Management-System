@@ -101,22 +101,22 @@ const ProductionBatchPage = () => {
         <div className="bg-base-300 p-4 rounded-lg shadow mb-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <label className="label text-white">Search</label>
+              <label className="label text-base-content">Search</label>
               <input
                 type="text"
                 placeholder="Search by field or batch ID..."
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                className="input input-bordered w-full bg-base-200 text-white"
+                className="input input-bordered w-full bg-base-200 text-base-content"
               />
             </div>
 
             <div className="flex-1">
-              <label className="label text-white">Filter by Status</label>
+              <label className="label text-base-content">Filter by Status</label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="select select-bordered w-full bg-base-200 text-white"
+                className="select select-bordered w-full bg-base-200 text-base-content"
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
@@ -126,7 +126,7 @@ const ProductionBatchPage = () => {
             </div>
           </div>
 
-          <p className="text-sm text-gray-300 mt-2">
+          <p className="text-sm text-base-content/70 mt-2">
             Showing {filteredBatches.length} of {batches.length} records
           </p>
         </div>

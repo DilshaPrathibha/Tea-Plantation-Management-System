@@ -15,6 +15,10 @@ const FNIItemSchema = new Schema({
   qtyOnHand: { type: Number, min: 0, required: true },
   minQty: { type: Number, min: 0, default: 0 },
   note: { type: String, trim: true },
+  suppliers: {
+    type: [{ type: Schema.Types.ObjectId, ref: 'Supplier' }],
+    default: []
+  },
   batches: { type: [FNIBatchSchema], default: [] }
 }, { timestamps: true });
 

@@ -17,10 +17,20 @@ const getAllSuppliers = async (req, res) => {
     if (type) filter.type = type;
     if (status) filter.status = status;
 
-    const suppliers = await Supplier.find(filter).sort({ createdAt: -1 });
+    const suppliers = await Supplier.find(filter)
+      .sort({ createdAt: -1 })
+      .lean() // Better performance
+      .maxTimeMS(10000); // Prevent query hangs
+    
     res.status(200).json(suppliers);
   } catch (error) {
     console.error("Error in getAllSuppliers controller:", error);
+    
+    // Handle specific timeout errors
+    if (error.name === 'MongooseError' && error.message.includes('maxTimeMS')) {
+      return res.status(504).json({ message: 'Query timeout - database may be slow' });
+    }
+    
     res.status(500).json({ message: "Internal server error" });
   }
 };

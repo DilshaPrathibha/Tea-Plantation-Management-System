@@ -187,8 +187,8 @@ const ProductionDashboard = () => {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-100">Production Manager Dashboard</h1>
-            <p className="text-gray-400">Welcome back! Here's the latest status across production and transport.</p>
+            <h1 className="text-3xl font-bold text-base-content">Production Manager Dashboard</h1>
+            <p className="text-base-content/60">Welcome back! Here's the latest status across production and transport.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <button
@@ -198,13 +198,6 @@ const ProductionDashboard = () => {
             >
               <RefreshCw className="w-4 h-4 mr-1" />
               Refresh
-            </button>
-            <button
-              onClick={() => navigate('/profile')}
-              className="btn btn-ghost btn-sm flex items-center gap-2 text-gray-300"
-            >
-              <Users className="w-5 h-5" />
-              <span>My Profile</span>
             </button>
             <button
               className="btn btn-ghost btn-sm text-red-400 hover:text-red-300 hover:bg-red-900/20"
@@ -245,11 +238,11 @@ const ProductionDashboard = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {statCards.map((stat) => (
-            <div key={stat.label} className="bg-base-100 p-4 rounded-lg shadow border border-gray-700">
+            <div key={stat.label} className="bg-base-100 p-4 rounded-lg shadow border border-base-content/10">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-2xl font-bold text-white">{loadingSummary ? '—' : stat.value}</p>
-                  <p className="text-gray-400">{stat.label}</p>
+                  <p className="text-2xl font-bold text-base-content">{loadingSummary ? '—' : stat.value}</p>
+                  <p className="text-base-content/60">{stat.label}</p>
                 </div>
                 <stat.icon className={`w-8 h-8 ${stat.color}`} />
               </div>
@@ -262,71 +255,71 @@ const ProductionDashboard = () => {
             <button
               key={action.title}
               onClick={action.action}
-              className="bg-base-100 p-4 rounded-lg shadow border border-gray-700 text-left hover:bg-gray-900 transition"
+              className="bg-base-100 p-4 rounded-lg shadow border border-base-content/10 text-left hover:bg-base-200 transition"
             >
               <div className={`w-12 h-12 rounded-full ${action.color} flex items-center justify-center mb-4`}>
                 <action.icon className="w-6 h-6" />
               </div>
-              <h3 className="font-semibold text-lg mb-2 text-white">{action.title}</h3>
-              <p className="text-gray-400 text-sm">{action.desc}</p>
+              <h3 className="font-semibold text-lg mb-2 text-base-content">{action.title}</h3>
+              <p className="text-base-content/60 text-sm">{action.desc}</p>
             </button>
           ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-base-300 p-4 rounded-lg shadow border border-gray-700">
+          <div className="bg-base-300 p-4 rounded-lg shadow border border-base-content/10">
             <div className="flex items-center gap-2 mb-3">
               <ClipboardList className="w-5 h-5 text-blue-300" />
-              <h2 className="text-xl font-bold text-white">Recent Batches</h2>
+              <h2 className="text-xl font-bold text-base-content">Recent Batches</h2>
             </div>
             <div className="space-y-3">
               {recentBatches.length === 0 && (
-                <p className="text-sm text-gray-400">No batches recorded yet.</p>
+                <p className="text-sm text-base-content/60">No batches recorded yet.</p>
               )}
               {recentBatches.map((batch) => (
                 <div key={batch._id} className="bg-base-100 rounded p-3 flex flex-col gap-1">
-                  <div className="flex justify-between text-sm text-gray-300">
-                    <span className="font-semibold text-white">{batch.batchId}</span>
+                  <div className="flex justify-between text-sm text-base-content/70">
+                    <span className="font-semibold text-base-content">{batch.batchId}</span>
                     <span className="badge badge-sm capitalize">{batch.status || 'pending'}</span>
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-base-content/60">
                     <span>{batch.teaWeight} kg</span> • <span>{batch.qualityGrade}</span> •{' '}
                     <span>{batch.supervisor || 'Supervisor n/a'}</span>
                   </div>
-                  <div className="text-xs text-gray-500">{toDateLabel(batch.createdAt)}</div>
+                  <div className="text-xs text-base-content/50">{toDateLabel(batch.createdAt)}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-base-300 p-4 rounded-lg shadow border border-gray-700">
+          <div className="bg-base-300 p-4 rounded-lg shadow border border-base-content/10">
             <div className="flex items-center gap-2 mb-3">
               <Truck className="w-5 h-5 text-orange-300" />
-              <h2 className="text-xl font-bold text-white">Transport Status</h2>
+              <h2 className="text-xl font-bold text-base-content">Transport Status</h2>
             </div>
             <div className="space-y-3">
               {recentTransports.length === 0 && (
-                <p className="text-sm text-gray-400">No transport records available.</p>
+                <p className="text-sm text-base-content/60">No transport records available.</p>
               )}
               {recentTransports.map((transport) => (
                 <div key={transport._id} className="bg-base-100 rounded p-3 flex flex-col gap-1">
-                  <div className="flex justify-between text-sm text-gray-300">
-                    <span className="font-semibold text-white">{transport.vehicleId}</span>
+                  <div className="flex justify-between text-sm text-base-content/70">
+                    <span className="font-semibold text-base-content">{transport.vehicleId}</span>
                     <span className={`badge badge-sm capitalize ${transport.status === 'delivered' ? 'badge-success' : 'badge-warning'}`}>
                       {transport.status}
                     </span>
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-base-content/60">
                     Driver: {transport.driverName || 'N/A'} • Batch: {transport.batchId || 'N/A'}
                   </div>
-                  <div className="text-xs text-gray-500">Updated {toDateLabel(transport.updatedAt)}</div>
+                  <div className="text-xs text-base-content/50">Updated {toDateLabel(transport.updatedAt)}</div>
                 </div>
               ))}
             </div>
             {activeDrivers.length > 0 && (
               <div className="mt-4 pt-3 border-t border-base-200">
-                <p className="text-sm font-semibold text-white">Drivers currently on duty</p>
-                <p className="text-xs text-gray-400">{activeDrivers.join(', ')}</p>
+                <p className="text-sm font-semibold text-base-content">Drivers currently on duty</p>
+                <p className="text-xs text-base-content/60">{activeDrivers.join(', ')}</p>
               </div>
             )}
           </div>

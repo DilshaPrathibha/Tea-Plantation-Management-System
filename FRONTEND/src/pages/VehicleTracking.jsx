@@ -7,8 +7,8 @@ const VehicleTracking = () => {
     <div className="min-h-screen bg-base-200">
       <div className="container mx-auto p-4">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2"> Vehicle Tracking System</h1>
-          <p className="text-gray-400">Real-time GPS tracking for delivery vehicles</p>
+          <h1 className="text-3xl font-bold text-base-content mb-2"> Vehicle Tracking System</h1>
+          <p className="text-base-content/60">Real-time GPS tracking for delivery vehicles</p>
         </div>
         
         <VehicleMap />
@@ -16,7 +16,7 @@ const VehicleTracking = () => {
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-base-100 p-4 rounded-lg shadow">
             <h3 className="font-bold mb-3 text-green-400">📱 For Drivers (Mobile GPS)</h3>
-            <p className="text-sm mb-3 text-gray-300">Send your location from mobile phone:</p>
+            <p className="text-sm mb-3 text-base-content/70">Send your location from mobile phone:</p>
             <div className="space-y-2">
               <a 
                 href={`${API_BASE_URL}/driver-location.html`} 
@@ -39,7 +39,7 @@ const VehicleTracking = () => {
           
           <div className="bg-base-100 p-4 rounded-lg shadow">
             <h3 className="font-bold mb-3 text-blue-400">🖥️ For Managers (Web View)</h3>
-            <p className="text-sm mb-3 text-gray-300">Monitor vehicles from web browser:</p>
+            <p className="text-sm mb-3 text-base-content/70">Monitor vehicles from web browser:</p>
             <div className="space-y-2">
               <a 
                 href={`${API_BASE_URL}/vehicle-location-map.html`} 
@@ -63,7 +63,7 @@ const VehicleTracking = () => {
         
         <div className="mt-6 bg-yellow-900/20 border border-yellow-700 p-4 rounded-lg">
           <h4 className="font-bold text-yellow-400 mb-2">💡 Quick Start Guide:</h4>
-          <ol className="list-decimal ml-5 space-y-1 text-sm text-gray-300">
+          <ol className="list-decimal ml-5 space-y-1 text-sm text-base-content/70">
             <li>Drivers: Open GPS Tracker link on mobile phone → Allow location access → Tracking starts automatically</li>
             <li>Managers: Open Map Viewer link → See real-time vehicle locations with auto-refresh</li>
             <li>Use "Local" links for testing, "External" links work from anywhere on internet</li>
