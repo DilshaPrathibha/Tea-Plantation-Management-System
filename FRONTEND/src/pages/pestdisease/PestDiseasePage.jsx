@@ -65,13 +65,89 @@ const PestDiseasePage = () => {
     const style = `
       <style>
         * { font-family: Arial, Helvetica, sans-serif; }
-        .header { display:flex; justify-content:space-between; align-items:center; }
-        .title { font-size:20px; font-weight:bold; margin:0; }
-        .meta { font-size:12px; color:#444; text-align:right; }
-        .hr { border:0; border-top:1px solid #ddd; margin:12px 0; }
-        table { width:100%; border-collapse:collapse; font-size:12px; }
-        th, td { border:1px solid #ddd; padding:6px 8px; }
-        th { background:#f3f3f3; text-align:left; }
+        body { margin: 0; padding: 20px; }
+        .header { 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: flex-start; 
+          margin-bottom: 20px; 
+        }
+        .logo-section { 
+          display: flex; 
+          align-items: center; 
+        }
+        .leaf-icon { 
+          width: 20px; 
+          height: 20px; 
+          margin-right: 8px; 
+          display: inline-block;
+        }
+        .company-name { 
+          font-size: 18px; 
+          font-weight: bold; 
+          color: #22C55E; 
+          margin: 0; 
+        }
+        .generation-info { 
+          text-align: right; 
+          font-size: 10px; 
+          color: #666; 
+          line-height: 1.4;
+        }
+        .report-title { 
+          font-size: 16px; 
+          font-weight: bold; 
+          color: #000; 
+          text-align: center; 
+          margin: 20px 0 30px 0; 
+        }
+        table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          font-size: 12px; 
+          margin-bottom: 40px;
+        }
+        th { 
+          background: #22C55E; 
+          color: #000; 
+          font-weight: bold; 
+          padding: 12px 8px; 
+          text-align: left;
+        }
+        td { 
+          padding: 10px 8px; 
+          border-bottom: 1px solid #eee; 
+        }
+        .status-active { 
+          color: #22C55E; 
+          font-weight: bold; 
+        }
+        .footer { 
+          position: fixed; 
+          bottom: 20px; 
+          left: 20px; 
+          right: 20px; 
+          text-align: center; 
+          font-size: 11px; 
+          color: #666;
+        }
+        .footer-company { 
+          color: #22C55E; 
+          font-weight: bold; 
+          margin-bottom: 4px; 
+        }
+        .footer-address { 
+          margin-bottom: 4px; 
+        }
+        .footer-slogan { 
+          font-style: italic; 
+          margin-bottom: 10px; 
+        }
+        .page-number { 
+          position: absolute; 
+          right: 0; 
+          bottom: 0; 
+        }
       </style>
     `;
     const now = new Date();
@@ -82,32 +158,36 @@ const PestDiseasePage = () => {
         <td>${escapeHTML(r.title || 'Untitled')}</td>
         <td>${escapeHTML(r.type || '')}</td>
         <td>${escapeHTML(r.urgency ? r.urgency.split(' (')[0] : '')}</td>
-        <td>${escapeHTML(r.status || '')}</td>
+        <td class="status-active">${escapeHTML(r.status || '')}</td>
         <td>${escapeHTML(r.location || '')}</td>
         <td>${escapeHTML(formatDate(r.date))}</td>
-        <td>${escapeHTML(r.affectedArea || '')}</td>
+        <td>${escapeHTML(r.affectedArea || '0')} perch</td>
         <td>${escapeHTML(r.reporterName || '')}</td>
-        <td>${escapeHTML(r.description || '')}</td>
+        <td>${escapeHTML(r.description || 'No description')}</td>
       </tr>
     `).join('');
 
     const html = `
       <!doctype html><html><head><meta charset="utf-8">${style}</head><body>
+        <!-- Header Section -->
         <div class="header">
-          <div>
-            <h1 class="title">CeylonLeaf</h1>
-            <div class="meta">Pest & Disease Report</div>
+          <div class="logo-section">
+            <svg class="leaf-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+            <div class="company-name">CeylonLeaf</div>
           </div>
-          <div class="meta">
-            Generated: ${now.toLocaleString()}<br/>
-            ${searchTerm ? `Search: "${escapeHTML(searchTerm)}"<br/>` : ''}
-            ${typeFilter ? `Type: ${escapeHTML(typeFilter)}<br/>` : ''}
-            ${statusFilter ? `Status: ${escapeHTML(statusFilter)}<br/>` : ''}
-            ${urgencyFilter ? `Urgency: ${escapeHTML(urgencyFilter)}<br/>` : ''}
-            ${dateFilter ? `Date: ${escapeHTML(dateFilter)}` : ''}
+          <div class="generation-info">
+            Generated on ${now.toLocaleString()}<br/>
+            Reports Shown: ${filteredReports.length}
           </div>
         </div>
-        <hr class="hr"/>
+        
+        <!-- Report Title -->
+        <div class="report-title">Pest & Disease Report</div>
+        
+        <!-- Data Table -->
         <table>
           <thead>
             <tr>
@@ -124,9 +204,17 @@ const PestDiseasePage = () => {
             </tr>
           </thead>
           <tbody>
-            ${rowsHtml || `<tr><td colspan="10" style="text-align:center;color:#666;">No data</td></tr>`}
+            ${rowsHtml || `<tr><td colspan="10" style="text-align:center;color:#666;">No data available</td></tr>`}
           </tbody>
         </table>
+        
+        <!-- Footer Section -->
+        <div class="footer">
+          <div class="footer-company">CeylonLeaf Plantations</div>
+          <div class="footer-address">No. 123, Tea Estate Road, Nuwara Eliya, Sri Lanka</div>
+          <div class="footer-slogan">Cultivating excellence in every leaf.</div>
+          <div class="page-number">Page 1</div>
+        </div>
       </body></html>
     `;
     w.document.open(); w.document.write(html); w.document.close();

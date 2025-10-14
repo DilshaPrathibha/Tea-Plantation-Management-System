@@ -24,95 +24,249 @@ const ViewPluckingRecordPage = () => {
     }
   };
 
-  // PDF download logic
+  // PDF download logic with CeylonLeaf header design
   const exportPDFRecord = () => {
     if (!record) return;
-    const escapeHTML = (str) => {
-      if (!str) return '';
-      return String(str).replace(/[&<>"]'/g, function(tag) {
-        const charsToReplace = {
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#39;'
-        };
-        return charsToReplace[tag] || tag;
-      });
-    };
-    const printableHTML = `
-      <html>
-        <head>
-          <title>Plucking Record PDF</title>
-          <style>
-            body { font-family: Arial, sans-serif; background: #f8fafc; color: #222; margin: 0; padding: 0; }
-            .container { max-width: 700px; margin: 40px auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 32px; }
-            h1 { font-size: 2rem; margin-bottom: 8px; }
-            .meta { margin-bottom: 24px; }
-            .meta span { display: inline-block; margin-right: 16px; font-size: 1rem; color: #555; }
-            .section { margin-bottom: 24px; }
-            .section-title { font-weight: bold; margin-bottom: 8px; color: #059669; }
-            .desc { background: #f1f5f9; border-radius: 8px; padding: 16px; }
-            .footer { text-align: right; color: #888; font-size: 0.9rem; margin-top: 32px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-            th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
-            th { background: #f3f4f6; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>Plucking Record</h1>
-            <div class="meta">
-              <span><b>Field:</b> ${escapeHTML(record.field)}</span>
-              <span><b>Date:</b> ${formatDate(record.date)}</span>
-              <span><b>Tea Grade:</b> ${escapeHTML(record.teaGrade)}</span>
-            </div>
-            <div class="section">
-              <div class="section-title">Reported by</div>
-              <div>${escapeHTML(record.reporterName)}</div>
-            </div>
-            <div class="section">
-              <div class="section-title">Workers</div>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>ID</th>
-                    <th>Weight (kg)</th>
-                    <th>Payment (LKR)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${record.workers.map(worker => `
-                    <tr>
-                      <td>${escapeHTML(worker.workerName)}</td>
-                      <td>${escapeHTML(worker.workerId)}</td>
-                      <td>${Number(worker.weight).toFixed(2)}</td>
-                      <td>${(Number(worker.weight) * Number(record.dailyPricePerKg)).toFixed(2)}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-            <div class="section">
-              <div class="section-title">Totals</div>
-              <div><b>Total Weight:</b> ${Number(record.totalWeight).toFixed(2)} kg</div>
-              <div><b>Total Payment:</b> LKR ${Number(record.totalPayment).toFixed(2)}</div>
-            </div>
-            <div class="footer">Generated on ${formatDate(new Date())}</div>
-          </div>
-        </body>
-      </html>
-    `;
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(printableHTML);
-      win.document.close();
-      win.focus();
-      win.print();
-    } else {
-      alert('Popup blocked! Please allow popups for this site to download PDF.');
+    
+    const w = window.open('', '_blank');
+    if (!w) {
+      Swal.fire({ icon: 'error', title: 'Please allow popups to export.' });
+      return;
     }
+
+    const escapeHTML = (s) =>
+      String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    const style = `
+      <style>
+        * { font-family: Arial, Helvetica, sans-serif; }
+        body { margin: 0; padding: 20px; }
+        .header { 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: flex-start; 
+          margin-bottom: 20px; 
+        }
+        .logo-section { 
+          display: flex; 
+          align-items: center; 
+        }
+        .leaf-icon { 
+          width: 20px; 
+          height: 20px; 
+          margin-right: 8px; 
+          display: inline-block;
+        }
+        .company-name { 
+          font-size: 18px; 
+          font-weight: bold; 
+          color: #22C55E; 
+          margin: 0; 
+        }
+        .generation-info { 
+          text-align: right; 
+          font-size: 10px; 
+          color: #666; 
+          line-height: 1.4;
+        }
+        .report-title { 
+          font-size: 16px; 
+          font-weight: bold; 
+          color: #000; 
+          text-align: center; 
+          margin: 20px 0 30px 0; 
+        }
+        .details-section { 
+          margin-bottom: 20px; 
+        }
+        .details-title { 
+          font-size: 14px; 
+          font-weight: bold; 
+          color: #22C55E; 
+          margin-bottom: 8px; 
+          border-bottom: 1px solid #22C55E; 
+          padding-bottom: 4px; 
+        }
+        .meta-grid { 
+          display: grid; 
+          grid-template-columns: 1fr 1fr; 
+          gap: 16px; 
+          margin-bottom: 20px; 
+        }
+        .meta-item { 
+          padding: 8px; 
+          background: #f1f5f9; 
+          border-radius: 4px; 
+        }
+        .meta-label { 
+          font-size: 12px; 
+          color: #666; 
+          font-weight: bold; 
+        }
+        .meta-value { 
+          font-size: 14px; 
+          color: #000; 
+          margin-top: 4px; 
+        }
+        table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          font-size: 12px; 
+          margin: 20px 0; 
+        }
+        th { 
+          background: #22C55E; 
+          color: #000; 
+          font-weight: bold; 
+          padding: 12px 8px; 
+          text-align: left;
+        }
+        td { 
+          padding: 10px 8px; 
+          border-bottom: 1px solid #eee; 
+        }
+        .totals { 
+          background: #f8f9fa; 
+          padding: 16px; 
+          border-radius: 8px; 
+          margin: 20px 0; 
+        }
+        .footer { 
+          position: fixed; 
+          bottom: 20px; 
+          left: 20px; 
+          right: 20px; 
+          text-align: center; 
+          font-size: 11px; 
+          color: #666;
+        }
+        .footer-company { 
+          color: #22C55E; 
+          font-weight: bold; 
+          margin-bottom: 4px; 
+        }
+        .footer-address { 
+          margin-bottom: 4px; 
+        }
+        .footer-slogan { 
+          font-style: italic; 
+          margin-bottom: 10px; 
+        }
+        .page-number { 
+          position: absolute; 
+          right: 0; 
+          bottom: 0; 
+        }
+      </style>
+    `;
+
+    const now = new Date();
+    const html = `
+      <!doctype html><html><head><meta charset="utf-8">${style}</head><body>
+        <!-- Header Section -->
+        <div class="header">
+          <div class="logo-section">
+            <svg class="leaf-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+            </svg>
+            <div class="company-name">CeylonLeaf</div>
+          </div>
+          <div class="generation-info">
+            Generated on ${now.toLocaleString()}<br/>
+            Record ID: ${record._id}
+          </div>
+        </div>
+        
+        <!-- Report Title -->
+        <div class="report-title">Plucking Record Details</div>
+        
+        <!-- Record Information -->
+        <div class="details-section">
+          <div class="details-title">Record Information</div>
+          <div class="meta-grid">
+            <div class="meta-item">
+              <div class="meta-label">Field</div>
+              <div class="meta-value">${escapeHTML(record.field)}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Date</div>
+              <div class="meta-value">${formatDate(record.date)}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Tea Grade</div>
+              <div class="meta-value">${escapeHTML(record.teaGrade)}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Reporter</div>
+              <div class="meta-value">${escapeHTML(record.reporterName)}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Price per KG</div>
+              <div class="meta-value">LKR ${Number(record.dailyPricePerKg).toFixed(2)}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Total Weight</div>
+              <div class="meta-value">${Number(record.totalWeight).toFixed(2)} kg</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Workers Table -->
+        <div class="details-section">
+          <div class="details-title">Workers (${record.workers.length})</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>ID</th>
+                <th>Weight (kg)</th>
+                <th>Payment (LKR)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${record.workers.map(worker => `
+                <tr>
+                  <td>${escapeHTML(worker.workerName)}</td>
+                  <td>${escapeHTML(worker.workerId)}</td>
+                  <td>${Number(worker.weight).toFixed(2)}</td>
+                  <td>${(Number(worker.weight) * Number(record.dailyPricePerKg)).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Totals -->
+        <div class="totals">
+          <div class="details-title">Summary</div>
+          <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+            <div>
+              <strong>Total Weight:</strong> ${Number(record.totalWeight).toFixed(2)} kg
+            </div>
+            <div>
+              <strong>Total Payment:</strong> LKR ${Number(record.totalPayment).toFixed(2)}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Footer Section -->
+        <div class="footer">
+          <div class="footer-company">CeylonLeaf Plantations</div>
+          <div class="footer-address">No. 123, Tea Estate Road, Nuwara Eliya, Sri Lanka</div>
+          <div class="footer-slogan">Cultivating excellence in every leaf.</div>
+          <div class="page-number">Page 1</div>
+        </div>
+      </body></html>
+    `;
+    
+    w.document.open(); 
+    w.document.write(html); 
+    w.document.close();
+    w.onload = () => { w.focus(); w.print(); };
   };
   const navigate = useNavigate();
   const { id } = useParams();
