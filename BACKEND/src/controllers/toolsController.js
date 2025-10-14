@@ -28,18 +28,27 @@ const getAllTools = async (req, res) => {
     }
     let tools = await Tool.find(filter)
       .populate({ path: 'assignedTo', select: 'name _id' })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean() // Better performance
+      .maxTimeMS(10000); // Prevent query hangs
+    
     // Add status field for frontend compatibility
     tools = tools.map(tool => {
       let status = 'available';
       if (tool.condition === 'retired') status = 'retired';
       else if (tool.condition === 'needs_repair') status = 'needs_repair';
       else if (tool.assignedTo) status = 'assigned';
-      return { ...tool.toObject(), status };
+      return { ...tool, status };
     });
     res.status(200).json(tools);
   } catch (error) {
     console.error("Error in getAllTools controller:", error);
+    
+    // Handle specific timeout errors
+    if (error.name === 'MongooseError' && error.message.includes('maxTimeMS')) {
+      return res.status(504).json({ message: 'Query timeout - database may be slow' });
+    }
+    
     res.status(500).json({ message: "Internal server error" });
   }
 };

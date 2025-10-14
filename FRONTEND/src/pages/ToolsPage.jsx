@@ -10,7 +10,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 5000,
+  timeout: 15000, // Increased from 5s to 15s for slow connections
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -80,7 +80,8 @@ const ToolsPage = () => {
   const { theme } = useTheme();
   const isLightTheme = theme === 'tea-light';
 
-  const fetchTools = useCallback(async () => {
+  const fetchTools = useCallback(async (retryCount = 0) => {
+    const MAX_RETRIES = 2;
     setLoading(true);
     try {
       const params = {};
@@ -90,8 +91,25 @@ const ToolsPage = () => {
       const response = await api.get('/tools', { params });
       setTools(response.data);
     } catch (error) {
+      // Determine if error is retryable
+      const isNetworkError = !error.response || error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK';
+      const shouldRetry = isNetworkError && retryCount < MAX_RETRIES;
+      
+      if (shouldRetry) {
+        console.log(`Retrying tools fetch... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        setLoading(false);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+        return fetchTools(retryCount + 1);
+      }
+      
       console.error('Failed to fetch tools', error);
-      Toast.error('Could not load tools.');
+      let errorMessage = 'Could not load tools.';
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout - server may be slow';
+      } else if (error.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error - check your connection';
+      }
+      Toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

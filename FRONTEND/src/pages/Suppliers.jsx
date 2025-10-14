@@ -9,7 +9,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 5000,
+  timeout: 15000, // Increased from 5s to 15s for slow connections
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -89,7 +89,8 @@ const Suppliers = () => {
     emergencyContact: ''
   });
 
-  const fetchSuppliers = useCallback(async () => {
+  const fetchSuppliers = useCallback(async (retryCount = 0) => {
+    const MAX_RETRIES = 2;
     setLoading(true);
     try {
       const params = {};
@@ -99,8 +100,25 @@ const Suppliers = () => {
       const response = await api.get('/suppliers', { params });
       setSuppliers(response.data);
     } catch (error) {
+      // Determine if error is retryable
+      const isNetworkError = !error.response || error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK';
+      const shouldRetry = isNetworkError && retryCount < MAX_RETRIES;
+      
+      if (shouldRetry) {
+        console.log(`Retrying suppliers fetch... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        setLoading(false);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+        return fetchSuppliers(retryCount + 1);
+      }
+      
       console.error('Failed to fetch suppliers', error);
-      Toast.error('Could not load suppliers.');
+      let errorMessage = 'Could not load suppliers.';
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout - server may be slow';
+      } else if (error.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error - check your connection';
+      }
+      Toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

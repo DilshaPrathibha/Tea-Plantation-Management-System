@@ -36,7 +36,7 @@ const svgToPngDataUrl = (svgMarkup, targetPx = 28) =>
     img.src = svgDataUrl;
   });
 
-const useFNIStats = () => {
+const useFNIStats = (shouldLoad = true) => {
   const [stats, setStats] = useState({
     totalItems: 0,
     lowStockItems: 0,
@@ -49,9 +49,11 @@ const useFNIStats = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchStats = useCallback(async () => {
+  const fetchStats = useCallback(async (retryCount = 0) => {
+    const MAX_RETRIES = 2;
     setIsLoading(true);
     setError(null);
+    
     try {
       const response = await listItems();
       const itemsData = response.data || [];
@@ -93,12 +95,34 @@ const useFNIStats = () => {
         lastUpdated: new Date()
       });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch FNI statistics');
-      Toast.error('Failed to load FNI statistics');
+      // Determine if error is retryable
+      const isNetworkError = !err.response || err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK';
+      const shouldRetry = isNetworkError && retryCount < MAX_RETRIES;
+      
+      if (shouldRetry) {
+        console.log(`Retrying FNI fetch... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        // Exponential backoff: wait 1s, then 2s
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+        return fetchStats(retryCount + 1);
+      }
+      
+      // Determine error message
+      let errorMessage = 'Failed to fetch FNI statistics';
+      if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout - server may be slow';
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error - check backend connection';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      
+      console.error('FNI fetch error:', err);
+      setError(errorMessage);
+      Toast.error(errorMessage);
       setStats(prev => ({
         ...prev,
         isLoading: false,
-        error: 'Failed to fetch FNI statistics'
+        error: errorMessage
       }));
     } finally {
       setIsLoading(false);
@@ -106,13 +130,18 @@ const useFNIStats = () => {
   }, []);
 
   useEffect(() => {
+    if (!shouldLoad) {
+      setIsLoading(true); // Keep loading state until shouldLoad is true
+      return;
+    }
+    
     fetchStats();
     
     // Temporarily disabled auto-refresh
     // const interval = setInterval(fetchStats, 30000);
     
     // return () => clearInterval(interval);
-  }, [fetchStats]);
+  }, [fetchStats, shouldLoad]);
 
   const refreshStats = () => {
     fetchStats();

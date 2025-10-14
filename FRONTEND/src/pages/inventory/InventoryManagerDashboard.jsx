@@ -11,6 +11,10 @@ import useSupplierStats from '../../hooks/useSupplierStats';
 const InventoryManagerDashboard = () => {
   const { theme } = useTheme();
   const isLightTheme = theme === 'tea-light';
+  
+  // Staggered loading state to prevent all API calls at once
+  const [loadingStage, setLoadingStage] = React.useState(0);
+  
   const {
     totalTools,
     availableTools,
@@ -22,7 +26,7 @@ const InventoryManagerDashboard = () => {
     refreshStats,
     exportCSV,
     exportPDF
-  } = useToolsStats();
+  } = useToolsStats(true); // Always load tools (they load first)
 
   const {
     totalItems: fniTotalItems,
@@ -35,7 +39,7 @@ const InventoryManagerDashboard = () => {
     refreshStats: refreshFNIStats,
     exportCSV: exportFNICSV,
     exportPDF: exportFNIPDF
-  } = useFNIStats();
+  } = useFNIStats(loadingStage >= 1); // Only load FNI after stage 1
 
   const {
     recentActivities,
@@ -53,7 +57,21 @@ const InventoryManagerDashboard = () => {
     isLoading: suppliersLoading,
     error: suppliersError,
     refreshStats: refreshSupplierStats
-  } = useSupplierStats();
+  } = useSupplierStats(loadingStage >= 2); // Only load suppliers after stage 2
+  
+  // Implement staggered loading on mount
+  React.useEffect(() => {
+    // Stage 0: Tools load immediately (default)
+    // Stage 1: FNI loads after 500ms
+    const timer1 = setTimeout(() => setLoadingStage(1), 500);
+    // Stage 2: Suppliers load after 1000ms
+    const timer2 = setTimeout(() => setLoadingStage(2), 1000);
+    
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
 
   const quickActions = useMemo(() => [
     {
