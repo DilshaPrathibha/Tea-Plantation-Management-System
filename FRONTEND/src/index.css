@@ -7,3 +7,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Prevent green flash during image/video transitions */
+@layer base {
+  * {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000;
+    perspective: 1000;
+  }
+  
+  img, video {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: opacity, transform;
+  }
+  
+  /* Ensure smooth transitions without color flashing */
+  .transition-smooth {
+    transition: opacity 1000ms ease-in-out, transform 1000ms ease-in-out;
+    -webkit-transition: opacity 1000ms ease-in-out, transform 1000ms ease-in-out;
+  }
+}
