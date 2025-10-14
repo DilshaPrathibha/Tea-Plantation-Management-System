@@ -52,6 +52,7 @@ export default function AttendanceList() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [limit] = useState(50);
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   const load = async () => {
     try {
@@ -300,8 +301,26 @@ export default function AttendanceList() {
             <option value="leave">leave</option>
             <option value="late">late</option>
           </select>
-          <input type="date" className="input input-bordered" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-          <input type="date" className="input input-bordered" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          <input
+          type="date"
+          className="input input-bordered"
+          value={dateFrom}
+          max={today}
+          onChange={(e) => {
+            const value = e.target.value;
+            setDateFrom(value && value > today ? today : value);
+          }}
+          />
+          <input
+          type="date"
+          className="input input-bordered"
+          value={dateTo}
+          max={today}
+          onChange={(e) => {
+            const value = e.target.value;
+            setDateTo(value && value > today ? today : value);
+          }}
+          />
           <button className="btn" onClick={load} disabled={loading}>Apply</button>
         </div>
 
@@ -357,7 +376,7 @@ export default function AttendanceList() {
                           </button>
                         )}
                         <Link
-                          className="btn btn-sm btn-warning text-black hover:brightness-110"
+                          className="btn btn-sm border-0 bg-amber-300 hover:bg-amber-200 text-amber-900 shadow-sm"
                           to={`/supervisor/attendance/${r._id}`}
                         >
                           Edit
