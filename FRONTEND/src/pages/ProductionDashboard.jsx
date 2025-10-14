@@ -200,13 +200,6 @@ const ProductionDashboard = () => {
               Refresh
             </button>
             <button
-              onClick={() => navigate('/profile')}
-              className="btn btn-ghost btn-sm flex items-center gap-2 text-base-content/70"
-            >
-              <Users className="w-5 h-5" />
-              <span>My Profile</span>
-            </button>
-            <button
               className="btn btn-ghost btn-sm text-red-400 hover:text-red-300 hover:bg-red-900/20"
               onClick={logout}
             >
