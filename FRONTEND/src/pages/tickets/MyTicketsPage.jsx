@@ -49,7 +49,6 @@ const makeBlankForm = () => ({
   subject: '',
   category: 'general',
   priority: 'medium',
-  fieldId: '',
   description: ''
 });
 
@@ -66,7 +65,6 @@ export default function MyTicketsPage({ title = 'Support Tickets' }) {
   const token = localStorage.getItem('token');
   const authHeader = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
 
-  const [fields, setFields] = useState([]);
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -74,16 +72,6 @@ export default function MyTicketsPage({ title = 'Support Tickets' }) {
   const [formMode, setFormMode] = useState('create');
   const [formTicketId, setFormTicketId] = useState(null);
   const [formData, setFormData] = useState(() => makeBlankForm());
-
-  const fetchFields = async () => {
-    try {
-      const { data } = await axios.get(`${API}/api/fields`, { headers: authHeader });
-      setFields(Array.isArray(data?.items) ? data.items : []);
-    } catch (err) {
-      console.error('[tickets] load fields', err?.response?.data || err);
-      Sweet.error(err?.response?.data?.message || 'Failed to load fields');
-    }
-  };
 
   const fetchTickets = async () => {
     try {
@@ -99,7 +87,6 @@ export default function MyTicketsPage({ title = 'Support Tickets' }) {
   };
 
   useEffect(() => {
-    fetchFields();
     fetchTickets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -118,7 +105,6 @@ export default function MyTicketsPage({ title = 'Support Tickets' }) {
       subject: ticket.subject || '',
       category: ticket.category || 'general',
       priority: ticket.priority || 'medium',
-      fieldId: ticket.field,
       description: ticket.description || ''
     });
     setFormOpen(true);
@@ -134,8 +120,8 @@ export default function MyTicketsPage({ title = 'Support Tickets' }) {
 
   const submitForm = async (event) => {
     event.preventDefault();
-    if (!formData.fieldId || !formData.description.trim()) {
-      Sweet.error('Field and problem description are required');
+    if (!formData.description.trim()) {
+      Sweet.error('Problem description is required');
       return;
     }
 
@@ -207,7 +193,7 @@ export default function MyTicketsPage({ title = 'Support Tickets' }) {
       <div className="mx-auto max-w-5xl p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-white">{title}</h1>
+            <h1 className="text-3xl font-bold text-base-content">{title}</h1>
             <p className="text-base-content/70">
               Submit issues to the admin team and track their responses.
             </p>
@@ -290,21 +276,6 @@ export default function MyTicketsPage({ title = 'Support Tickets' }) {
               </div>
 
               <label className="form-control">
-                <span className="label-text">Related field</span>
-                <select
-                  className="select select-bordered"
-                  value={formData.fieldId}
-                  onChange={(event) => setFormData((prev) => ({ ...prev, fieldId: event.target.value }))}
-                  required
-                >
-                  <option value="">Select field</option>
-                  {fields.map((field) => (
-                    <option key={field._id} value={field._id}>{field.name}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="form-control">
                 <span className="label-text">Describe the problem</span>
                 <textarea
                   className="textarea textarea-bordered h-32"
@@ -350,11 +321,13 @@ export default function MyTicketsPage({ title = 'Support Tickets' }) {
                         <span className="mx-2">|</span>
                         Updated {formatDate(ticket.updatedAt)}
                       </div>
-                      <h3 className="text-lg font-semibold text-white">
+                      <h3 className="text-lg font-semibold text-base-content">
                         {ticket.subject?.trim() || 'Untitled ticket'}
                       </h3>
                       <div className="flex flex-wrap gap-2 text-sm">
-                        <span className="badge badge-outline">Field: {ticket.fieldName || 'N/A'}</span>
+                        {ticket.fieldName && (
+                          <span className="badge badge-outline">Field: {ticket.fieldName}</span>
+                        )}
                         <span className="badge badge-outline">Category: {CATEGORY_OPTIONS.find((c) => c.value === ticket.category)?.label || ticket.category}</span>
                         <span className="badge badge-outline">Priority: {PRIORITY_OPTIONS.find((p) => p.value === ticket.priority)?.label || ticket.priority}</span>
                         <span className={STATUS_STYLES[ticket.status] || 'badge badge-outline'}>
@@ -402,3 +375,4 @@ export default function MyTicketsPage({ title = 'Support Tickets' }) {
     </div>
   );
 }
+

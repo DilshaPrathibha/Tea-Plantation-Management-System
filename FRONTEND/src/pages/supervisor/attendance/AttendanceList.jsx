@@ -1,9 +1,43 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { Sweet, Toast } from '@/utils/sweet';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+const CEYLONLEAF_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+     fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+  <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+</svg>
+`;
+
+const svgToPngDataUrl = (svgMarkup, targetPx = 26) =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => {
+      const scale = targetPx / (img.width || 28);
+      const w = Math.max(1, Math.round((img.width || 28) * scale));
+      const h = Math.max(1, Math.round((img.height || 28) * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      try {
+        resolve(canvas.toDataURL('image/png'));
+      } catch (err) {
+        reject(err);
+      }
+    };
+    img.onerror = reject;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
+  });
 
 export default function AttendanceList() {
   const token = localStorage.getItem('token');
@@ -17,7 +51,6 @@ export default function AttendanceList() {
   const [status, setStatus] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-
   const [limit] = useState(50);
 
   const load = async () => {
@@ -91,85 +124,154 @@ export default function AttendanceList() {
     });
   };
 
-  // ---- ZERO-DEPENDENCY PDF (print) ----
-  const exportPdf = () => {
-    const w = window.open('', '_blank');
-    if (!w) {
-      Toast.fire({ icon: 'error', title: 'Please allow popups to export.' });
-      return;
+  const exportPdf = async () => {
+    if (!rows.length) return;
+    try {
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const marginX = 48;
+      const marginY = 42;
+
+      const logoDataUrl = await svgToPngDataUrl(CEYLONLEAF_SVG, 30);
+      const generatedAt = new Date();
+
+      const totalRecords = rows.length;
+      const presentCount = rows.filter(r => String(r.status).toLowerCase() === 'present').length;
+      const lateCount = rows.filter(r => String(r.status).toLowerCase() === 'late').length;
+
+      const renderHeader = () => {
+        const brandBaseline = marginY + 18;
+        const logoSize = 28;
+        if (logoDataUrl) {
+          doc.addImage(logoDataUrl, 'PNG', marginX, marginY - 6, logoSize, logoSize);
+        }
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(20);
+        doc.setTextColor(34, 197, 94);
+        doc.text('CeylonLeaf', marginX + logoSize + 8, brandBaseline);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(71, 85, 105);
+        doc.text(`Generated on ${generatedAt.toLocaleString()}`, pageWidth - marginX, marginY, { align: 'right' });
+        doc.text(`Records: ${totalRecords}`, pageWidth - marginX, marginY + 12, { align: 'right' });
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(17, 24, 39);
+        doc.text('Attendance Report', pageWidth / 2, marginY + 32, { align: 'center' });
+      };
+
+      const renderFooter = (pageNumber) => {
+        const footerTop = pageHeight - 72;
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.5);
+        doc.line(marginX, footerTop, pageWidth - marginX, footerTop);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(34, 197, 94);
+        doc.text('CeylonLeaf Plantations', pageWidth / 2, footerTop + 18, { align: 'center' });
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(100, 116, 139);
+        doc.text('No. 123, Tea Estate Road, Nuwara Eliya, Sri Lanka', pageWidth / 2, footerTop + 32, { align: 'center' });
+        doc.text('Cultivating excellence in every leaf.', pageWidth / 2, footerTop + 46, { align: 'center' });
+
+        doc.setFontSize(8);
+        doc.text(`Page ${pageNumber}`, pageWidth - marginX, footerTop + 46, { align: 'right' });
+      };
+
+      renderHeader();
+
+      autoTable(doc, {
+        body: [[
+          { content: `Total Records: ${totalRecords}`, styles: { textColor: [30, 41, 59], fontStyle: 'bold' } },
+          { content: `Present: ${presentCount}`, styles: { textColor: [34, 197, 94], fontStyle: 'bold' } },
+          { content: `Late: ${lateCount}`, styles: { textColor: [234, 179, 8], fontStyle: 'bold' } },
+        ]],
+        theme: 'plain',
+        styles: { fontSize: 11 },
+        margin: { left: marginX, right: marginX },
+        startY: marginY + 46,
+      });
+
+      let tableStartY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 20 : marginY + 66;
+
+      const activeFilters = [];
+      if (q) activeFilters.push(`Search: "${q}"`);
+      if (status) activeFilters.push(`Status: ${status}`);
+      if (dateFrom) activeFilters.push(`From: ${dateFrom}`);
+      if (dateTo) activeFilters.push(`To: ${dateTo}`);
+      if (activeFilters.length) {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(10);
+        doc.setTextColor(94, 104, 118);
+        doc.text(`Filters • ${activeFilters.join(' | ')}`, marginX, tableStartY);
+        tableStartY += 16;
+      }
+
+      const body = rows.map((r) => {
+        const rawStatus = (r.status || '').replace(/_/g, ' ').trim();
+        const normalizedStatus = rawStatus.toLowerCase();
+        const displayStatus = rawStatus
+          ? rawStatus.replace(/\w/g, (ch) => ch.toUpperCase())
+          : '-';
+        return [
+          r.date || '-',
+          r.workerId || '-',
+          r.workerName || '-',
+          r.field || '-',
+          r.checkInTime || '-',
+          r.checkOutTime || r.expectedOutTime || '-',
+          { content: displayStatus, statusValue: normalizedStatus }
+        ];
+      });
+
+      autoTable(doc, {
+        head: [['Date', 'Employee ID', 'Worker Name', 'Field', 'Check-In', 'Expected Out', 'Status']],
+        body: body.length
+          ? body
+          : [[
+              '-', '-', '-', '-', '-', '-',
+              { content: '-', statusValue: '' }
+            ]],
+        startY: tableStartY,
+        margin: { top: marginY + 60, left: marginX, right: marginX, bottom: 90 },
+        styles: { fontSize: 10, cellPadding: 6, lineWidth: 0.2, lineColor: [226, 232, 240] },
+        headStyles: { fillColor: [34, 197, 94], textColor: [17, 24, 39], fontSize: 11, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        didParseCell: (data) => {
+          if (data.section === 'body' && data.column.index === 6) {
+            const statusValue = typeof data.cell.raw === 'object'
+              ? String(data.cell.raw.statusValue || '').toLowerCase()
+              : String(data.cell.raw || '').toLowerCase();
+            if (statusValue === 'present') {
+              data.cell.styles.textColor = [34, 197, 94];
+              data.cell.styles.fontStyle = 'bold';
+            } else if (statusValue === 'late') {
+              data.cell.styles.textColor = [234, 179, 8];
+              data.cell.styles.fontStyle = 'bold';
+            } else {
+              data.cell.styles.textColor = [30, 41, 59];
+            }
+          }
+        },
+        didDrawPage: (data) => {
+          renderHeader();
+          renderFooter(data.pageNumber);
+        },
+      });
+
+      const blobUrl = doc.output('bloburl');
+      window.open(blobUrl, '_blank');
+      Toast.fire({ icon: 'success', title: 'Attendance report ready' });
+    } catch (error) {
+      console.error('[attendance pdf] error', error);
+      Toast.fire({ icon: 'error', title: 'Failed to generate PDF' });
     }
-
-    const escapeHTML = (s) =>
-      String(s || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-
-    const style = `
-      <style>
-        * { font-family: Arial, Helvetica, sans-serif; }
-        .header { display:flex; justify-content:space-between; align-items:center; }
-        .title { font-size:20px; font-weight:bold; margin:0; }
-        .meta { font-size:12px; color:#444; text-align:right; }
-        .hr { border:0; border-top:1px solid #ddd; margin:12px 0; }
-        table { width:100%; border-collapse:collapse; font-size:12px; }
-        th, td { border:1px solid #ddd; padding:6px 8px; }
-        th { background:#f3f3f3; text-align:left; }
-      </style>
-    `;
-    const now = new Date();
-
-    const rowsHtml = rows.map(r => `
-      <tr>
-        <td>${escapeHTML(r.date)}</td>
-        <td>${escapeHTML(r.workerId)}</td>
-        <td>${escapeHTML(r.workerName)}</td>
-        <td>${escapeHTML(r.field)}</td>
-        <td>${escapeHTML(r.checkInTime)}</td>
-        <td>${escapeHTML(r.expectedOutTime || '-')}</td>
-        <td>${escapeHTML(r.status)}</td>
-        <td>${escapeHTML(r.notes)}</td>
-      </tr>
-    `).join('');
-
-    const html = `
-      <!doctype html><html><head><meta charset="utf-8">${style}</head><body>
-        <div class="header">
-          <div>
-            <h1 class="title">CeylonLeaf</h1>
-            <div class="meta">Attendance Report</div>
-          </div>
-          <div class="meta">
-            Generated: ${now.toLocaleString()}<br/>
-            ${q ? `Search: "${escapeHTML(q)}"<br/>` : ''}
-            ${status ? `Status: ${escapeHTML(status)}<br/>` : ''}
-            ${dateFrom ? `From: ${escapeHTML(dateFrom)}<br/>` : ''}
-            ${dateTo ? `To: ${escapeHTML(dateTo)}` : ''}
-          </div>
-        </div>
-        <hr class="hr"/>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>EmpID</th>
-              <th>Name</th>
-              <th>Field</th>
-              <th>In</th>
-              <th>Expected Out</th>
-              <th>Status</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml || `<tr><td colspan="8" style="text-align:center;color:#666;">No data</td></tr>`}
-          </tbody>
-        </table>
-      </body></html>
-    `;
-    w.document.open(); w.document.write(html); w.document.close();
-    w.onload = () => { w.focus(); w.print(); /* w.close(); */ };
-    Toast.fire({ icon: 'success', title: 'Preparing print previewâ€¦' });
   };
 
   return (
@@ -184,7 +286,6 @@ export default function AttendanceList() {
           </div>
         </div>
 
-        {/* Filters */}
         <div className="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3 bg-base-100 border rounded-xl p-4">
           <input
             className="input input-bordered"
@@ -217,13 +318,17 @@ export default function AttendanceList() {
                 <th>In</th>
                 <th>Expected Out</th>
                 <th>Status</th>
-                <th style={{ width: 160 }} />
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {loading && (<tr><td colSpan={8}>Loadingâ€¦</td></tr>)}
-              {!loading && rows.length === 0 && (<tr><td colSpan={8}>No records</td></tr>)}
-              {rows.map((r) => {
+              {loading && (
+                <tr><td colSpan={8}>Loading…</td></tr>
+              )}
+              {!loading && rows.length === 0 && (
+                <tr><td colSpan={8}>No records</td></tr>
+              )}
+              {!loading && rows.map((r) => {
                 const edited = Boolean(r.notes && String(r.notes).trim().length);
                 return (
                   <tr

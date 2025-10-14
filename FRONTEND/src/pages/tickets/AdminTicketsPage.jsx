@@ -171,7 +171,7 @@ export default function AdminTicketsPage() {
       <div className="mx-auto max-w-6xl p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-white">Ticket Inbox</h1>
+            <h1 className="text-3xl font-bold text-base-content">Ticket Inbox</h1>
             <p className="text-base-content/70">
               Filter, reply, and resolve support tickets submitted by field teams.
             </p>
@@ -188,7 +188,7 @@ export default function AdminTicketsPage() {
         </div>
 
         <div className="bg-base-100 border border-base-200 rounded-2xl p-4 sm:p-6 shadow mb-6">
-          <div className="flex items-center gap-2 text-lg font-semibold text-white mb-4">
+          <div className="flex items-center gap-2 text-lg font-semibold text-base-content mb-4">
             <Filter className="w-5 h-5" />
             Filters
           </div>
@@ -254,7 +254,7 @@ export default function AdminTicketsPage() {
         <div className="bg-base-100 border border-base-200 rounded-2xl shadow">
           <div className="border-b border-base-200 px-6 py-4 flex items-center gap-3">
             <TicketIcon className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-semibold text-white">Tickets</h2>
+            <h2 className="text-xl font-semibold text-base-content">Tickets</h2>
             <span className="badge badge-primary badge-outline">{tickets.length}</span>
           </div>
 
@@ -287,7 +287,7 @@ export default function AdminTicketsPage() {
                           {STATUS_LABELS[ticket.status] || ticket.status}
                         </span>
                       </div>
-                      <h3 className="text-lg font-semibold text-white">{ticket.subject?.trim() || 'Untitled ticket'}</h3>
+                      <h3 className="text-lg font-semibold text-base-content">{ticket.subject?.trim() || 'Untitled ticket'}</h3>
                       <div className="flex flex-wrap gap-2 text-sm">
                         <span className="flex items-center gap-1">
                           <MapPin className="w-4 h-4" />

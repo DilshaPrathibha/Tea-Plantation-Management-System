@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
 import { 
   ArrowLeft, 
@@ -64,9 +64,14 @@ const typeIcons = {
   'Other': '❓'
 };
 
-const PestDiseaseDetailPage = () => {
+const PestDiseaseDetailPage = ({ viewOnly = false }) => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Determine the base path based on current route (inventory or supervisor)
+  const basePath = location.pathname.includes('/inventory/') ? '/inventory/pest-disease' : '/supervisor/pest-disease';
+  
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -151,7 +156,7 @@ const PestDiseaseDetailPage = () => {
           background: '#ffffff',
           customClass: { popup: 'rounded-2xl shadow-2xl' }
         });
-        navigate('/supervisor/pest-disease', { state: { deleteSuccess: true } });
+        navigate(basePath, { state: { deleteSuccess: true } });
       } catch (err) {
         console.error('Error deleting report:', err);
         Swal.fire({
@@ -179,14 +184,16 @@ const PestDiseaseDetailPage = () => {
       return;
     }
 
-    navigate(`/supervisor/pest-disease/${report._id}/edit`);
+    navigate(`${basePath}/${report._id}/edit`);
   };
 
   const canEditReport = () => {
+    if (viewOnly) return false;
     return currentUser && report && currentUser._id === report.reportedBy && report.status !== 'Resolved';
   };
 
   const canDeleteReport = () => {
+    if (viewOnly) return false;
     return currentUser && report && currentUser._id === report.reportedBy && report.status === 'Resolved';
   };
 
@@ -539,7 +546,7 @@ const PestDiseaseDetailPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <Link to="/supervisor/pest-disease" className="inline-flex items-center text-green-600 hover:text-green-700 mb-6 transition-colors">
+          <Link to={basePath} className="inline-flex items-center text-green-600 hover:text-green-700 mb-6 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Reports
           </Link>
@@ -563,7 +570,7 @@ const PestDiseaseDetailPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <Link to="/supervisor/pest-disease" className="inline-flex items-center text-green-600 hover:text-green-700 mb-6 transition-colors">
+          <Link to={basePath} className="inline-flex items-center text-green-600 hover:text-green-700 mb-6 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Reports
           </Link>
@@ -572,7 +579,7 @@ const PestDiseaseDetailPage = () => {
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Report Not Found</h2>
             <p className="text-gray-600 mb-6">The requested pest/disease report could not be found.</p>
             <Link
-              to="/supervisor/pest-disease"
+              to={basePath}
               className="px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors inline-block"
             >
               View All Reports
@@ -593,7 +600,7 @@ const PestDiseaseDetailPage = () => {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <Link 
-            to="/supervisor/pest-disease" 
+            to={basePath} 
             className="inline-flex items-center text-green-600 hover:text-green-700 transition-colors bg-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />

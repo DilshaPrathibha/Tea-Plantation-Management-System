@@ -10,7 +10,8 @@ const fetchTodaysPluckingTotal = async (apiUrl, date) => {
     const config = token ? { headers: { Authorization: `Bearer ${token}` } } : undefined;
     const { data } = await axios.get(`${apiUrl}/api/plucking-records?date=${date}`, config);
     const list = data?.items || data || [];
-    return list.reduce((sum, rec) => sum + (Number(rec.totalWeight) || 0), 0);
+    const total = list.reduce((sum, rec) => sum + (Number(rec.totalWeight) || 0), 0);
+    return Number(total.toFixed(2));
   } catch (error) {
     if (error?.response?.status === 401) {
       Swal.fire('Unauthorized', 'Please log in again to view plucking totals.', 'error');
@@ -41,10 +42,13 @@ const CreateProductionBatch = () => {
   useEffect(() => {
     fetchSupervisors();
     generateBatchId();
-    const today = new Date().toISOString().split('T')[0];
-    fetchTodaysPluckingTotal(API_URL, today).then(setPluckingTotal);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const targetDate = formData.pluckingDate || new Date().toISOString().split('T')[0];
+    fetchTodaysPluckingTotal(API_URL, targetDate).then(setPluckingTotal);
+  }, [API_URL, formData.pluckingDate]);
 
   const fetchSupervisors = async () => {
     try {

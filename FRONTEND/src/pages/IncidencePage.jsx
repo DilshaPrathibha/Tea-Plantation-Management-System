@@ -585,19 +585,19 @@ const IncidencePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+      <div className="min-h-screen bg-base-100 py-8 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse">
-            <div className="h-8 bg-white rounded-lg w-64 mb-8"></div>
+            <div className="h-8 bg-base-300 rounded-lg w-64 mb-8"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((item) => (
-                <div key={item} className="bg-white rounded-2xl shadow-sm p-6">
-                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+                <div key={item} className="bg-base-200 rounded-2xl shadow-sm p-6">
+                  <div className="h-6 bg-base-300 rounded w-3/4 mb-4"></div>
+                  <div className="h-4 bg-base-300 rounded w-1/2 mb-2"></div>
+                  <div className="h-4 bg-base-300 rounded w-2/3 mb-4"></div>
                   <div className="flex justify-between mt-4">
-                    <div className="h-8 bg-gray-200 rounded w-16"></div>
-                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                    <div className="h-8 bg-base-300 rounded w-16"></div>
+                    <div className="h-8 bg-base-300 rounded w-16"></div>
                   </div>
                 </div>
               ))}
@@ -609,27 +609,27 @@ const IncidencePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+    <div className="min-h-screen bg-base-100 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Success Messages */}
         {showSuccess && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center">
+          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center">
             <div className="w-3 h-3 bg-emerald-500 rounded-full mr-3"></div>
-            <span className="text-emerald-800 font-medium">Incidence submitted successfully!</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">Incidence submitted successfully!</span>
           </div>
         )}
         
         {deleteSuccess && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center">
+          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center">
             <div className="w-3 h-3 bg-emerald-500 rounded-full mr-3"></div>
-            <span className="text-emerald-800 font-medium">Incidence report deleted successfully!</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">Incidence report deleted successfully!</span>
           </div>
         )}
 
         {infoMessage && (
-          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center">
-            <AlertCircle className="w-5 h-5 text-amber-600 mr-3" />
-            <span className="text-amber-800">{infoMessage}</span>
+          <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center">
+            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 mr-3" />
+            <span className="text-amber-700 dark:text-amber-300">{infoMessage}</span>
           </div>
         )}
 
@@ -637,12 +637,12 @@ const IncidencePage = () => {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
           <div className="flex-1">
             <div className="flex items-center mb-3">
-              <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mr-4">
-                <AlertTriangle className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 bg-base-200 rounded-xl shadow-sm flex items-center justify-center mr-4">
+                <AlertTriangle className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Incidence Reports</h1>
-                <p className="text-gray-600 mt-1">Manage and track all field incidents and safety reports</p>
+                <h1 className="text-3xl font-bold text-base-content">Incidence Reports</h1>
+                <p className="text-base-content/70 mt-1">Manage and track all field incidents and safety reports</p>
               </div>
             </div>
           </div>
@@ -653,7 +653,7 @@ const IncidencePage = () => {
                 fetchIncidences();
                 fetchWeatherData();
               }}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all duration-200 flex items-center shadow-sm hover:shadow-md"
+              className="px-4 py-2 bg-base-200 border border-base-content/10 rounded-xl text-base-content hover:bg-base-300 transition-all duration-200 flex items-center shadow-sm hover:shadow-md"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
@@ -661,7 +661,7 @@ const IncidencePage = () => {
             <button
               onClick={exportPDFIncidences}
               disabled={filteredIncidences.length === 0}
-              className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 font-semibold ${filteredIncidences.length === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-900 shadow-lg hover:shadow-xl'}`}
+              className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 font-semibold ${filteredIncidences.length === 0 ? 'bg-base-content/10 text-base-content/40 cursor-not-allowed' : 'bg-base-200 border border-base-content/10 hover:bg-base-300 text-base-content shadow-lg hover:shadow-xl'}`}
               title={filteredIncidences.length === 0 ? 'No data to export' : 'Export current view to PDF'}
             >
               <Info className="w-4 h-4 mr-2" />
@@ -669,62 +669,62 @@ const IncidencePage = () => {
             </button>
             <button
               onClick={handleAddNew}
-              className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center shadow-lg hover:shadow-xl"
+              className="px-6 py-2 bg-primary hover:bg-primary-focus text-white rounded-xl hover:shadow-xl transition-all duration-200 flex items-center shadow-lg"
             >
               <Plus className="w-4 h-4 mr-2" />
-              New Report
+              <span className="font-semibold">New Report</span>
             </button>
           </div>
         </div>
 
         {/* Weather Dashboard */}
-        <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-              <Cloud className="w-5 h-5 text-blue-500 mr-2" />
+        <div className="mb-8 bg-base-200 rounded-2xl shadow-sm border border-base-content/10 overflow-hidden">
+          <div className="p-6 border-b border-base-content/10">
+            <h2 className="text-xl font-semibold text-base-content flex items-center">
+              <Cloud className="w-5 h-5 text-primary mr-2" />
               Weather Forecast - Avissawella, Sri Lanka
             </h2>
           </div>
           
           {weatherError ? (
-            <div className="p-6 text-center text-gray-500">
+            <div className="p-6 text-center text-base-content/70">
               {weatherError}
             </div>
           ) : weatherLoading ? (
             <div className="p-8 flex justify-center items-center">
-              <Loader className="w-6 h-6 animate-spin text-blue-500" />
+              <Loader className="w-6 h-6 animate-spin text-primary" />
             </div>
           ) : (
             <div className="p-6">
               {/* Current Weather */}
               {currentWeather && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Current Conditions</h3>
+                  <h3 className="text-lg font-medium text-base-content mb-4">Current Conditions</h3>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 text-center">
+                    <div className="bg-primary/10 rounded-xl p-4 text-center border border-primary/20">
                       <div className="flex justify-center mb-3">
                         {weatherIcons[getWeatherInfo(currentWeather.weatherCode).icon]}
                       </div>
-                      <div className="text-2xl font-bold text-gray-900">{Math.round(currentWeather.temperature)}°C</div>
-                      <div className="text-sm text-gray-600 capitalize mt-1">{getWeatherInfo(currentWeather.weatherCode).description}</div>
+                      <div className="text-2xl font-bold text-base-content">{Math.round(currentWeather.temperature)}°C</div>
+                      <div className="text-sm text-base-content/70 capitalize mt-1">{getWeatherInfo(currentWeather.weatherCode).description}</div>
                     </div>
                     
-                    <div className="bg-gray-50 rounded-xl p-4 text-center">
+                    <div className="bg-base-300 rounded-xl p-4 text-center">
                       <Droplets className="w-6 h-6 text-blue-500 mx-auto mb-2" />
-                      <div className="text-xl font-bold text-gray-900">{currentWeather.humidity}%</div>
-                      <div className="text-sm text-gray-600">Humidity</div>
+                      <div className="text-xl font-bold text-base-content">{currentWeather.humidity}%</div>
+                      <div className="text-sm text-base-content/70">Humidity</div>
                     </div>
                     
-                    <div className="bg-gray-50 rounded-xl p-4 text-center">
+                    <div className="bg-base-300 rounded-xl p-4 text-center">
                       <CloudRain className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                      <div className="text-xl font-bold text-gray-900">{currentWeather.precipitation}mm</div>
-                      <div className="text-sm text-gray-600">Precipitation</div>
+                      <div className="text-xl font-bold text-base-content">{currentWeather.precipitation}mm</div>
+                      <div className="text-sm text-base-content/70">Precipitation</div>
                     </div>
                     
-                    <div className="bg-gray-50 rounded-xl p-4 text-center">
-                      <Wind className="w-6 h-6 text-gray-500 mx-auto mb-2" />
-                      <div className="text-xl font-bold text-gray-900">{currentWeather.windSpeed} km/h</div>
-                      <div className="text-sm text-gray-600">Wind Speed</div>
+                    <div className="bg-base-300 rounded-xl p-4 text-center">
+                      <Wind className="w-6 h-6 text-base-content/70 mx-auto mb-2" />
+                      <div className="text-xl font-bold text-base-content">{currentWeather.windSpeed} km/h</div>
+                      <div className="text-sm text-base-content/70">Wind Speed</div>
                     </div>
                   </div>
                 </div>
@@ -732,20 +732,20 @@ const IncidencePage = () => {
               
               {/* 5-Day Forecast */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">5-Day Forecast</h3>
+                <h3 className="text-lg font-medium text-base-content mb-4">5-Day Forecast</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                   {weatherForecast.map((day, index) => {
                     const weatherInfo = getWeatherInfo(day.weatherCode);
                     return (
-                      <div key={index} className="bg-gray-50 rounded-lg p-3 text-center">
-                        <div className="text-sm font-medium text-gray-900 mb-2">
+                      <div key={index} className="bg-base-300 rounded-lg p-3 text-center">
+                        <div className="text-sm font-medium text-base-content mb-2">
                           {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
                         </div>
                         <div className="flex justify-center mb-2">
                           {weatherIcons[weatherInfo.icon]}
                         </div>
-                        <div className="text-lg font-bold text-gray-900">{Math.round(day.maxTemp)}°</div>
-                        <div className="text-xs text-gray-500">{Math.round(day.minTemp)}°</div>
+                        <div className="text-lg font-bold text-base-content">{Math.round(day.maxTemp)}°</div>
+                        <div className="text-xs text-base-content/70">{Math.round(day.minTemp)}°</div>
                         {day.precipitation > 0 && (
                           <div className="text-xs text-blue-600 font-medium mt-1">
                             {day.precipitation}mm
@@ -761,19 +761,19 @@ const IncidencePage = () => {
         </div>
 
         {/* Search and Filter Section */}
-        <div className="mb-6 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="mb-6 bg-base-200 rounded-2xl shadow-sm border border-base-content/10 p-6">
           <div className="flex flex-col md:flex-row gap-4 items-end">
             {/* Search Input */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search Reports</label>
+              <label className="block text-sm font-medium text-base-content mb-2">Search Reports</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search by title, reporter, or location..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900"
+                  className="w-full pl-10 pr-4 py-3 border border-base-content/10 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 bg-base-100 text-base-content"
                 />
               </div>
             </div>
@@ -781,12 +781,12 @@ const IncidencePage = () => {
             {/* Filter Toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all duration-200 flex items-center"
+              className="px-4 py-3 bg-base-200 border border-base-content/10 rounded-xl text-base-content hover:bg-base-300 transition-all duration-200 flex items-center"
             >
               <Filter className="w-4 h-4 mr-2" />
               Filters
               {hasActiveFilters && (
-                <span className="ml-2 w-2 h-2 bg-blue-500 rounded-full"></span>
+                <span className="ml-2 w-2 h-2 bg-primary rounded-full"></span>
               )}
             </button>
 
@@ -794,7 +794,7 @@ const IncidencePage = () => {
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 flex items-center"
+                className="px-4 py-3 text-error hover:bg-error/10 rounded-xl transition-all duration-200 flex items-center"
               >
                 <X className="w-4 h-4 mr-1" />
                 Clear
@@ -804,23 +804,23 @@ const IncidencePage = () => {
 
           {/* Advanced Filters */}
           {showFilters && (
-            <div className="mt-6 pt-6 border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="mt-6 pt-6 border-t border-base-content/10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <label className="block text-sm font-medium text-base-content mb-2">Date</label>
                 <input
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-base-content/10 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-base-100 text-base-content"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <label className="block text-sm font-medium text-base-content mb-2">Type</label>
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-base-content/10 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-base-100 text-base-content"
                 >
                   <option value="">All Types</option>
                   <option value="Injury">Injury</option>
@@ -831,11 +831,11 @@ const IncidencePage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <label className="block text-sm font-medium text-base-content mb-2">Status</label>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-base-content/10 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-base-100 text-base-content"
                 >
                   <option value="">All Statuses</option>
                   <option value="Pending">Pending</option>
@@ -850,7 +850,7 @@ const IncidencePage = () => {
 
         {/* Results Count */}
         {hasActiveFilters && (
-          <div className="mb-4 text-sm text-gray-600">
+          <div className="mb-4 text-sm text-base-content/70">
             Showing {filteredIncidences.length} of {incidences.length} reports
             {searchTerm && ` matching "${searchTerm}"`}
           </div>
@@ -858,25 +858,25 @@ const IncidencePage = () => {
 
         {/* Incidences Grid */}
         {filteredIncidences.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
-            <AlertTriangle className="mx-auto w-16 h-16 text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <div className="bg-base-200 rounded-2xl shadow-sm border border-base-content/10 p-12 text-center">
+            <AlertTriangle className="mx-auto w-16 h-16 text-base-content/30 mb-4" />
+            <h3 className="text-xl font-semibold text-base-content mb-2">
               {hasActiveFilters ? 'No matching reports found' : 'No incidence reports yet'}
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-base-content/70 mb-6">
               {hasActiveFilters ? 'Try adjusting your search or filters' : 'Get started by creating your first incidence report.'}
             </p>
             {hasActiveFilters ? (
               <button
                 onClick={clearFilters}
-                className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                className="px-6 py-2 bg-primary text-white rounded-xl hover:bg-primary-focus transition-colors"
               >
                 Clear Filters
               </button>
             ) : (
               <button
                 onClick={handleAddNew}
-                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                className="px-6 py-2 bg-gradient-to-r from-primary to-primary-focus text-white rounded-xl hover:shadow-lg transition-all duration-200"
               >
                 Create First Report
               </button>
@@ -892,14 +892,14 @@ const IncidencePage = () => {
               return (
                 <div 
                   key={incidence._id} 
-                  className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden"
+                  className="bg-base-200 rounded-2xl shadow-sm border border-base-content/10 hover:shadow-md transition-all duration-300 overflow-hidden"
                 >
                   {/* Card Header */}
-                  <div className="p-6 border-b border-gray-200">
+                  <div className="p-6 border-b border-base-content/10">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center min-w-0">
                         <span className="text-2xl mr-3 flex-shrink-0">{typeIcons[incidence.type] || '⚠️'}</span>
-                        <h3 className="font-semibold text-gray-900 truncate">
+                        <h3 className="font-semibold text-base-content truncate">
                           {incidence.title}
                         </h3>
                       </div>
@@ -916,31 +916,31 @@ const IncidencePage = () => {
                   {/* Card Body */}
                   <div className="p-6">
                     <div className="space-y-3">
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-base-content/70">
                         <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span className="truncate">{incidence.location === 'full_estate' ? 'Full Estate' : incidence.location}</span>
                       </div>
                       
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-base-content/70">
                         <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span>{formatDate(incidence.date)}</span>
                       </div>
                       
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-base-content/70">
                         <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span>{incidence.time}</span>
                       </div>
                       
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-base-content/70">
                         <User className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span>By: {incidence.reporterName}</span>
                         {currentUser && currentUser._id === incidence.reportedBy && (
-                          <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">You</span>
+                          <span className="ml-2 px-2 py-1 bg-primary/20 text-primary text-xs rounded">You</span>
                         )}
                       </div>
 
                       <div className="pt-2">
-                        <p className="text-sm text-gray-600 line-clamp-2">
+                        <p className="text-sm text-base-content/70 line-clamp-2">
                           {incidence.description}
                         </p>
                       </div>
@@ -948,14 +948,14 @@ const IncidencePage = () => {
                   </div>
 
                   {/* Card Footer */}
-                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
-                    <span className="text-xs text-gray-500">
+                  <div className="px-6 py-4 bg-base-300 border-t border-base-content/10 flex justify-between items-center">
+                    <span className="text-xs text-base-content/60">
                       {new Date(incidence.createdAt).toLocaleDateString()}
                     </span>
                     <div className="flex space-x-2">
                       <button
                         onClick={(e) => handleViewDetails(incidence._id, e)}
-                        className="p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors duration-200"
+                        className="p-2 text-base-content/70 hover:bg-base-content/10 rounded-lg transition-colors duration-200"
                         title="View details"
                       >
                         <Eye className="w-4 h-4" />
@@ -965,8 +965,8 @@ const IncidencePage = () => {
                         onClick={(e) => handleEdit(incidence._id, incidence.status, incidence, e)}
                         className={`p-2 rounded-lg transition-colors duration-200 ${
                           canEdit 
-                            ? 'text-blue-600 hover:bg-blue-100' 
-                            : 'text-gray-400 cursor-not-allowed'
+                            ? 'text-primary hover:bg-primary/10' 
+                            : 'text-base-content/40 cursor-not-allowed'
                         }`}
                         title={canEdit ? "Edit report" : isResolved ? "Resolved reports cannot be edited" : "Only the reporter can edit"}
                       >
@@ -978,8 +978,8 @@ const IncidencePage = () => {
                         disabled={deletingId === incidence._id || !canDelete}
                         className={`p-2 rounded-lg transition-colors duration-200 ${
                           canDelete 
-                            ? 'text-red-600 hover:bg-red-100' 
-                            : 'text-gray-400 cursor-not-allowed'
+                            ? 'text-error hover:bg-error/10' 
+                            : 'text-base-content/40 cursor-not-allowed'
                         }`}
                         title={canDelete ? "Delete report" : "Only resolved reports by the reporter can be deleted"}
                       >

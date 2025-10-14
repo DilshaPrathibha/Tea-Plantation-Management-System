@@ -7,7 +7,6 @@ import {
   LogIn,
   Home,
   User2,
-  BarChart2,
   Wrench,
   FlaskConical,
   Menu,
@@ -18,13 +17,15 @@ import {
   Bell,
   Calendar,
   Shield,
-  FileText,
   Package,
   Truck,
   User,
-  Ticket
+  Ticket,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { Sweet } from '../utils/sweet';
+import { useTheme } from '../context/ThemeContext';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
@@ -80,9 +81,7 @@ const getRoleNavLinks = (role) => {
         { label: 'Dashboard', href: '/supervisor', icon: Home, exact: true },
         { label: 'Attendance', href: '/supervisor/attendance', icon: Calendar },
         { label: 'Tasks', href: '/supervisor/tasks', icon: Users },
-        { label: 'Pest & Disease', href: '/supervisor/pestdisease', icon: Shield },
-        { label: 'Tickets', href: '/supervisor/tickets', icon: Ticket },
-        { label: 'Reports', href: '/reports', icon: FileText },
+        { label: 'Pest & Disease', href: '/supervisor/pest-disease', icon: Shield },
       ];
     
     case 'production_manager':
@@ -91,8 +90,6 @@ const getRoleNavLinks = (role) => {
         { label: 'Batches', href: '/production-batches', icon: Package },
         { label: 'Tracking', href: '/vehicle-tracking', icon: Truck },
         { label: 'Transport', href: '/transports', icon: Truck },
-        { label: 'Tickets', href: '/production/tickets', icon: Ticket },
-        { label: 'Reports', href: '/reports', icon: FileText },
       ];
     
     case 'inventory_manager':
@@ -101,14 +98,11 @@ const getRoleNavLinks = (role) => {
         { label: 'Tools', href: '/inventory/tools', icon: Wrench },
         { label: 'FNI', href: '/inventory/fni', icon: FlaskConical },
         { label: 'Suppliers', href: '/inventory/suppliers', icon: Users },
-        { label: 'Tickets', href: '/inventory/tickets', icon: Ticket },
-        { label: 'Reports', href: '/inventory/reports', icon: BarChart2 },
       ];
     
     case 'worker':
       return [
         { label: 'Dashboard', href: '/worker', icon: Home, exact: true },
-        { label: 'Profile', href: '/profile', icon: User },
       ];
     
     default:
@@ -145,6 +139,7 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const { theme, toggleTheme } = useTheme();
   const ackRef = useRef({});
   const userId = user?._id || user?.id;
   const ackStorageKey = useMemo(
@@ -368,27 +363,32 @@ const Navbar = () => {
               <div className="absolute -inset-1 rounded-xl bg-emerald-500/20 blur-sm opacity-0 group-hover:opacity-100 transition" />
               <Leaf className="relative w-6 h-6 sm:w-8 sm:h-8 text-emerald-400 group-hover:text-emerald-300 transition" />
             </div>
-            <span className="text-lg sm:text-2xl font-extrabold tracking-tight text-white">
-              <span className="text-emerald-400">Ceylon</span>Leaf
+            <span className="text-lg sm:text-2xl font-extrabold tracking-tight">
+              <span className="text-emerald-400">Ceylon</span><span className="text-emerald-400">Leaf</span>
             </span>
           </Link>
 
           {/* Desktop Navigation for All Authenticated Users */}
           {authed && user?.role && (
             <nav className="hidden md:flex gap-1">
-              {getRoleNavLinks(user.role).map((link) => (
-                <NavLink 
-                  key={link.href}
-                  to={link.href} 
-                  end={link.exact}
-                  className={({ isActive }) =>
-                    `btn btn-ghost btn-sm flex items-center gap-1 ${isActive ? 'bg-primary/20 text-primary' : 'hover:bg-base-content/10'}`
-                  }
-                >
-                  <link.icon size={18} />
-                  <span className="hidden lg:inline">{link.label}</span>
-                </NavLink>
-              ))}
+              {getRoleNavLinks(user.role).map((link) => {
+                const hasIcon = Boolean(link.icon);
+                return (
+                  <NavLink 
+                    key={link.href}
+                    to={link.href} 
+                    end={link.exact}
+                    className={({ isActive }) => {
+                      const stateClass = isActive ? 'bg-primary/20 text-primary' : 'hover:bg-base-content/10';
+                      const layoutClass = hasIcon ? 'inline-flex items-center gap-1' : 'inline-flex items-center gap-0';
+                      return `btn btn-ghost btn-sm ${layoutClass} ${stateClass}`;
+                    }}
+                  >
+                    {hasIcon ? <link.icon size={18} /> : null}
+                    <span className={hasIcon ? 'hidden lg:inline' : 'leading-none'}>{link.label}</span>
+                  </NavLink>
+                );
+              })}
             </nav>
           )}
 
@@ -431,7 +431,7 @@ const Navbar = () => {
                   <div
                     tabIndex={0}
                     role="button"
-                    className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                    className="relative flex h-11 w-11 items-center justify-center rounded-full border border-base-content/10 bg-base-content/5 transition hover:bg-base-content/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                     aria-label="Notifications"
                     onClick={handleNotificationsOpen}
                   >
@@ -507,16 +507,20 @@ const Navbar = () => {
                 </div>
                 {/* User chip with responsive styling */}
                 <div className="dropdown dropdown-end">
-                  <div tabIndex={0} role="button" className="flex items-center gap-2 rounded-full bg-white/5 border border-white/10 px-2 sm:px-3 py-1.5 hover:bg-white/10 transition cursor-pointer">
+                  <div
+                    tabIndex={0}
+                    role="button"
+                    className="flex items-center gap-2 rounded-full px-2 sm:px-3 py-1.5 transition cursor-pointer bg-base-content/5 border border-base-content/10 hover:bg-base-content/10"
+                  >
                     <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 grid place-items-center text-white font-bold">
                       <span className="text-xs sm:text-sm leading-none">{initialsOf(user)}</span>
                       <div className="absolute -inset-0.5 rounded-full ring-1 ring-white/10"></div>
                     </div>
                     <div className="hidden sm:flex flex-col leading-tight">
-                      <span className="text-white text-sm font-semibold">
+                      <span className="text-sm font-semibold text-base-content">
                         {user?.name || user?.email || 'User'}
                       </span>
-                      <span className="text-xs text-white/70 sm:truncate max-w-[180px]">
+                      <span className="text-xs sm:truncate max-w-[180px] text-base-content/60">
                         {getRoleTitle(user?.role)}
                       </span>
                     </div>
@@ -534,6 +538,23 @@ const Navbar = () => {
                           {getRoleTitle(user?.role)}
                         </span>
                       </div>
+                    </li>
+                    <div className="divider my-1"></div>
+                    <li>
+                      <button
+                        onClick={() => {
+                          toggleTheme();
+                          document.activeElement?.blur();
+                        }}
+                        className="flex items-center gap-2 w-full"
+                      >
+                        {theme === 'tea-dark' ? (
+                          <Sun className="w-4 h-4" />
+                        ) : (
+                          <Moon className="w-4 h-4" />
+                        )}
+                        {theme === 'tea-dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+                      </button>
                     </li>
                     <div className="divider my-1"></div>
                     {/* Dashboard shortcut in dropdown - always show for authenticated users */}
@@ -573,33 +594,36 @@ const Navbar = () => {
           {authed && user?.role && mobileMenuOpen && (
             <div className="md:hidden absolute top-16 left-0 right-0 bg-base-300 border-b border-base-content/10 shadow-lg mobile-menu-dropdown">
               <nav className="px-4 py-3 space-y-2">
-                {getRoleNavLinks(user.role).map((link) => (
-                  <div
-                    key={link.href}
-                    onTouchStart={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      // Handle touch navigation
-                      closeMobileMenu();
-                      setTimeout(() => navigate(link.href), 100);
-                    }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      // Handle click navigation (desktop responsive mode)
-                      closeMobileMenu();
-                      setTimeout(() => navigate(link.href), 100);
-                    }}
-                    className="flex items-center gap-3 px-3 py-3 rounded-lg transition mobile-menu-item cursor-pointer hover:bg-base-content/10 text-base-content active:bg-base-content/20"
-                    style={{ 
-                      WebkitTapHighlightColor: 'transparent',
-                      touchAction: 'manipulation'
-                    }}
-                  >
-                    <link.icon size={20} />
-                    <span className="font-medium">{link.label}</span>
-                  </div>
-                ))}
+                {getRoleNavLinks(user.role).map((link) => {
+                  const hasIcon = Boolean(link.icon);
+                  return (
+                    <div
+                      key={link.href}
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Handle touch navigation
+                        closeMobileMenu();
+                        setTimeout(() => navigate(link.href), 100);
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Handle click navigation (desktop responsive mode)
+                        closeMobileMenu();
+                        setTimeout(() => navigate(link.href), 100);
+                      }}
+                      className={`flex items-center ${hasIcon ? 'gap-3' : 'gap-1'} px-3 py-3 rounded-lg transition mobile-menu-item cursor-pointer hover:bg-base-content/10 text-base-content active:bg-base-content/20`}
+                      style={{ 
+                        WebkitTapHighlightColor: 'transparent',
+                        touchAction: 'manipulation'
+                      }}
+                    >
+                      {hasIcon ? <link.icon size={20} /> : null}
+                      <span className="font-medium">{link.label}</span>
+                    </div>
+                  );
+                })}
               </nav>
             </div>
           )}

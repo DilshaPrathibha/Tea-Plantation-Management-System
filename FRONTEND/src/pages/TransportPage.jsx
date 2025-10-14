@@ -125,22 +125,22 @@ const TransportPage = () => {
         <div className="bg-base-300 p-4 rounded-lg shadow mb-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <label className="label text-white">Search</label>
+              <label className="label text-base-content">Search</label>
               <input
                 type="text"
                 placeholder="Search by vehicle or driver..."
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                className="input input-bordered w-full bg-base-200 text-white"
+                className="input input-bordered w-full bg-base-200 text-base-content"
               />
             </div>
             
             <div className="flex-1">
-              <label className="label text-white">Filter by Status</label>
+              <label className="label text-base-content">Filter by Status</label>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="select select-bordered w-full bg-base-200 text-white"
+                className="select select-bordered w-full bg-base-200 text-base-content"
               >
                 <option value="all">All Status</option>
                 <option value="scheduled">Scheduled</option>
@@ -150,7 +150,7 @@ const TransportPage = () => {
             </div>
           </div>
           
-          <p className="text-sm text-gray-300 mt-2">
+          <p className="text-sm text-base-content/70 mt-2">
             Showing {filteredTransports.length} of {transports.length} records
           </p>
         </div>
