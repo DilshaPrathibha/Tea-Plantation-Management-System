@@ -105,6 +105,12 @@ export default function App() {
           <Route path="fields" element={<FieldsPage />} />
           <Route path="notifications" element={<AdminNotifications />} />
           <Route path="tickets" element={<AdminTicketsPage />} />
+          
+          {/* Incidences (admin access) */}
+          <Route path="incidences" element={<IncidencePage />} />
+          <Route path="incidences/add" element={<AddIncidencePage />} />
+          <Route path="incidences/:id" element={<IncidenceDetailPage />} />
+          <Route path="incidences/:id/edit" element={<UpdateIncidencePage />} />
         </Route>
 
         {/* Notes (practice) */}
@@ -188,6 +194,40 @@ export default function App() {
           element={
             <RequireAuth role="worker">
               <WorkerDashboard />
+            </RequireAuth>
+          }
+        />
+        
+        {/* Worker Incidence Routes */}
+        <Route
+          path="/worker/incidences"
+          element={
+            <RequireAuth role="worker">
+              <IncidencePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/worker/incidences/add"
+          element={
+            <RequireAuth role="worker">
+              <AddIncidencePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/worker/incidences/:id"
+          element={
+            <RequireAuth role="worker">
+              <IncidenceDetailPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/worker/incidences/:id/edit"
+          element={
+            <RequireAuth role="worker">
+              <UpdateIncidencePage />
             </RequireAuth>
           }
         />

@@ -1,7 +1,7 @@
 // BACKEND/src/routes/incidenceroutes.js
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('../middleware/auth');
+const { verifyToken, requireAnyRole } = require('../middleware/auth');
 const { 
     createIncidence,
     listIncidences,
@@ -12,10 +12,11 @@ const {
 } = require('../controllers/incidencecontroller');
 
 // Fix the route order to avoid conflicts 
-router.post('/', verifyToken, createIncidence);
-router.get('/', verifyToken, listIncidences);
-router.get('/:id', verifyToken, getIncidence);
-router.patch('/:id', verifyToken, updateIncidence);
-router.delete('/:id', verifyToken, deleteIncidence);
+// Allow admin, field_supervisor, and worker to access incidence routes
+router.post('/', verifyToken, requireAnyRole(['admin', 'field_supervisor', 'worker']), createIncidence);
+router.get('/', verifyToken, requireAnyRole(['admin', 'field_supervisor', 'worker']), listIncidences);
+router.get('/:id', verifyToken, requireAnyRole(['admin', 'field_supervisor', 'worker']), getIncidence);
+router.patch('/:id', verifyToken, requireAnyRole(['admin', 'field_supervisor', 'worker']), updateIncidence);
+router.delete('/:id', verifyToken, requireAnyRole(['admin', 'field_supervisor', 'worker']), deleteIncidence);
 
 module.exports = router;

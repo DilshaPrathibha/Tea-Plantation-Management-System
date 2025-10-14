@@ -1,7 +1,7 @@
 // FRONTEND/src/pages/admin/AdminDashboard.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Leaf, UserCog, Bell, Ticket } from "lucide-react";
+import { Leaf, UserCog, Bell, Ticket, AlertTriangle } from "lucide-react";
 
 const Tile = ({ icon, title, desc, onClick }) => (
   <button
@@ -59,6 +59,12 @@ export default function AdminDashboard() {
             title="Ticket Inbox"
             desc="Review, reply, and resolve support tickets."
             onClick={() => navigate("/admin/tickets")}
+          />
+          <Tile
+            icon={<AlertTriangle className="w-6 h-6" />}
+            title="Incidence Reports"
+            desc="View, create, and manage incidence reports."
+            onClick={() => navigate("/admin/incidences")}
           />
         </div>
       </div>
