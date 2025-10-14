@@ -692,7 +692,7 @@ const PestDiseasePage = ({ viewOnly = false }) => {
                     <div className="flex space-x-2">
                       <button
                         onClick={(e) => handleViewDetails(report._id, e)}
-                        className="p-2 text-base-content/70 hover:bg-base-300 rounded-lg transition-colors duration-200"
+                        className="p-2 rounded-lg transition-colors duration-200 text-base-content/70 hover:text-emerald-700 hover:bg-emerald-100/60"
                         title="View details"
                       >
                         <Eye className="w-4 h-4" />
@@ -702,7 +702,7 @@ const PestDiseasePage = ({ viewOnly = false }) => {
                         onClick={(e) => handleEdit(report._id, report.status, report, e)}
                         className={`p-2 rounded-lg transition-colors duration-200 ${
                           canEdit 
-                            ? 'text-green-600 hover:bg-green-100' 
+                            ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-100/60' 
                             : 'text-base-content/50 cursor-not-allowed'
                         }`}
                         title={canEdit ? "Edit report" : isResolved ? "Resolved reports cannot be edited" : "Only the reporter can edit"}

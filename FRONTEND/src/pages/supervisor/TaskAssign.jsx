@@ -1,4 +1,4 @@
-// FRONTEND/src/pages/supervisor/TaskAssign.jsx
+﻿// FRONTEND/src/pages/supervisor/TaskAssign.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
@@ -150,9 +150,9 @@ export default function TaskAssign() {
         }));
         const now = rows[0] || null;
         const avgRain = rows.length ? Math.round(rows.slice(0, 6).reduce((a, b) => a + (b.rainp || 0), 0) / Math.min(6, rows.length)) : 0;
-        let advisory = 'Low rain chance — plucking & fertilizing are fine.';
-        if (avgRain >= 50) advisory = 'High rain chance — prefer pruning/weeding; avoid fertilizing.';
-        else if (avgRain >= 25) advisory = 'Moderate rain chance — schedule critical tasks earlier.';
+        let advisory = 'Low rain chance - plucking & fertilizing are fine.';
+        if (avgRain >= 50) advisory = 'High rain chance - prefer pruning/weeding; avoid fertilizing.';
+        else if (avgRain >= 25) advisory = 'Moderate rain chance - schedule critical tasks earlier.';
         setWx({ loading: false, rows, now, loc: 'Awissawella', advisory });
       } catch {
         setWx({ loading: false, rows: [], now: null, loc: 'Awissawella', advisory: '' });
@@ -305,7 +305,7 @@ export default function TaskAssign() {
                 )
               }
             >
-              {t.workerName} ({t.workerId}) —{" "}
+              {t.workerName} ({t.workerId}) -{" "}
               {t.taskType === "other" ? t.customTask : t.taskType}
             </li>
           ))}
@@ -324,7 +324,7 @@ export default function TaskAssign() {
 
 {/* Export PDF button */}
 <button
-  className="btn btn-secondary mt-2"
+  className="btn btn-primary mt-2"
   onClick={async () => {
     const doc = new jsPDF();
 
@@ -432,31 +432,30 @@ export default function TaskAssign() {
             </div>
 
             {wx.loading ? (
-              <div className="text-sm opacity-70">Loading weather…</div>
+              <div className="text-sm opacity-70">Loading weather...</div>
             ) : (
               <>
                 {wx.now ? (
                   <>
+                    <div className="rounded-xl border p-3">
+                      <div className="opacity-70">Now</div>
+                      <div className="text-xl font-semibold">{wx.now?.temp ?? 0}&deg;C</div>
+                      <div className="text-xs opacity-70">
+                        <Clock className="w-3 h-3 inline mr-1" />
+                        {nowTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </div>
+                    </div>
 
-                      <div className="rounded-xl border p-3">
-                        <div className="opacity-70">Now</div>
-                        <div className="text-xl font-semibold">{wx.now?.temp}°C</div>
-                        <div className="text-xs opacity-70">
-                          <Clock className="w-3 h-3 inline mr-1" />
-                          {nowTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                        </div>
-                      </div>
+                    <div className="rounded-xl border p-3">
+                      <div className="opacity-70">Rain</div>
+                      <div className="text-xl font-semibold">{wx.now?.rainp ?? 0}%</div>
+                      <div className="text-xs opacity-70">{wx.now?.rain ?? 0} mm</div>
+                    </div>
+                    <div className="rounded-xl border p-3">
+                      <div className="opacity-70">Wind</div>
+                      <div className="text-xl font-semibold">{wx.now?.wind ?? 0} km/h</div>
+                    </div>
 
-                      <div className="rounded-xl border p-3">
-                        <div className="opacity-70">Rain</div>
-                        <div className="text-xl font-semibold">{wx.now.rainp ?? 0}%</div>
-                        <div className="text-xs opacity-70">{wx.now.rain ?? 0} mm</div>
-                      </div>
-                      <div className="rounded-xl border p-3">
-                        <div className="opacity-70">Wind</div>
-                        <div className="text-xl font-semibold">{wx.now.wind ?? 0} km/h</div>
-                      </div>
-                  
                     {wx.advisory && (
                       <div className="mt-2 text-sm alert alert-info">
                         <span><b>Advisory:</b> {wx.advisory}</span>
@@ -473,9 +472,9 @@ export default function TaskAssign() {
                           {wx.rows.map((r, idx) => (
                             <tr key={`${r.time}-${idx}`}>
                               <td>{r.time}</td>
-                              <td>{r.temp}°C</td>
+                              <td>{r.temp}&deg;C</td>
                               <td>{r.rainp ?? 0}%</td>
-                              <td>{r.rain ?? 0}</td>
+                              <td>{r.rain ?? 0} mm</td>
                               <td>{r.wind ?? 0} km/h</td>
                             </tr>
                           ))}
@@ -498,7 +497,7 @@ export default function TaskAssign() {
             <div className="flex items-center gap-2 font-semibold mb-1">
               <UserCheck className="w-4 h-4" /> Eligible workers
             </div>
-            <div className="text-xs opacity-70 mb-2">Only today’s attendees are listed. Once assigned, a worker is removed.</div>
+            <div className="text-xs opacity-70 mb-2">Only today's attendees are listed. Once assigned, a worker is removed.</div>
             <div className="overflow-x-auto">
               <table className="table">
                 <thead>
@@ -545,7 +544,7 @@ export default function TaskAssign() {
               <div className="space-y-3">
                 <div className="text-sm">
                   <div className="font-medium">
-                    {pickedWorker.workerName || '-'} &nbsp;•&nbsp;
+                    {pickedWorker.workerName || '-'} &nbsp;â€¢&nbsp;
                     <code>{pickedWorker.workerId}</code>
                   </div>
                   <div className="opacity-70">Field: {fieldName || pickedWorker.field || '-'}</div>
@@ -604,7 +603,7 @@ export default function TaskAssign() {
               <div className="space-y-3">
                 <div className="text-sm">
                   <div className="font-medium">
-                    {editing.workerName || '-'} &nbsp;•&nbsp; <code>{editing.workerId}</code>
+                    {editing.workerName || '-'} &nbsp;â€¢&nbsp; <code>{editing.workerId}</code>
                   </div>
                   <div className="opacity-70">Field: {editing.field || '-'}</div>
                 </div>
@@ -666,9 +665,9 @@ export default function TaskAssign() {
           </div>
         </div>
 
-        {/* Today’s tasks */}
+        {/* Today's tasks */}
         <div className="rounded-2xl bg-base-100 p-4 border">
-          <h3 className="font-semibold mb-2">Today’s tasks</h3>
+          <h3 className="font-semibold mb-2">Today's tasks</h3>
           <div className="overflow-x-auto">
             <table className="table">
               <thead>
@@ -696,8 +695,8 @@ export default function TaskAssign() {
                     <td className="capitalize">{t.status || 'assigned'}</td>
                     <td className="text-right">
                       <button
-                        className="btn btn-sm mr-2"
-                        style={{ backgroundColor: '#FFC107', color: '#111', borderRadius: '2em', border: 'none', fontWeight: 600, minWidth: 90 }}
+                        className="btn btn-sm mr-2 bg-amber-300 hover:bg-amber-200 border-none text-amber-900 shadow-sm"
+                        
                         onClick={() => startEdit(t)}
                       >
                         <Pencil className="w-4 h-4" /> Edit
@@ -715,3 +714,6 @@ export default function TaskAssign() {
     </div>
   );
 }
+
+
+

@@ -21,6 +21,7 @@ import {
   Truck,
   FileText
 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 /* Read auth state from localStorage safely */
 const readAuth = () => {
@@ -33,6 +34,11 @@ const readAuth = () => {
 
 const Footer = () => {
   const [{ authed, user }, setAuth] = useState(readAuth());
+  const { theme } = useTheme();
+  const isLightTheme = theme === 'tea-light';
+  const footerBackgroundClass = isLightTheme
+    ? 'bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-700 border-emerald-700 text-emerald-50'
+    : 'bg-base-300 border-base-content/30';
 
   /* Keep Footer updated after login/logout and across tabs */
   useEffect(() => {
@@ -108,7 +114,7 @@ const Footer = () => {
   const roleLinks = authed && user?.role ? getRoleLinks(user.role) : publicLinks;
 
   return (
-    <footer className="bg-base-300 backdrop-blur-sm border-t border-base-content/30 shadow-lg mt-auto">
+    <footer data-theme={isLightTheme ? 'tea-dark' : undefined} className={`backdrop-blur-sm border-t shadow-lg mt-auto transition-colors duration-300 ${footerBackgroundClass}`}> 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">

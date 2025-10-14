@@ -323,11 +323,11 @@ const IncidenceDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+      <div className="min-h-screen bg-base-100 py-8 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="animate-pulse">
             <div className="h-6 bg-white rounded-lg w-32 mb-6"></div>
-            <div className="bg-white rounded-2xl shadow-sm p-8">
+            <div className="bg-emerald-50 rounded-2xl shadow-sm p-8">
               <div className="h-8 bg-gray-200 rounded w-3/4 mb-6"></div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div className="space-y-4">
@@ -353,19 +353,19 @@ const IncidenceDetailPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+      <div className="min-h-screen bg-base-100 py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <Link to="/incidences" className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-6 transition-colors">
+          <Link to="/incidences" className="inline-flex items-center text-emerald-600 hover:text-emerald-700 mb-6 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Reports
           </Link>
-          <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
+          <div className="bg-emerald-50 rounded-2xl shadow-sm p-8 text-center">
             <AlertCircle className="mx-auto w-16 h-16 text-red-400 mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Report</h2>
-            <p className="text-gray-600 mb-6">{error}</p>
+            <h2 className="text-2xl font-bold text-emerald-900 mb-2">Error Loading Report</h2>
+            <p className="text-emerald-800/80 mb-6">{error}</p>
             <button
               onClick={fetchIncidence}
-              className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+              className="px-6 py-2 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors"
             >
               Try Again
             </button>
@@ -377,19 +377,19 @@ const IncidenceDetailPage = () => {
 
   if (!incidence) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+      <div className="min-h-screen bg-base-100 py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <Link to="/incidences" className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-6 transition-colors">
+          <Link to="/incidences" className="inline-flex items-center text-emerald-600 hover:text-emerald-700 mb-6 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Reports
           </Link>
-          <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
+          <div className="bg-emerald-50 rounded-2xl shadow-sm p-8 text-center">
             <AlertTriangle className="mx-auto w-16 h-16 text-amber-400 mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Report Not Found</h2>
-            <p className="text-gray-600 mb-6">The requested incidence report could not be found.</p>
+            <h2 className="text-2xl font-bold text-emerald-900 mb-2">Report Not Found</h2>
+            <p className="text-emerald-800/80 mb-6">The requested incidence report could not be found.</p>
             <Link
               to="/incidences"
-              className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors inline-block"
+              className="px-6 py-2 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors inline-block"
             >
               View All Reports
             </Link>
@@ -404,13 +404,13 @@ const IncidenceDetailPage = () => {
   const isOwnReport = currentUser && currentUser._id === incidence.reportedBy;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+    <div className="min-h-screen bg-base-100 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header Navigation */}
         <div className="flex items-center justify-between mb-8">
           <Link 
             to="/incidences" 
-            className="inline-flex items-center text-blue-600 hover:text-blue-700 transition-colors bg-white px-4 py-2 rounded-xl shadow-sm hover:shadow-md"
+            className="inline-flex items-center bg-emerald-100/80 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100 transition-colors px-4 py-2 rounded-xl shadow-sm hover:shadow-md"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Reports
@@ -427,29 +427,29 @@ const IncidenceDetailPage = () => {
         </div>
 
         {/* Main Content Card */}
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200">
+        <div className="bg-emerald-50 rounded-2xl shadow-sm overflow-hidden border border-emerald-100">
           {/* Header Section */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-8 border-b border-gray-200">
+          <div className="bg-emerald-50 p-8 border-b border-emerald-100">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
               <div className="flex-1">
                 <div className="flex items-start mb-4">
                   <span className="text-4xl mr-4 flex-shrink-0">{typeIcons[incidence.type] || '⚠️'}</span>
                   <div className="min-w-0">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2 break-words">
+                    <h1 className="text-3xl font-bold text-emerald-900 mb-2 break-words">
                       {incidence.title}
                     </h1>
                     <div className="flex items-center flex-wrap gap-2">
-                      <div className="flex items-center text-gray-600">
+                      <div className="flex items-center text-emerald-800/80">
                         <User className="w-4 h-4 mr-1" />
                         <span className="font-medium">{incidence.reporterName}</span>
                         {isOwnReport && (
-                          <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                          <span className="ml-2 px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full font-medium">
                             Your Report
                           </span>
                         )}
                       </div>
-                      <span className="text-gray-400">•</span>
-                      <span className="text-gray-500 text-sm">
+                      <span className="text-emerald-700/50">•</span>
+                      <span className="text-emerald-800/70 text-sm">
                         {getTimeAgo(incidence.createdAt)}
                       </span>
                     </div>
@@ -461,14 +461,14 @@ const IncidenceDetailPage = () => {
               <div className="flex space-x-2 mt-4 lg:mt-0 lg:ml-4">
                 <button
                   onClick={shareReport}
-                  className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="p-2 text-emerald-800/70 hover:text-emerald-600 hover:bg-emerald-100/70 rounded-lg transition-colors"
                   title="Share Report"
                 >
                   <Share className="w-5 h-5" />
                 </button>
                 <button
                   onClick={exportPDFIncidence}
-                  className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                  className="p-2 text-emerald-800/70 hover:text-emerald-700 hover:bg-emerald-100/70 rounded-lg transition-colors"
                   title="Download PDF Report"
                 >
                   <Download className="w-5 h-5" />
@@ -482,27 +482,27 @@ const IncidenceDetailPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
               {/* Left Column */}
               <div className="space-y-6">
-                <div className="bg-gray-50 rounded-xl p-4">
+                <div className="bg-emerald-50/70 rounded-xl p-4">
                   <div className="flex items-center mb-3">
-                    <MapPin className="w-5 h-5 text-blue-600 mr-3" />
-                    <h3 className="font-semibold text-gray-900">Location</h3>
+                    <MapPin className="w-5 h-5 text-emerald-600 mr-3" />
+                    <h3 className="font-semibold text-emerald-900">Location</h3>
                   </div>
-                  <p className="text-gray-700">{incidence.location === 'full_estate' ? 'Full Estate' : incidence.location}</p>
+                  <p className="text-emerald-900/80">{incidence.location === 'full_estate' ? 'Full Estate' : incidence.location}</p>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-4">
+                <div className="bg-emerald-50/70 rounded-xl p-4">
                   <div className="flex items-center mb-3">
-                    <Calendar className="w-5 h-5 text-blue-600 mr-3" />
-                    <h3 className="font-semibold text-gray-900">Date & Time</h3>
+                    <Calendar className="w-5 h-5 text-emerald-600 mr-3" />
+                    <h3 className="font-semibold text-emerald-900">Date & Time</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-600">Date</p>
-                      <p className="font-medium text-gray-900">{formatDate(incidence.date)}</p>
+                      <p className="text-sm text-emerald-800/80">Date</p>
+                      <p className="font-medium text-emerald-900">{formatDate(incidence.date)}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Time</p>
-                      <p className="font-medium text-gray-900">{incidence.time}</p>
+                      <p className="text-sm text-emerald-800/80">Time</p>
+                      <p className="font-medium text-emerald-900">{incidence.time}</p>
                     </div>
                   </div>
                 </div>
@@ -510,32 +510,32 @@ const IncidenceDetailPage = () => {
 
               {/* Right Column */}
               <div className="space-y-6">
-                <div className="bg-gray-50 rounded-xl p-4">
+                <div className="bg-emerald-50/70 rounded-xl p-4">
                   <div className="flex items-center mb-3">
-                    <AlertCircle className="w-5 h-5 text-blue-600 mr-3" />
-                    <h3 className="font-semibold text-gray-900">Incident Details</h3>
+                    <AlertCircle className="w-5 h-5 text-emerald-600 mr-3" />
+                    <h3 className="font-semibold text-emerald-900">Incident Details</h3>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-600">Type</p>
-                      <p className="font-medium text-gray-900">{incidence.type}</p>
+                      <p className="text-sm text-emerald-800/80">Type</p>
+                      <p className="font-medium text-emerald-900">{incidence.type}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Severity</p>
-                      <p className="font-medium text-gray-900">{incidence.severity}</p>
+                      <p className="text-sm text-emerald-800/80">Severity</p>
+                      <p className="font-medium text-emerald-900">{incidence.severity}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-4">
+                <div className="bg-emerald-50/70 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center">
-                      <Shield className="w-5 h-5 text-blue-600 mr-3" />
-                      <h3 className="font-semibold text-gray-900">Report ID</h3>
+                      <Shield className="w-5 h-5 text-emerald-600 mr-3" />
+                      <h3 className="font-semibold text-emerald-900">Report ID</h3>
                     </div>
                     <button
                       onClick={copyReportId}
-                      className="text-xs text-blue-600 hover:text-blue-700 flex items-center"
+                      className="text-xs text-emerald-600 hover:text-emerald-700 flex items-center"
                     >
                       {copiedId ? (
                         <>
@@ -550,7 +550,7 @@ const IncidenceDetailPage = () => {
                       )}
                     </button>
                   </div>
-                  <p className="text-sm font-mono text-gray-600 break-all">{incidence._id}</p>
+                  <p className="text-sm font-mono text-emerald-800/80 break-all">{incidence._id}</p>
                 </div>
               </div>
             </div>
@@ -558,11 +558,11 @@ const IncidenceDetailPage = () => {
             {/* Description Section */}
             <div className="mb-8">
               <div className="flex items-center mb-4">
-                <FileText className="w-6 h-6 text-blue-600 mr-3" />
-                <h3 className="text-xl font-semibold text-gray-900">Incident Description</h3>
+                <FileText className="w-6 h-6 text-emerald-600 mr-3" />
+                <h3 className="text-xl font-semibold text-emerald-900">Incident Description</h3>
               </div>
-              <div className="bg-gray-50 rounded-xl p-6">
-                <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+              <div className="bg-emerald-50/70 rounded-xl p-6">
+                <p className="text-emerald-900/80 leading-relaxed whitespace-pre-line">
                   {incidence.description}
                 </p>
               </div>
@@ -575,7 +575,7 @@ const IncidenceDetailPage = () => {
                   <ImageIcon className="w-5 h-5 text-primary mr-2" />
                   <h3 className="text-lg font-semibold">Evidence</h3>
                 </div>
-                <div className="bg-white rounded-lg p-4 flex flex-col items-center justify-center">
+                <div className="bg-emerald-50 rounded-lg p-4 flex flex-col items-center justify-center">
                   <img 
                     src={incidence.imageUrl} 
                     alt="Incidence evidence" 
@@ -587,7 +587,7 @@ const IncidenceDetailPage = () => {
                       if (errorDiv) errorDiv.style.display = 'block';
                     }}
                   />
-                  <div className="text-center text-gray-500 p-4 hidden">
+                  <div className="text-center text-emerald-800/70 p-4 hidden">
                     <ImageIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                     <p>Evidence image unavailable or deleted</p>
                   </div>
@@ -596,8 +596,8 @@ const IncidenceDetailPage = () => {
             )}
 
             {/* Timeline Metadata */}
-            <div className="pt-6 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+            <div className="pt-6 border-t border-emerald-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-emerald-800/80">
                 <div>
                   <p className="font-medium">Report Timeline</p>
                   <p>Reported: {formatDateTime(incidence.createdAt)}</p>
@@ -615,14 +615,14 @@ const IncidenceDetailPage = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="bg-gray-50 px-8 py-6 border-t border-gray-200">
+          <div className="bg-emerald-50 px-8 py-6 border-t border-emerald-100">
             <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
               <button
                 onClick={handleEdit}
                 className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 flex items-center justify-center ${
                   canEdit 
-                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md' 
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm hover:shadow-md' 
+                    : 'bg-emerald-100/80 text-emerald-400 cursor-not-allowed'
                 }`}
                 disabled={!canEdit}
                 title={canEdit ? "Edit Report" : incidence.status === 'Resolved' ? "Resolved reports cannot be edited" : "Only the reporter can edit"}
@@ -640,7 +640,7 @@ const IncidenceDetailPage = () => {
                 className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 flex items-center justify-center ${
                   canDelete 
                     ? 'bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow-md' 
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    : 'bg-emerald-100/80 text-emerald-400 cursor-not-allowed'
                 }`}
                 title={canDelete ? "Delete Report" : "Only resolved reports by the reporter can be deleted"}
               >

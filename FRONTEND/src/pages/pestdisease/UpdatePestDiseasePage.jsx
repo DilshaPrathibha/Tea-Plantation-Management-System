@@ -531,42 +531,42 @@ const UpdatePestDiseasePage = () => {
 
   if (fetching) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4 flex items-center justify-center">
+      <div className="min-h-screen bg-base-100 py-8 px-4 flex items-center justify-center">
         <div className="text-center">
-          <Loader className="w-8 h-8 animate-spin text-green-600 mx-auto mb-4" />
-          <div className="text-lg text-gray-900">Loading report data...</div>
+          <Loader className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-4" />
+          <div className="text-lg text-emerald-900">Loading report data...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
+    <div className="min-h-screen bg-base-100 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header with Back Button */}
         <div className="flex items-center mb-6">
           <button
             onClick={() => navigate(`/supervisor/pest-disease/${id}`)}
-            className="flex items-center text-gray-900 hover:text-gray-700 transition-colors mr-4"
+            className="flex items-center text-emerald-900 hover:text-emerald-900 transition-colors mr-4"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back to Details
           </button>
           <div className="flex-1 text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Update Pest/Disease Report</h1>
-            <p className="text-gray-900">Update the details about this agricultural threat</p>
+            <h1 className="text-3xl font-bold text-emerald-900 mb-2">Update Pest/Disease Report</h1>
+            <p className="text-emerald-900">Update the details about this agricultural threat</p>
           </div>
         </div>
 
         {uploadProgress > 0 && uploadProgress < 100 && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
+          <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-green-900 font-medium">Uploading Image...</span>
-              <span className="text-green-800">{uploadProgress}%</span>
+              <span className="text-emerald-900 font-medium">Uploading Image...</span>
+              <span className="text-emerald-800">{uploadProgress}%</span>
             </div>
-            <div className="w-full bg-green-200 rounded-full h-2">
+            <div className="w-full bg-emerald-200 rounded-full h-2">
               <div 
-                className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${uploadProgress}%` }}
               ></div>
             </div>
@@ -580,34 +580,34 @@ const UpdatePestDiseasePage = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-emerald-50 rounded-2xl shadow-sm border border-emerald-100 p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Reporter Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
-                <User className="w-4 h-4 mr-2 text-green-600" />
+              <label className="block text-sm font-medium text-emerald-900 mb-2 flex items-center">
+                <User className="w-4 h-4 mr-2 text-emerald-600" />
                 Reporter Name
               </label>
               <div className="relative">
                 <input
                   type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-emerald-200 rounded-xl bg-emerald-50/70 text-emerald-900 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   value={form.reporterName}
                   readOnly
                 />
-                <Shield className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Shield className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-emerald-800/70" />
               </div>
             </div>
 
             {/* Report Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-emerald-900 mb-2">
                 Report Title *
               </label>
               <input
                 type="text"
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
-                  validationErrors.title ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white text-emerald-900 ${
+                  validationErrors.title ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                 }`}
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -622,21 +622,21 @@ const UpdatePestDiseasePage = () => {
 
             {/* Location */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
-                <MapPin className="w-4 h-4 mr-2 text-green-600" />
+              <label className="block text-sm font-medium text-emerald-900 mb-2 flex items-center">
+                <MapPin className="w-4 h-4 mr-2 text-emerald-600" />
                 Location *
               </label>
               <select
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
-                  validationErrors.location ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white text-emerald-900 ${
+                  validationErrors.location ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                 }`}
                 value={form.location}
                 onChange={(e) => setForm({ ...form, location: e.target.value })}
               >
-                <option value="" className="text-gray-500">Select a location</option>
-                <option value="full_estate" className="text-gray-900">Full Estate</option>
+                <option value="" className="text-emerald-800/70">Select a location</option>
+                <option value="full_estate" className="text-emerald-900">Full Estate</option>
                 {fields.map(field => (
-                  <option key={field._id} value={field.name} className="text-gray-900">{field.name}</option>
+                  <option key={field._id} value={field.name} className="text-emerald-900">{field.name}</option>
                 ))}
               </select>
               {validationErrors.location && (
@@ -649,17 +649,17 @@ const UpdatePestDiseasePage = () => {
 
             {/* Map Location */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
-                <Map className="w-4 h-4 mr-2 text-green-600" />
+              <label className="block text-sm font-medium text-emerald-900 mb-2 flex items-center">
+                <Map className="w-4 h-4 mr-2 text-emerald-600" />
                 Map Location
               </label>
               <div className="space-y-3">
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 bg-white">
+                <div className="border-2 border-dashed border-emerald-200 rounded-xl p-4 bg-emerald-50">
                   {selectedLocation ? (
                     <div className="text-center">
-                      <div className="bg-green-50 rounded-lg p-3 mb-3">
-                        <p className="text-sm font-medium text-green-900">Location Set</p>
-                        <p className="text-xs text-green-800">
+                      <div className="bg-emerald-50 rounded-lg p-3 mb-3">
+                        <p className="text-sm font-medium text-emerald-900">Location Set</p>
+                        <p className="text-xs text-emerald-800">
                           Lat: {selectedLocation.lat?.toFixed(6)}, Lng: {selectedLocation.lng?.toFixed(6)}
                         </p>
                       </div>
@@ -667,7 +667,7 @@ const UpdatePestDiseasePage = () => {
                         <button
                           type="button"
                           onClick={() => setShowMapModal(true)}
-                          className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm"
+                          className="px-3 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors flex items-center text-sm"
                         >
                           <Maximize2 className="w-4 h-4 mr-1" />
                           Change on Map
@@ -675,7 +675,7 @@ const UpdatePestDiseasePage = () => {
                         <button
                           type="button"
                           onClick={getUserLocation}
-                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center text-sm"
+                          className="px-3 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors flex items-center text-sm"
                         >
                           <Navigation className="w-4 h-4 mr-1" />
                           Use Current
@@ -684,12 +684,12 @@ const UpdatePestDiseasePage = () => {
                     </div>
                   ) : (
                     <div className="text-center">
-                      <Map className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                      <Map className="w-8 h-8 text-emerald-800/70 mx-auto mb-2" />
                       <div className="flex gap-2 justify-center">
                         <button
                           type="button"
                           onClick={() => setShowMapModal(true)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                          className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors flex items-center"
                         >
                           <Map className="w-4 h-4 mr-2" />
                           Select on Map
@@ -698,7 +698,7 @@ const UpdatePestDiseasePage = () => {
                           type="button"
                           onClick={getUserLocation}
                           disabled={mapLoading}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center"
+                          className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-colors flex items-center"
                         >
                           {mapLoading ? (
                             <Loader className="w-4 h-4 animate-spin mr-2" />
@@ -717,13 +717,13 @@ const UpdatePestDiseasePage = () => {
             {/* Map Modal with Leaflet */}
             {showMapModal && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                  <div className="p-6 border-b border-gray-200">
+                <div className="bg-emerald-50 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                  <div className="p-6 border-b border-emerald-100">
                     <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-semibold text-gray-900">Select Location on Map</h3>
+                      <h3 className="text-lg font-semibold text-emerald-900">Select Location on Map</h3>
                       <button
                         onClick={() => setShowMapModal(false)}
-                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-700"
+                        className="p-2 hover:bg-emerald-100/70 rounded-lg text-emerald-900"
                       >
                         <X className="w-5 h-5" />
                       </button>
@@ -744,9 +744,9 @@ const UpdatePestDiseasePage = () => {
                     </MapContainer>
 
                     {selectedLocation && (
-                      <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                        <p className="text-sm font-medium text-green-900">Selected Coordinates</p>
-                        <p className="text-xs text-green-800 font-mono">
+                      <div className="mt-4 p-3 bg-emerald-50 rounded-lg">
+                        <p className="text-sm font-medium text-emerald-900">Selected Coordinates</p>
+                        <p className="text-xs text-emerald-800 font-mono">
                           Latitude: {selectedLocation.lat?.toFixed(6)}, Longitude: {selectedLocation.lng?.toFixed(6)}
                         </p>
                       </div>
@@ -756,14 +756,14 @@ const UpdatePestDiseasePage = () => {
                       <button
                         type="button"
                         onClick={() => setShowMapModal(false)}
-                        className="px-4 py-2 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50"
+                        className="px-4 py-2 border border-emerald-200 text-emerald-900 rounded-lg hover:bg-emerald-50/70"
                       >
                         Cancel
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowMapModal(false)}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600"
                       >
                         Confirm Location
                       </button>
@@ -776,15 +776,15 @@ const UpdatePestDiseasePage = () => {
 
             {/* Date of Observation */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
-                <Calendar className="w-4 h-4 mr-2 text-green-600" />
+              <label className="block text-sm font-medium text-emerald-900 mb-2 flex items-center">
+                <Calendar className="w-4 h-4 mr-2 text-emerald-600" />
                 Date of Observation *
               </label>
               <input
                 type="date"
                 max={getMaxDate()}
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
-                  validationErrors.date ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white text-emerald-900 ${
+                  validationErrors.date ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                 }`}
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
@@ -800,20 +800,20 @@ const UpdatePestDiseasePage = () => {
             {/* Issue Type and Status */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="block text-sm font-medium text-emerald-900 mb-2">
                   Issue Type *
                 </label>
                 <select
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
-                    validationErrors.type ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white text-emerald-900 ${
+                    validationErrors.type ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                   }`}
                   value={form.type}
                   onChange={(e) => setForm({ ...form, type: e.target.value })}
                 >
-                  <option value="Pest Infestation" className="text-gray-900">Pest Infestation</option>
-                  <option value="Disease" className="text-gray-900">Disease</option>
-                  <option value="Both" className="text-gray-900">Both</option>
-                  <option value="Other" className="text-gray-900">Other</option>
+                  <option value="Pest Infestation" className="text-emerald-900">Pest Infestation</option>
+                  <option value="Disease" className="text-emerald-900">Disease</option>
+                  <option value="Both" className="text-emerald-900">Both</option>
+                  <option value="Other" className="text-emerald-900">Other</option>
                 </select>
                 {validationErrors.type && (
                   <p className="text-red-600 text-sm mt-1 flex items-center">
@@ -823,18 +823,18 @@ const UpdatePestDiseasePage = () => {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="block text-sm font-medium text-emerald-900 mb-2">
                   Status
                 </label>
                 <select
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900"
+                  className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white text-emerald-900"
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
                 >
-                  <option value="Pending" className="text-gray-900">Pending</option>
-                  <option value="Monitoring" className="text-gray-900">Monitoring</option>
-                  <option value="Treatment Ongoing" className="text-gray-900">Treatment Ongoing</option>
-                  <option value="Resolved" className="text-gray-900">Resolved</option>
+                  <option value="Pending" className="text-emerald-900">Pending</option>
+                  <option value="Monitoring" className="text-emerald-900">Monitoring</option>
+                  <option value="Treatment Ongoing" className="text-emerald-900">Treatment Ongoing</option>
+                  <option value="Resolved" className="text-emerald-900">Resolved</option>
                 </select>
               </div>
             </div>
@@ -842,20 +842,20 @@ const UpdatePestDiseasePage = () => {
             {/* Urgency and Economic Impact */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="block text-sm font-medium text-emerald-900 mb-2">
                   Urgency Level *
                 </label>
                 <select
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
-                    validationErrors.urgency ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white text-emerald-900 ${
+                    validationErrors.urgency ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                   }`}
                   value={form.urgency}
                   onChange={(e) => setForm({ ...form, urgency: e.target.value })}
                 >
-                  <option value="Low (Routine monitoring)" className="text-gray-900">Low (Routine monitoring)</option>
-                  <option value="Medium (Schedule treatment)" className="text-gray-900">Medium (Schedule treatment)</option>
-                  <option value="High (Immediate action needed)" className="text-gray-900">High (Immediate action needed)</option>
-                  <option value="Emergency (Critical threat)" className="text-gray-900">Emergency (Critical threat)</option>
+                  <option value="Low (Routine monitoring)" className="text-emerald-900">Low (Routine monitoring)</option>
+                  <option value="Medium (Schedule treatment)" className="text-emerald-900">Medium (Schedule treatment)</option>
+                  <option value="High (Immediate action needed)" className="text-emerald-900">High (Immediate action needed)</option>
+                  <option value="Emergency (Critical threat)" className="text-emerald-900">Emergency (Critical threat)</option>
                 </select>
                 {validationErrors.urgency && (
                   <p className="text-red-600 text-sm mt-1 flex items-center">
@@ -865,20 +865,20 @@ const UpdatePestDiseasePage = () => {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
+                <label className="block text-sm font-medium text-emerald-900 mb-2">
                   Economic Impact Level *
                 </label>
                 <select
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
-                    validationErrors.economicImpact ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white text-emerald-900 ${
+                    validationErrors.economicImpact ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                   }`}
                   value={form.economicImpact}
                   onChange={(e) => setForm({ ...form, economicImpact: e.target.value })}
                 >
-                  <option value="Minimal (<5% loss)" className="text-gray-900">Minimal (&lt;5% loss)</option>
-                  <option value="Moderate (5-20% loss)" className="text-gray-900">Moderate (5-20% loss)</option>
-                  <option value="Significant (20-50% loss)" className="text-gray-900">Significant (20-50% loss)</option>
-                  <option value="Severe (>50% loss)" className="text-gray-900">Severe (&gt;50% loss)</option>
+                  <option value="Minimal (<5% loss)" className="text-emerald-900">Minimal (&lt;5% loss)</option>
+                  <option value="Moderate (5-20% loss)" className="text-emerald-900">Moderate (5-20% loss)</option>
+                  <option value="Significant (20-50% loss)" className="text-emerald-900">Significant (20-50% loss)</option>
+                  <option value="Severe (>50% loss)" className="text-emerald-900">Severe (&gt;50% loss)</option>
                 </select>
                 {validationErrors.economicImpact && (
                   <p className="text-red-600 text-sm mt-1 flex items-center">
@@ -891,10 +891,10 @@ const UpdatePestDiseasePage = () => {
 
             {/* Affected Area */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
-                <Ruler className="w-4 h-4 mr-2 text-green-600" />
+              <label className="block text-sm font-medium text-emerald-900 mb-2 flex items-center">
+                <Ruler className="w-4 h-4 mr-2 text-emerald-600" />
                 Affected Area (Perch) *
-                <span className="ml-2 text-xs text-gray-700">0.5 - 2000 perch</span>
+                <span className="ml-2 text-xs text-emerald-900">0.5 - 2000 perch</span>
               </label>
               
               {/* Quick selection buttons */}
@@ -906,8 +906,8 @@ const UpdatePestDiseasePage = () => {
                     onClick={() => quickAreaSelect(area)}
                     className={`px-3 py-1 text-sm rounded-lg border transition-colors ${
                       form.affectedArea === area 
-                        ? 'bg-green-600 text-white border-green-600' 
-                        : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-50'
+                        ? 'bg-emerald-500 text-white border-green-600' 
+                        : 'bg-white text-emerald-900 border-emerald-200 hover:bg-emerald-50/70'
                     }`}
                   >
                     {area} P
@@ -920,7 +920,7 @@ const UpdatePestDiseasePage = () => {
                   type="button"
                   onClick={decrementAffectedArea}
                   disabled={form.affectedArea <= 0.5}
-                  className="px-4 py-3 bg-gray-100 rounded-xl hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-lg text-gray-900"
+                  className="px-4 py-3 bg-gray-100 rounded-xl hover:bg-emerald-100/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-lg text-emerald-900"
                 >
                   -
                 </button>
@@ -930,8 +930,8 @@ const UpdatePestDiseasePage = () => {
                     step="0.1"
                     min="0.5"
                     max="2000"
-                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-center bg-white text-gray-900 ${
-                      validationErrors.affectedArea ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-center bg-white text-emerald-900 ${
+                      validationErrors.affectedArea ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                     }`}
                     value={form.affectedArea}
                     onChange={(e) => handleAffectedAreaChange(e.target.value)}
@@ -941,12 +941,12 @@ const UpdatePestDiseasePage = () => {
                   type="button"
                   onClick={incrementAffectedArea}
                   disabled={form.affectedArea >= 2000}
-                  className="px-4 py-3 bg-gray-100 rounded-xl hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-lg text-gray-900"
+                  className="px-4 py-3 bg-gray-100 rounded-xl hover:bg-emerald-100/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-lg text-emerald-900"
                 >
                   +
                 </button>
               </div>
-              <div className="flex justify-between text-xs text-gray-700 mt-1">
+              <div className="flex justify-between text-xs text-emerald-900 mt-1">
                 <span>Min: 0.5 perch</span>
                 <span>Max: 2000 perch</span>
               </div>
@@ -960,8 +960,8 @@ const UpdatePestDiseasePage = () => {
 
             {/* Requested Actions */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
-                <Leaf className="w-4 h-4 mr-2 text-green-600" />
+              <label className="block text-sm font-medium text-emerald-900 mb-2 flex items-center">
+                <Leaf className="w-4 h-4 mr-2 text-emerald-600" />
                 Requested Actions
               </label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -971,22 +971,22 @@ const UpdatePestDiseasePage = () => {
                       type="checkbox"
                       checked={form.requestedActions.includes(action)}
                       onChange={() => handleActionChange(action)}
-                      className="w-4 h-4 text-green-600 rounded focus:ring-green-500 bg-white border-gray-300"
+                      className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 bg-white border-emerald-200"
                     />
-                    <span className="text-sm text-gray-900">{action}</span>
+                    <span className="text-sm text-emerald-900">{action}</span>
                   </label>
                 ))}
               </div>
               
               {showOtherAction && (
                 <div className="mt-3">
-                  <label className="block text-sm font-medium text-gray-900 mb-2">
+                  <label className="block text-sm font-medium text-emerald-900 mb-2">
                     Specify Other Action {form.requestedActions.includes('Other') && '*'}
                   </label>
                   <input
                     type="text"
-                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white text-gray-900 ${
-                      validationErrors.otherAction ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white text-emerald-900 ${
+                      validationErrors.otherAction ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                     }`}
                     placeholder="Please specify the required action..."
                     value={form.otherAction}
@@ -1004,14 +1004,14 @@ const UpdatePestDiseasePage = () => {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2 flex items-center">
-                <FileText className="w-4 h-4 mr-2 text-green-600" />
+              <label className="block text-sm font-medium text-emerald-900 mb-2 flex items-center">
+                <FileText className="w-4 h-4 mr-2 text-emerald-600" />
                 Description & Symptoms *
               </label>
               <textarea
                 rows={4}
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 ${
-                  validationErrors.description ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white text-emerald-900 ${
+                  validationErrors.description ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                 }`}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -1026,12 +1026,12 @@ const UpdatePestDiseasePage = () => {
 
             {/* Image Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
+              <label className="block text-sm font-medium text-emerald-900 mb-2">
                 Update Evidence
-                <span className="text-green-600 ml-2 text-xs">✓ Supabase Storage</span>
+                <span className="text-emerald-600 ml-2 text-xs">✓ Supabase Storage</span>
               </label>
               <div className={`border-2 border-dashed rounded-xl transition-all duration-200 bg-white ${
-                validationErrors.image ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                validationErrors.image ? 'border-red-300 bg-red-50' : 'border-emerald-200'
               }`}>
                 <div className="p-6 text-center">
                   {imagePreview ? (
@@ -1049,7 +1049,7 @@ const UpdatePestDiseasePage = () => {
                       >
                         <X size={16} />
                       </button>
-                      <div className="text-xs text-gray-700 mt-2">
+                      <div className="text-xs text-emerald-900 mt-2">
                         {imageFile ? 'New image ready to upload' : 'Current evidence image'}
                       </div>
                     </div>
@@ -1064,7 +1064,7 @@ const UpdatePestDiseasePage = () => {
                           e.target.nextSibling.style.display = 'block';
                         }}
                       />
-                      <div className="text-center text-gray-700 p-4 hidden">
+                      <div className="text-center text-emerald-900 p-4 hidden">
                         <Camera className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                         <p>Image unavailable</p>
                       </div>
@@ -1076,13 +1076,13 @@ const UpdatePestDiseasePage = () => {
                       >
                         <X size={16} />
                       </button>
-                      <div className="text-xs text-gray-700 mt-2">Current evidence image</div>
+                      <div className="text-xs text-emerald-900 mt-2">Current evidence image</div>
                     </div>
                   ) : (
                     <>
-                      <Camera className="mx-auto w-12 h-12 text-gray-500 mb-3" />
+                      <Camera className="mx-auto w-12 h-12 text-emerald-800/70 mb-3" />
                       <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
-                        <label className="cursor-pointer bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                        <label className="cursor-pointer bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors flex items-center">
                           <Upload className="w-4 h-4 mr-2" />
                           Upload Image
                           <input
@@ -1092,9 +1092,9 @@ const UpdatePestDiseasePage = () => {
                             onChange={handleImageChange}
                           />
                         </label>
-                        <span className="text-gray-700 text-sm">or drag and drop</span>
+                        <span className="text-emerald-900 text-sm">or drag and drop</span>
                       </div>
-                      <p className="text-xs text-gray-600 mt-2">PNG, JPG, GIF up to 5MB</p>
+                      <p className="text-xs text-emerald-800/80 mt-2">PNG, JPG, GIF up to 5MB</p>
                     </>
                   )}
                 </div>
@@ -1102,11 +1102,11 @@ const UpdatePestDiseasePage = () => {
             </div>
 
             {/* Submit Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-emerald-100">
               <button
                 type="button"
                 onClick={() => navigate(`/supervisor/pest-disease/${id}`)}
-                className="flex-1 px-6 py-3 border border-gray-300 text-gray-900 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium flex items-center justify-center bg-white"
+                className="flex-1 px-6 py-3 border border-emerald-200 text-emerald-900 rounded-xl hover:bg-emerald-50/70 transition-all duration-200 font-medium flex items-center justify-center bg-white"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Details
@@ -1114,7 +1114,7 @@ const UpdatePestDiseasePage = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center justify-center"
+                className="flex-1 px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center justify-center"
               >
                 {loading ? (
                   <>
@@ -1130,12 +1130,12 @@ const UpdatePestDiseasePage = () => {
         </div>
 
         {/* Update Guidelines */}
-        <div className="mt-6 bg-green-50 border border-green-200 rounded-xl p-4">
-          <h3 className="font-medium text-green-900 mb-2 flex items-center">
+        <div className="mt-6 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <h3 className="font-medium text-emerald-900 mb-2 flex items-center">
             <AlertCircle className="w-4 h-4 mr-2" />
             Update Guidelines
           </h3>
-          <ul className="text-green-900 text-sm space-y-1">
+          <ul className="text-emerald-900 text-sm space-y-1">
             <li>• All fields marked with * are required</li>
             <li>• Date cannot be set to future dates</li>
             <li>• Mark as resolved only when issue is completely fixed</li>
