@@ -33,22 +33,36 @@ const HomePage = () => {
   }, [showVideo]);
 
   return (
-    <div className="min-h-screen bg-base-200 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 relative overflow-hidden font-sans">
       {/* Background: intro video then slideshow */}
       <video
         src="/teacup.mp4"
         autoPlay
         muted
         playsInline
-        className={`fixed inset-0 w-full h-full object-cover z-0 transition-opacity duration-1000 ${
-          showVideo ? 'opacity-100' : 'opacity-0'
+        className={`fixed inset-0 w-full h-full object-cover z-0 transition-all duration-1000 ease-in-out ${
+          showVideo ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
         }`}
+        style={{
+          willChange: 'opacity, transform',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+          transform: 'translateZ(0)',
+          WebkitTransform: 'translateZ(0)'
+        }}
         aria-label="Intro video of tea and plantation"
       />
       <div
-        className={`fixed inset-0 w-full h-full z-0 transition-opacity duration-1000 ${
-          showVideo || fade ? 'opacity-0' : 'opacity-100'
+        className={`fixed inset-0 w-full h-full z-0 transition-all duration-1000 ease-in-out ${
+          showVideo || fade ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
         }`}
+        style={{
+          willChange: 'opacity, transform',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+          transform: 'translateZ(0)',
+          WebkitTransform: 'translateZ(0)'
+        }}
         aria-hidden={showVideo || fade}
       >
         <BackgroundSlideshow />
