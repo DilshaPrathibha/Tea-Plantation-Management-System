@@ -82,27 +82,12 @@ async function listItems(req, res) {
     const filter = {};
     if (category) filter.category = category;
     if (q) filter.name = { $regex: q, $options: 'i' };
-    
-    // Use lean() for better performance and select only needed fields
     const items = await FNIItem.find(filter)
       .sort({ updatedAt: -1 })
-      .populate('suppliers', SUPPLIER_FIELDS)
-      .lean() // Convert to plain JavaScript objects for better performance
-      .maxTimeMS(10000); // Set max query time to 10 seconds
-    
+      .populate('suppliers', SUPPLIER_FIELDS);
     res.json(items);
   } catch (err) {
-    console.error('listItems error:', err);
-    
-    // Handle specific MongoDB timeout errors
-    if (err.name === 'MongooseError' && err.message.includes('buffering timed out')) {
-      return res.status(503).json({ message: 'Database connection issue - please try again' });
-    }
-    if (err.name === 'MongooseError' && err.message.includes('maxTimeMS')) {
-      return res.status(504).json({ message: 'Query timeout - database may be slow' });
-    }
-    
-    res.status(500).json({ message: err.message || 'Failed to fetch items' });
+    res.status(400).json({ message: err.message });
   }
 }
 

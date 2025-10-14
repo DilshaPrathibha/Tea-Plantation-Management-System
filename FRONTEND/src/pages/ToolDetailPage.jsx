@@ -37,7 +37,7 @@ const ToolDetailPage = () => {
 
   const handleChange = (e) => {
     if (e.target.name === "note") {
-      const value = e.target.value.slice(0, 100);
+      const value = e.target.value.slice(0, 200);
       setTool({ ...tool, note: value });
       setNoteCharCount(value.length);
     } else {
@@ -47,12 +47,19 @@ const ToolDetailPage = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (tool.note && tool.note.length > 200) {
+      Toast.error("Note must not exceed 200 characters");
+      return;
+    }
+    
     setSaving(true);
     setError("");
     try {
       await api.put(`/tools/${id}`, {
         condition: tool.condition,
-        note: tool.note,
+        note: tool.note?.trim() || '',
       });
       Toast.success("Tool updated successfully");
       navigate("/inventory/tools");
@@ -179,10 +186,11 @@ const ToolDetailPage = () => {
               rows={3}
               value={tool.note || ""}
               onChange={handleChange}
-              placeholder="Optional notes about this tool..."
+              placeholder="Optional notes (max 200 characters)"
+              maxLength={200}
             />
             <div className="text-xs text-base-content/70 mt-1 text-right">
-              {noteCharCount}/100 characters
+              {noteCharCount}/200 characters
             </div>
           </div>
           <div className="flex justify-end gap-2">

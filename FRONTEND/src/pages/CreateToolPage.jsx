@@ -24,9 +24,20 @@ const CreateToolPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    
+    // Validation
+    if (!toolType) {
+      setError("Tool type is required");
+      return;
+    }
+    if (note && note.length > 200) {
+      setError("Note must not exceed 200 characters");
+      return;
+    }
+    
     setLoading(true);
     try {
-      const res = await api.post("/tools", { toolType, condition, note });
+      const res = await api.post("/tools", { toolType, condition, note: note.trim() });
       const created = res.data;
       Toast.success(`Tool created: ${created.tool?.toolId || 'Successfully'}`);
       navigate("/inventory/tools");
@@ -92,15 +103,15 @@ const CreateToolPage = () => {
               rows={3}
               value={note}
               onChange={e => {
-                const value = e.target.value.slice(0, 100);
+                const value = e.target.value.slice(0, 200);
                 setNote(value);
                 setNoteCharCount(value.length);
               }}
-              placeholder="Optional notes about this tool..."
-              maxLength={100}
+              placeholder="Optional notes (max 200 characters)"
+              maxLength={200}
             />
             <div className="text-xs text-base-content/70 mt-1 text-right">
-              {noteCharCount}/100 characters
+              {noteCharCount}/200 characters
             </div>
           </div>
           <button

@@ -3,7 +3,7 @@ import { API_URL } from '../config/api.js';
 
 const api = axios.create({
   baseURL: `${API_URL}/fni`,
-  timeout: 15000, // Increased from 5s to 15s for better reliability
+  timeout: 5000,
   headers: { 'Content-Type': 'application/json' }
 });
 
