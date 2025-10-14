@@ -65,19 +65,19 @@ const ToolDetailPage = () => {
 
   const handleDelete = async () => {
     const ok = await Sweet.confirm(
-      'Are you sure you want to delete this tool?',
-      'Delete Tool',
-      { confirmButtonText: 'Delete', confirmButtonColor: '#d33', icon: 'warning' }
+      'Are you sure you want to retire this tool? This action will mark the tool as retired.',
+      'Retire Tool',
+      { confirmButtonText: 'Retire', confirmButtonColor: '#d33', icon: 'warning' }
     );
     if (!ok) return;
     setSaving(true);
     setError("");
     try {
       await api.delete(`/tools/${id}`);
-      Toast.success("Tool deleted successfully");
+      Toast.success("Tool retired successfully");
       navigate("/inventory/tools");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to delete tool");
+      setError(err.response?.data?.message || "Failed to retire tool");
     } finally {
       setSaving(false);
     }
@@ -200,7 +200,7 @@ const ToolDetailPage = () => {
               onClick={handleDelete}
               disabled={saving}
             >
-              Delete
+              Retire Tool
             </button>
           </div>
         </form>
