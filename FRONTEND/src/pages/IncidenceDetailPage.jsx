@@ -174,15 +174,27 @@ const IncidenceDetailPage = () => {
   };
 
   const canEditIncidence = () => {
-    return currentUser && 
-           currentUser._id === incidence.reportedBy && 
-           incidence.status !== 'Resolved';
+    if (!currentUser || !incidence) return false;
+    
+    // Admin, supervisor, and worker can edit their own reports
+    const isOwnReport = currentUser._id === incidence.reportedBy;
+    const isAdmin = currentUser.role === 'admin';
+    const isSupervisor = currentUser.role === 'field_supervisor';
+    const isWorker = currentUser.role === 'worker';
+    
+    return (isOwnReport && (isAdmin || isSupervisor || isWorker)) && incidence.status !== 'Resolved';
   };
 
   const canDeleteIncidence = () => {
-    return currentUser && 
-           currentUser._id === incidence.reportedBy && 
-           incidence.status === 'Resolved';
+    if (!currentUser || !incidence) return false;
+    
+    // Admin, supervisor, and worker can delete their own reports
+    const isOwnReport = currentUser._id === incidence.reportedBy;
+    const isAdmin = currentUser.role === 'admin';
+    const isSupervisor = currentUser.role === 'field_supervisor';
+    const isWorker = currentUser.role === 'worker';
+    
+    return (isOwnReport && (isAdmin || isSupervisor || isWorker)) && incidence.status === 'Resolved';
   };
 
   const copyReportId = () => {

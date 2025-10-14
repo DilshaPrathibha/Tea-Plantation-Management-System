@@ -18,6 +18,7 @@ import {
   Calendar,
   Shield,
   Package,
+  AlertTriangle,
   Truck,
   User,
   Ticket,
@@ -72,6 +73,7 @@ const getRoleNavLinks = (role) => {
         { label: 'Dashboard', href: '/admin', icon: Home, exact: true },
         { label: 'Users', href: '/admin/users', icon: Users },
         { label: 'Fields', href: '/admin/fields', icon: MapPin },
+        { label: 'Incidences', href: '/admin/incidences', icon: AlertTriangle },
         { label: 'Notifications', href: '/admin/notifications', icon: Mail },
         { label: 'Tickets', href: '/admin/tickets', icon: Ticket },
       ];
@@ -98,11 +100,13 @@ const getRoleNavLinks = (role) => {
         { label: 'Tools', href: '/inventory/tools', icon: Wrench },
         { label: 'FNI', href: '/inventory/fni', icon: FlaskConical },
         { label: 'Suppliers', href: '/inventory/suppliers', icon: Users },
+        { label: 'Pest & Disease', href: '/inventory/pest-disease', icon: Shield },
       ];
     
     case 'worker':
       return [
         { label: 'Dashboard', href: '/worker', icon: Home, exact: true },
+        { label: 'Incidence Reports', href: '/worker/incidences', icon: AlertTriangle },
       ];
     
     default:

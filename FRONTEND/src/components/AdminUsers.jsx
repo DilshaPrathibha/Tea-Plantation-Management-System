@@ -43,11 +43,11 @@ const svgToPngDataUrl = (svgMarkup, targetPx = 28) =>
   });
 
 const defaultCreate = {
-  name: '', email: '', role: 'worker', password: '', empId: '',
+  name: '', email: '', role: '', password: '', empId: '',
   phone: ''
 };
 const defaultEdit = {
-  id: '', name: '', email: '', role: 'worker', empId: '',
+  id: '', name: '', email: '', role: '', empId: '',
   phone: '', password: ''
 };
 
@@ -91,12 +91,108 @@ export default function AdminUsers() {
 
   // errors
   const [error, setError] = useState('');
+  
+  // validation
+  const [validationErrors, setValidationErrors] = useState({});
+  const [editValidationErrors, setEditValidationErrors] = useState({});
 
   const formatRole = (role = '') =>
     role
       .toString()
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (ch) => ch.toUpperCase());
+
+  // Validation functions
+  const validateForm = () => {
+    const errors = {};
+    
+    // Full name validation - no special characters or numbers
+    if (!form.name.trim()) {
+      errors.name = 'Full name is required';
+    } else if (!/^[a-zA-Z\s]+$/.test(form.name.trim())) {
+      errors.name = 'Full name cannot contain special characters or numbers';
+    }
+    
+    // Email validation - must contain @ symbol
+    if (!form.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!form.email.includes('@')) {
+      errors.email = 'Email must contain @ symbol';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    // Role validation - must be selected
+    if (!form.role) {
+      errors.role = 'Role must be selected';
+    }
+    
+    // Password validation - if provided, must be strong (min 6 chars, at least one letter and one number)
+    if (form.password && form.password.length > 0) {
+      if (form.password.length < 6) {
+        errors.password = 'Password must be at least 6 characters long';
+      } else if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(form.password)) {
+        errors.password = 'Password must contain at least one letter and one number';
+      }
+    }
+    
+    // Phone validation - must be exactly 10 digits
+    if (form.phone && form.phone.trim()) {
+      const phoneDigits = form.phone.replace(/\D/g, ''); // Remove non-digits
+      if (phoneDigits.length !== 10) {
+        errors.phone = 'Phone number must be exactly 10 digits';
+      }
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Edit form validation function
+  const validateEditForm = () => {
+    const errors = {};
+    
+    // Full name validation - no special characters or numbers
+    if (!edit.name.trim()) {
+      errors.name = 'Full name is required';
+    } else if (!/^[a-zA-Z\s]+$/.test(edit.name.trim())) {
+      errors.name = 'Full name cannot contain special characters or numbers';
+    }
+    
+    // Email validation - must contain @ symbol
+    if (!edit.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!edit.email.includes('@')) {
+      errors.email = 'Email must contain @ symbol';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(edit.email.trim())) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    // Role validation - must be selected
+    if (!edit.role) {
+      errors.role = 'Role must be selected';
+    }
+    
+    // Password validation - if provided, must be strong (min 6 chars, at least one letter and one number)
+    if (edit.password && edit.password.length > 0) {
+      if (edit.password.length < 6) {
+        errors.password = 'Password must be at least 6 characters long';
+      } else if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(edit.password)) {
+        errors.password = 'Password must contain at least one letter and one number';
+      }
+    }
+    
+    // Phone validation - must be exactly 10 digits
+    if (edit.phone && edit.phone.trim()) {
+      const phoneDigits = edit.phone.replace(/\D/g, ''); // Remove non-digits
+      if (phoneDigits.length !== 10) {
+        errors.phone = 'Phone number must be exactly 10 digits';
+      }
+    }
+    
+    setEditValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const roleBreakdown = users.reduce(
     (acc, user) => {
@@ -151,6 +247,14 @@ export default function AdminUsers() {
   const onCreate = async (e) => {
     e.preventDefault();
     setError('');
+    setValidationErrors({});
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      Toast.error('Please fix the validation errors before submitting');
+      return;
+    }
+    
     setCreating(true);
     setTempPw('');
     try {
@@ -188,11 +292,12 @@ export default function AdminUsers() {
       id: u._id || u.id,
       name: u.name || '',
       email: u.email || '',
-      role: u.role || 'worker',
+      role: u.role || '',
       empId: u.empId || '',
       phone: u.phone || '',
       password: ''
     });
+    setEditValidationErrors({}); // Clear any previous validation errors
     setShowEdit(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -205,8 +310,16 @@ export default function AdminUsers() {
   const saveEdit = async (e) => {
     e.preventDefault();
     if (!edit.id) return;
-    setSavingEdit(true);
     setError('');
+    setEditValidationErrors({});
+    
+    // Validate form before submission
+    if (!validateEditForm()) {
+      Toast.error('Please fix the validation errors before submitting');
+      return;
+    }
+    
+    setSavingEdit(true);
     try {
       const payload = {
         name: edit.name,
@@ -543,37 +656,71 @@ export default function AdminUsers() {
               <label className="form-control">
                 <span className="label-text">Full name</span>
                 <input
-                  className="input input-bordered"
+                  className={`input input-bordered ${editValidationErrors.name ? 'input-error' : ''}`}
                   value={edit.name}
-                  onChange={(e) => setEdit((p) => ({ ...p, name: e.target.value }))}
+                  onChange={(e) => {
+                    setEdit((p) => ({ ...p, name: e.target.value }));
+                    // Clear validation error when user starts typing
+                    if (editValidationErrors.name) {
+                      setEditValidationErrors(prev => ({ ...prev, name: undefined }));
+                    }
+                  }}
                   required
                 />
+                {editValidationErrors.name && (
+                  <div className="label">
+                    <span className="label-text-alt text-error">{editValidationErrors.name}</span>
+                  </div>
+                )}
               </label>
 
               <label className="form-control">
                 <span className="label-text">Email</span>
                 <input
                   type="email"
-                  className="input input-bordered"
+                  className={`input input-bordered ${editValidationErrors.email ? 'input-error' : ''}`}
                   value={edit.email}
-                  onChange={(e) => setEdit((p) => ({ ...p, email: e.target.value }))}
+                  onChange={(e) => {
+                    setEdit((p) => ({ ...p, email: e.target.value }));
+                    // Clear validation error when user starts typing
+                    if (editValidationErrors.email) {
+                      setEditValidationErrors(prev => ({ ...prev, email: undefined }));
+                    }
+                  }}
                   required
                 />
+                {editValidationErrors.email && (
+                  <div className="label">
+                    <span className="label-text-alt text-error">{editValidationErrors.email}</span>
+                  </div>
+                )}
               </label>
 
               <label className="form-control">
                 <span className="label-text">Role</span>
                 <select
-                  className="select select-bordered"
+                  className={`select select-bordered ${editValidationErrors.role ? 'select-error' : ''}`}
                   value={edit.role}
-                  onChange={(e) => setEdit((p) => ({ ...p, role: e.target.value }))}
+                  onChange={(e) => {
+                    setEdit((p) => ({ ...p, role: e.target.value }));
+                    // Clear validation error when user selects a role
+                    if (editValidationErrors.role) {
+                      setEditValidationErrors(prev => ({ ...prev, role: undefined }));
+                    }
+                  }}
                 >
+                  <option value="">Select a role</option>
                   <option value="worker">Worker</option>
                   <option value="production_manager">Production Manager</option>
                   <option value="inventory_manager">Inventory Manager</option>
                   <option value="field_supervisor">Field Supervisor</option>
                   <option value="admin">Admin</option>
                 </select>
+                {editValidationErrors.role && (
+                  <div className="label">
+                    <span className="label-text-alt text-error">{editValidationErrors.role}</span>
+                  </div>
+                )}
               </label>
 
               <label className="form-control">
@@ -592,20 +739,45 @@ export default function AdminUsers() {
               <label className="form-control">
                 <span className="label-text">Phone</span>
                 <input
-                  className="input input-bordered"
+                  className={`input input-bordered ${editValidationErrors.phone ? 'input-error' : ''}`}
+                  placeholder="Phone (10 digits)"
                   value={edit.phone}
-                  onChange={(e) => setEdit((p) => ({ ...p, phone: e.target.value }))}
+                  onChange={(e) => {
+                    // Only allow digits and limit to 10 characters
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setEdit((p) => ({ ...p, phone: value }));
+                    // Clear validation error when user starts typing
+                    if (editValidationErrors.phone) {
+                      setEditValidationErrors(prev => ({ ...prev, phone: undefined }));
+                    }
+                  }}
                 />
+                {editValidationErrors.phone && (
+                  <div className="label">
+                    <span className="label-text-alt text-error">{editValidationErrors.phone}</span>
+                  </div>
+                )}
               </label>
 
               <label className="form-control">
                 <span className="label-text">New password (optional, min 6)</span>
                 <input
-                  className="input input-bordered"
+                  className={`input input-bordered ${editValidationErrors.password ? 'input-error' : ''}`}
                   value={edit.password}
-                  onChange={(e) => setEdit((p) => ({ ...p, password: e.target.value }))}
+                  onChange={(e) => {
+                    setEdit((p) => ({ ...p, password: e.target.value }));
+                    // Clear validation error when user starts typing
+                    if (editValidationErrors.password) {
+                      setEditValidationErrors(prev => ({ ...prev, password: undefined }));
+                    }
+                  }}
                   placeholder="Leave blank to keep current password"
                 />
+                {editValidationErrors.password && (
+                  <div className="label">
+                    <span className="label-text-alt text-error">{editValidationErrors.password}</span>
+                  </div>
+                )}
               </label>
 
               <button className={`btn btn-primary ${savingEdit ? 'btn-disabled' : ''}`} type="submit">
@@ -628,39 +800,73 @@ export default function AdminUsers() {
               <label className="form-control">
                 <span className="label-text">Full name</span>
                 <input
-                  className="input input-bordered"
+                  className={`input input-bordered ${validationErrors.name ? 'input-error' : ''}`}
                   placeholder="Full name"
                   value={form.name}
-                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((p) => ({ ...p, name: e.target.value }));
+                    // Clear validation error when user starts typing
+                    if (validationErrors.name) {
+                      setValidationErrors(prev => ({ ...prev, name: undefined }));
+                    }
+                  }}
                   required
                 />
+                {validationErrors.name && (
+                  <div className="label">
+                    <span className="label-text-alt text-error">{validationErrors.name}</span>
+                  </div>
+                )}
               </label>
 
               <label className="form-control">
                 <span className="label-text">Email (unique)</span>
                 <input
                   type="email"
-                  className="input input-bordered"
+                  className={`input input-bordered ${validationErrors.email ? 'input-error' : ''}`}
                   placeholder="Email"
                   value={form.email}
-                  onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((p) => ({ ...p, email: e.target.value }));
+                    // Clear validation error when user starts typing
+                    if (validationErrors.email) {
+                      setValidationErrors(prev => ({ ...prev, email: undefined }));
+                    }
+                  }}
                   required
                 />
+                {validationErrors.email && (
+                  <div className="label">
+                    <span className="label-text-alt text-error">{validationErrors.email}</span>
+                  </div>
+                )}
               </label>
 
               <label className="form-control">
                 <span className="label-text">Role</span>
                 <select
-                  className="select select-bordered"
+                  className={`select select-bordered ${validationErrors.role ? 'select-error' : ''}`}
                   value={form.role}
-                  onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((p) => ({ ...p, role: e.target.value }));
+                    // Clear validation error when user selects a role
+                    if (validationErrors.role) {
+                      setValidationErrors(prev => ({ ...prev, role: undefined }));
+                    }
+                  }}
                 >
+                  <option value="">Select a role</option>
                   <option value="worker">Worker</option>
                   <option value="production_manager">Production Manager</option>
                   <option value="inventory_manager">Inventory Manager</option>
                   <option value="field_supervisor">Field Supervisor</option>
                   <option value="admin">Admin</option>
                 </select>
+                {validationErrors.role && (
+                  <div className="label">
+                    <span className="label-text-alt text-error">{validationErrors.role}</span>
+                  </div>
+                )}
               </label>
 
               <label className="form-control">
@@ -679,21 +885,45 @@ export default function AdminUsers() {
               <label className="form-control">
                 <span className="label-text">Password (or leave blank)</span>
                 <input
-                  className="input input-bordered"
+                  className={`input input-bordered ${validationErrors.password ? 'input-error' : ''}`}
                   placeholder="Password (min 6 to set)"
                   value={form.password}
-                  onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+                  onChange={(e) => {
+                    setForm((p) => ({ ...p, password: e.target.value }));
+                    // Clear validation error when user starts typing
+                    if (validationErrors.password) {
+                      setValidationErrors(prev => ({ ...prev, password: undefined }));
+                    }
+                  }}
                 />
+                {validationErrors.password && (
+                  <div className="label">
+                    <span className="label-text-alt text-error">{validationErrors.password}</span>
+                  </div>
+                )}
               </label>
 
               <label className="form-control">
                 <span className="label-text">Phone</span>
                 <input
-                  className="input input-bordered"
-                  placeholder="Phone"
+                  className={`input input-bordered ${validationErrors.phone ? 'input-error' : ''}`}
+                  placeholder="Phone (10 digits)"
                   value={form.phone}
-                  onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                  onChange={(e) => {
+                    // Only allow digits and limit to 10 characters
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setForm((p) => ({ ...p, phone: value }));
+                    // Clear validation error when user starts typing
+                    if (validationErrors.phone) {
+                      setValidationErrors(prev => ({ ...prev, phone: undefined }));
+                    }
+                  }}
                 />
+                {validationErrors.phone && (
+                  <div className="label">
+                    <span className="label-text-alt text-error">{validationErrors.phone}</span>
+                  </div>
+                )}
               </label>
 
               <button className={`btn btn-primary ${creating ? 'btn-disabled' : ''}`} type="submit">
