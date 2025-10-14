@@ -22,12 +22,13 @@ import {
   Map
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import AIChatBot from '../../components/AIChatBot';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 const statusColors = {
   'Pending': 'bg-amber-100 text-amber-800 border-amber-200',
-  'Monitoring': 'bg-blue-100 text-blue-800 border-blue-200',
+  'Monitoring': 'bg-primary/20 text-primary border-blue-200',
   'Treatment Ongoing': 'bg-orange-100 text-orange-800 border-orange-200',
   'Resolved': 'bg-emerald-100 text-emerald-800 border-emerald-200',
 };
@@ -46,7 +47,91 @@ const typeIcons = {
   'Other': '❓'
 };
 
-const PestDiseasePage = () => {
+const PestDiseasePage = ({ viewOnly = false }) => {
+  // ---- ZERO-DEPENDENCY PDF (print) ----
+  const exportPDFReports = () => {
+    const w = window.open('', '_blank');
+    if (!w) {
+      Swal.fire({ icon: 'error', title: 'Please allow popups to export.' });
+      return;
+    }
+
+    const escapeHTML = (s) =>
+      String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    const style = `
+      <style>
+        * { font-family: Arial, Helvetica, sans-serif; }
+        .header { display:flex; justify-content:space-between; align-items:center; }
+        .title { font-size:20px; font-weight:bold; margin:0; }
+        .meta { font-size:12px; color:#444; text-align:right; }
+        .hr { border:0; border-top:1px solid #ddd; margin:12px 0; }
+        table { width:100%; border-collapse:collapse; font-size:12px; }
+        th, td { border:1px solid #ddd; padding:6px 8px; }
+        th { background:#f3f3f3; text-align:left; }
+      </style>
+    `;
+    const now = new Date();
+
+    const rowsHtml = filteredReports.map((r, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${escapeHTML(r.title || 'Untitled')}</td>
+        <td>${escapeHTML(r.type || '')}</td>
+        <td>${escapeHTML(r.urgency ? r.urgency.split(' (')[0] : '')}</td>
+        <td>${escapeHTML(r.status || '')}</td>
+        <td>${escapeHTML(r.location || '')}</td>
+        <td>${escapeHTML(formatDate(r.date))}</td>
+        <td>${escapeHTML(r.affectedArea || '')}</td>
+        <td>${escapeHTML(r.reporterName || '')}</td>
+        <td>${escapeHTML(r.description || '')}</td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <!doctype html><html><head><meta charset="utf-8">${style}</head><body>
+        <div class="header">
+          <div>
+            <h1 class="title">CeylonLeaf</h1>
+            <div class="meta">Pest & Disease Report</div>
+          </div>
+          <div class="meta">
+            Generated: ${now.toLocaleString()}<br/>
+            ${searchTerm ? `Search: "${escapeHTML(searchTerm)}"<br/>` : ''}
+            ${typeFilter ? `Type: ${escapeHTML(typeFilter)}<br/>` : ''}
+            ${statusFilter ? `Status: ${escapeHTML(statusFilter)}<br/>` : ''}
+            ${urgencyFilter ? `Urgency: ${escapeHTML(urgencyFilter)}<br/>` : ''}
+            ${dateFilter ? `Date: ${escapeHTML(dateFilter)}` : ''}
+          </div>
+        </div>
+        <hr class="hr"/>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Urgency</th>
+              <th>Status</th>
+              <th>Location</th>
+              <th>Date</th>
+              <th>Affected Area</th>
+              <th>Reporter</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml || `<tr><td colspan="10" style="text-align:center;color:#666;">No data</td></tr>`}
+          </tbody>
+        </table>
+      </body></html>
+    `;
+    w.document.open(); w.document.write(html); w.document.close();
+    w.onload = () => { w.focus(); w.print(); };
+  };
   const [reports, setReports] = useState([]);
   const [filteredReports, setFilteredReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +148,9 @@ const PestDiseasePage = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Determine the base path based on current route (inventory or supervisor)
+  const basePath = location.pathname.includes('/inventory/') ? '/inventory/pest-disease' : '/supervisor/pest-disease';
   
   const [showSuccess, setShowSuccess] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
@@ -176,24 +264,26 @@ const PestDiseasePage = () => {
   const hasActiveFilters = searchTerm || dateFilter || typeFilter || statusFilter || urgencyFilter;
 
   const canEditReport = (report) => {
+    if (viewOnly) return false; // Inventory managers cannot edit
     return currentUser && 
            currentUser._id === report.reportedBy && 
            report.status !== 'Resolved';
   };
 
   const canDeleteReport = (report) => {
+    if (viewOnly) return false; // Inventory managers cannot delete
     return currentUser && 
            currentUser._id === report.reportedBy && 
            report.status === 'Resolved';
   };
 
   const handleAddNew = () => {
-    navigate('/supervisor/pest-disease/add');
+    navigate(`${basePath}/add`);
   };
 
   const handleViewDetails = (id, e) => {
     if (e && e.stopPropagation) e.stopPropagation();
-    navigate(`/supervisor/pest-disease/${id}`);
+    navigate(`${basePath}/${id}`);
   };
 
   const handleEdit = (id, status, report, e) => {
@@ -220,7 +310,7 @@ const PestDiseasePage = () => {
   }
   
   // This should navigate to the update page
-  navigate(`/supervisor/pest-disease/${id}/edit`);
+  navigate(`${basePath}/${id}/edit`);
 };
 
   const handleDelete = async (id, status, report, e) => {
@@ -310,19 +400,19 @@ const PestDiseasePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
+      <div className="min-h-screen bg-base-100 py-8 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse">
-            <div className="h-8 bg-white rounded-lg w-64 mb-8"></div>
+            <div className="h-8 bg-base-200 rounded-lg w-64 mb-8"></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((item) => (
-                <div key={item} className="bg-white rounded-2xl shadow-sm p-6">
-                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+                <div key={item} className="bg-base-200 rounded-2xl shadow-sm p-6">
+                  <div className="h-6 bg-base-300 rounded w-3/4 mb-4"></div>
+                  <div className="h-4 bg-base-300 rounded w-1/2 mb-2"></div>
+                  <div className="h-4 bg-base-300 rounded w-2/3 mb-4"></div>
                   <div className="flex justify-between mt-4">
-                    <div className="h-8 bg-gray-200 rounded w-16"></div>
-                    <div className="h-8 bg-gray-200 rounded w-16"></div>
+                    <div className="h-8 bg-base-300 rounded w-16"></div>
+                    <div className="h-8 bg-base-300 rounded w-16"></div>
                   </div>
                 </div>
               ))}
@@ -334,20 +424,20 @@ const PestDiseasePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
+    <div className="min-h-screen bg-base-100 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Success Messages */}
         {showSuccess && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center">
+          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center">
             <div className="w-3 h-3 bg-emerald-500 rounded-full mr-3"></div>
-            <span className="text-emerald-800 font-medium">Pest/Disease report submitted successfully!</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">Pest/Disease report submitted successfully!</span>
           </div>
         )}
         
         {deleteSuccess && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center">
+          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center">
             <div className="w-3 h-3 bg-emerald-500 rounded-full mr-3"></div>
-            <span className="text-emerald-800 font-medium">Pest/Disease report deleted successfully!</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">Pest/Disease report deleted successfully!</span>
           </div>
         )}
 
@@ -355,12 +445,12 @@ const PestDiseasePage = () => {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
           <div className="flex-1">
             <div className="flex items-center mb-3">
-              <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mr-4">
-                <Bug className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 bg-base-200 rounded-xl shadow-sm flex items-center justify-center mr-4">
+                <Bug className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Pest & Disease Reports</h1>
-                <p className="text-gray-600 mt-1">Monitor and manage agricultural threats in your plantation</p>
+                <h1 className="text-3xl font-bold text-base-content">Pest & Disease Reports</h1>
+                <p className="text-base-content/70 mt-1">Monitor and manage agricultural threats in your plantation</p>
               </div>
             </div>
           </div>
@@ -368,41 +458,52 @@ const PestDiseasePage = () => {
           <div className="flex gap-3">
             <button
               onClick={fetchReports}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all duration-200 flex items-center shadow-sm hover:shadow-md"
+              className="px-4 py-2 bg-base-200 border border-base-content/10 rounded-xl text-base-content hover:bg-base-300 transition-all duration-200 flex items-center shadow-sm hover:shadow-md"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </button>
             <button
-              onClick={handleAddNew}
-              className="px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center shadow-lg hover:shadow-xl"
+              onClick={exportPDFReports}
+              disabled={filteredReports.length === 0}
+              className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 font-semibold ${filteredReports.length === 0 ? 'bg-base-300 text-base-content/50 cursor-not-allowed' : 'bg-base-200 border border-base-content/10 hover:bg-base-300 text-base-content shadow-lg hover:shadow-xl'}`}
+              title={filteredReports.length === 0 ? 'No data to export' : 'Export current view to PDF'}
             >
-              <Plus className="w-4 h-4 mr-2" />
-              New Report
+              <Leaf className="w-4 h-4 mr-2" />
+              Export PDF
             </button>
+            {!viewOnly && (
+              <button
+                onClick={handleAddNew}
+                className="px-6 py-2 bg-primary hover:bg-primary-focus text-white rounded-xl transition-all duration-200 flex items-center shadow-lg hover:shadow-xl font-semibold"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                <span>New Report</span>
+              </button>
+            )}
           </div>
         </div>
 
         {/* Search and Filter Section */}
-        <div className="mb-6 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="mb-6 bg-base-200 rounded-2xl shadow-sm border border-base-content/10 p-6">
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search Reports</label>
+              <label className="block text-sm font-medium text-base-content mb-2">Search Reports</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search by title, reporter, location, or description..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 bg-white"
+                  className="w-full pl-10 pr-4 py-3 border border-base-content/10 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 bg-base-200"
                 />
               </div>
             </div>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all duration-200 flex items-center"
+              className="px-4 py-3 bg-base-200 border border-base-content/10 rounded-xl text-base-content hover:bg-base-300 transition-all duration-200 flex items-center"
             >
               <Filter className="w-4 h-4 mr-2" />
               Filters
@@ -423,23 +524,23 @@ const PestDiseasePage = () => {
           </div>
 
           {showFilters && (
-            <div className="mt-6 pt-6 border-t border-gray-200 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="mt-6 pt-6 border-t border-base-content/10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                <label className="block text-sm font-medium text-base-content mb-2">Date</label>
                 <input
                   type="date"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  className="w-full px-3 py-2 border border-base-content/10 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-base-200"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <label className="block text-sm font-medium text-base-content mb-2">Type</label>
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  className="w-full px-3 py-2 border border-base-content/10 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-base-200"
                 >
                   <option value="">All Types</option>
                   <option value="Pest Infestation">Pest Infestation</option>
@@ -450,11 +551,11 @@ const PestDiseasePage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <label className="block text-sm font-medium text-base-content mb-2">Status</label>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  className="w-full px-3 py-2 border border-base-content/10 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-base-200"
                 >
                   <option value="">All Statuses</option>
                   <option value="Pending">Pending</option>
@@ -465,11 +566,11 @@ const PestDiseasePage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Urgency</label>
+                <label className="block text-sm font-medium text-base-content mb-2">Urgency</label>
                 <select
                   value={urgencyFilter}
                   onChange={(e) => setUrgencyFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                  className="w-full px-3 py-2 border border-base-content/10 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-base-200"
                 >
                   <option value="">All Urgency</option>
                   <option value="Low (Routine monitoring)">Low</option>
@@ -484,7 +585,7 @@ const PestDiseasePage = () => {
 
         {/* Results Count */}
         {hasActiveFilters && (
-          <div className="mb-4 text-sm text-gray-600">
+          <div className="mb-4 text-sm text-base-content/70">
             Showing {filteredReports.length} of {reports.length} reports
             {searchTerm && ` matching "${searchTerm}"`}
           </div>
@@ -492,12 +593,12 @@ const PestDiseasePage = () => {
 
         {/* Reports Grid */}
         {filteredReports.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
+          <div className="bg-base-200 rounded-2xl shadow-sm border border-base-content/10 p-12 text-center">
             <Bug className="mx-auto w-16 h-16 text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-xl font-semibold text-base-content mb-2">
               {hasActiveFilters ? 'No matching reports found' : 'No pest/disease reports yet'}
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-base-content/70 mb-6">
               {hasActiveFilters ? 'Try adjusting your search or filters' : 'Get started by creating your first pest/disease report.'}
             </p>
             {hasActiveFilters ? (
@@ -528,29 +629,29 @@ const PestDiseasePage = () => {
               return (
                 <div 
                   key={report._id} 
-                  className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden"
+                  className="bg-base-200 rounded-2xl shadow-sm border border-base-content/10 hover:shadow-md transition-all duration-300 overflow-hidden"
                 >
-                  <div className="p-6 border-b border-gray-200">
+                  <div className="p-6 border-b border-base-content/10">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center min-w-0">
                         <span className="text-2xl mr-3 flex-shrink-0">{typeIcons[report.type] || '❓'}</span>
-                        <h3 className="font-semibold text-gray-900 truncate">
+                        <h3 className="font-semibold text-base-content truncate">
                           {report.title || 'Untitled Report'}
                         </h3>
                       </div>
-                      <span className={`px-3 py-1 text-xs font-medium rounded-full border ${statusColors[report.status] || 'bg-gray-100 text-gray-800 border-gray-200'} flex-shrink-0`}>
+                      <span className={`px-3 py-1 text-xs font-medium rounded-full border ${statusColors[report.status] || 'bg-gray-100 text-gray-800 border-base-content/10'} flex-shrink-0`}>
                         {report.status || 'Unknown'}
                       </span>
                     </div>
                     
-                    <span className={`px-3 py-1 text-xs font-medium rounded-full border ${urgencyColors[report.urgency] || 'bg-gray-100 text-gray-800 border-gray-200'} mb-2 inline-block`}>
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full border ${urgencyColors[report.urgency] || 'bg-gray-100 text-gray-800 border-base-content/10'} mb-2 inline-block`}>
                       {urgencyDisplay}
                     </span>
                   </div>
 
                   <div className="p-6">
                     <div className="space-y-3">
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-base-content/70">
                         <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span className="truncate">{report.location || 'No location'}</span>
                         {hasMapLocation && (
@@ -558,17 +659,17 @@ const PestDiseasePage = () => {
                         )}
                       </div>
                       
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-base-content/70">
                         <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span>{formatDate(report.date)}</span>
                       </div>
                       
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-base-content/70">
                         <Ruler className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span>{report.affectedArea || 0} perch affected</span>
                       </div>
                       
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-base-content/70">
                         <User className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span>By: {report.reporterName || 'Unknown'}</span>
                         {currentUser && currentUser._id === report.reportedBy && (
@@ -577,21 +678,21 @@ const PestDiseasePage = () => {
                       </div>
 
                       <div className="pt-2">
-                        <p className="text-sm text-gray-600 line-clamp-2">
+                        <p className="text-sm text-base-content/70 line-clamp-2">
                           {report.description || 'No description provided'}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
-                    <span className="text-xs text-gray-500">
+                  <div className="px-6 py-4 bg-base-300 border-t border-base-content/10 flex justify-between items-center">
+                    <span className="text-xs text-base-content/60">
                       {formatDateTime(report.createdAt)}
                     </span>
                     <div className="flex space-x-2">
                       <button
                         onClick={(e) => handleViewDetails(report._id, e)}
-                        className="p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors duration-200"
+                        className="p-2 text-base-content/70 hover:bg-base-300 rounded-lg transition-colors duration-200"
                         title="View details"
                       >
                         <Eye className="w-4 h-4" />
@@ -602,7 +703,7 @@ const PestDiseasePage = () => {
                         className={`p-2 rounded-lg transition-colors duration-200 ${
                           canEdit 
                             ? 'text-green-600 hover:bg-green-100' 
-                            : 'text-gray-400 cursor-not-allowed'
+                            : 'text-base-content/50 cursor-not-allowed'
                         }`}
                         title={canEdit ? "Edit report" : isResolved ? "Resolved reports cannot be edited" : "Only the reporter can edit"}
                       >
@@ -615,7 +716,7 @@ const PestDiseasePage = () => {
                         className={`p-2 rounded-lg transition-colors duration-200 ${
                           canDelete 
                             ? 'text-red-600 hover:bg-red-100' 
-                            : 'text-gray-400 cursor-not-allowed'
+                            : 'text-base-content/50 cursor-not-allowed'
                         }`}
                         title={canDelete ? "Delete report" : "Only resolved reports by the reporter can be deleted"}
                       >
@@ -633,6 +734,8 @@ const PestDiseasePage = () => {
           </div>
         )}
       </div>
+     
+      <AIChatBot />
     </div>
   );
 };

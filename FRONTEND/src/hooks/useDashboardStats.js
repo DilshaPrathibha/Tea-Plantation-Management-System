@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: 'http://localhost:5001/api',
-  timeout: 5000,
+  timeout: 15000, // Increased from 5s to 15s for slow connections
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -26,9 +26,11 @@ const useDashboardStats = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchDashboardStats = useCallback(async () => {
+  const fetchDashboardStats = useCallback(async (retryCount = 0) => {
+    const MAX_RETRIES = 2;
     setIsLoading(true);
     setError(null);
+    
     try {
       const [fniResponse, toolsResponse] = await Promise.all([
         listItems(),
@@ -71,7 +73,29 @@ const useDashboardStats = () => {
         recentActivities
       });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch dashboard statistics');
+      // Determine if error is retryable
+      const isNetworkError = !err.response || err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK';
+      const shouldRetry = isNetworkError && retryCount < MAX_RETRIES;
+      
+      if (shouldRetry) {
+        console.log(`Retrying dashboard stats fetch... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        // Exponential backoff: wait 1s, then 2s
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+        return fetchDashboardStats(retryCount + 1);
+      }
+      
+      // Determine error message
+      let errorMessage = 'Failed to fetch dashboard statistics';
+      if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout - server may be slow';
+      } else if (err.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error - check connection';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      
+      console.error('Dashboard stats error:', err);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -161,9 +185,10 @@ const useDashboardStats = () => {
   useEffect(() => {
     fetchDashboardStats();
     
-    const interval = setInterval(fetchDashboardStats, 30000);
+    // Temporarily disabled auto-refresh
+    // const interval = setInterval(fetchDashboardStats, 30000);
     
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [fetchDashboardStats]);
 
   const refreshStats = () => {

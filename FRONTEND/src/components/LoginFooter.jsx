@@ -26,7 +26,7 @@ const LoginFooter = () => {
             </a>
             <a href="tel:+94112345678" className="flex items-center gap-1 hover:text-emerald-400 transition">
               <Phone className="w-4 h-4" />
-              <span className="hidden sm:inline">+94 11 234 5678</span>
+              <span className="hidden sm:inline whitespace-nowrap">+94 11 234 5678</span>
               <span className="sm:hidden">Call Support</span>
             </a>
           </div>

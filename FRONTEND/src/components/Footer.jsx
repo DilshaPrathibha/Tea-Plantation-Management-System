@@ -108,7 +108,7 @@ const Footer = () => {
   const roleLinks = authed && user?.role ? getRoleLinks(user.role) : publicLinks;
 
   return (
-    <footer className="bg-base-200/95 backdrop-blur-sm border-t border-base-content/30 shadow-lg mt-auto">
+    <footer className="bg-base-300 backdrop-blur-sm border-t border-base-content/30 shadow-lg mt-auto">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
@@ -121,7 +121,7 @@ const Footer = () => {
                 <Leaf className="relative w-8 h-8 text-emerald-400" />
               </div>
               <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-base-content">
-                <span className="text-emerald-500">Ceylon</span>Leaf
+                <span className="text-emerald-500">Ceylon</span><span className="text-emerald-500">Leaf</span>
               </span>
             </div>
             <p className="text-sm sm:text-base text-base-content/90 mb-4 leading-relaxed font-medium">

@@ -1,13 +1,62 @@
 const { Types } = require('mongoose');
 const FNIItem = require('../../models/FNIItem');
 const FNIAdjustment = require('../../models/FNIAdjustment');
+const Supplier = require('../../models/Supplier');
+
+const SUPPLIER_FIELDS = 'supplierId name type status contactNumber email contactPerson';
+
+async function validateSuppliers(suppliers, category) {
+  if (suppliers == null) return [];
+  if (!Array.isArray(suppliers)) {
+    const err = new Error('Suppliers must be an array');
+    err.statusCode = 400;
+    throw err;
+  }
+  const cleanedIds = Array.from(new Set(
+    suppliers
+      .filter(Boolean)
+      .map(id => id.toString().trim())
+      .filter(Boolean)
+  ));
+  if (cleanedIds.length === 0) return [];
+  const invalidId = cleanedIds.find(id => !Types.ObjectId.isValid(id));
+  if (invalidId) {
+    const err = new Error('One or more supplier IDs are invalid');
+    err.statusCode = 400;
+    throw err;
+  }
+  const supplierDocs = await Supplier.find({ _id: { $in: cleanedIds } });
+  if (supplierDocs.length !== cleanedIds.length) {
+    const missingSet = new Set(cleanedIds);
+    supplierDocs.forEach(doc => missingSet.delete(String(doc._id)));
+    const err = new Error(`Unknown supplier IDs: ${Array.from(missingSet).join(', ')}`);
+    err.statusCode = 404;
+    throw err;
+  }
+  const suspended = supplierDocs.filter(doc => doc.status === 'suspended');
+  if (suspended.length > 0) {
+    const err = new Error(`Cannot assign suspended suppliers: ${suspended.map(s => s.name).join(', ')}`);
+    err.statusCode = 400;
+    throw err;
+  }
+  if (category) {
+    const mismatched = supplierDocs.filter(doc => doc.type !== category && doc.type !== 'other');
+    if (mismatched.length > 0) {
+      const err = new Error(`Suppliers ${mismatched.map(s => s.name).join(', ')} do not match the item's category`);
+      err.statusCode = 400;
+      throw err;
+    }
+  }
+  return cleanedIds;
+}
 
 async function createItem(req, res) {
   try {
-    const { name, category, unit, openingQty, minQty, note, cost } = req.body;
+    const { name, category, unit, openingQty, minQty, note, cost, suppliers } = req.body;
     if (!name || !category || !unit || openingQty == null || cost == null) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
+    const supplierIds = await validateSuppliers(suppliers, category);
     const item = new FNIItem({
       name,
       category,
@@ -16,12 +65,14 @@ async function createItem(req, res) {
       qtyOnHand: openingQty,
       minQty: minQty ?? 0,
       note,
+      suppliers: supplierIds,
       batches: openingQty > 0 ? [{ qty: openingQty, unitCost: cost, date: new Date() }] : []
     });
     await item.save();
+    await item.populate('suppliers', SUPPLIER_FIELDS);
     res.status(201).json(item);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(err.statusCode || 400).json({ message: err.message });
   }
 }
 
@@ -31,10 +82,27 @@ async function listItems(req, res) {
     const filter = {};
     if (category) filter.category = category;
     if (q) filter.name = { $regex: q, $options: 'i' };
-    const items = await FNIItem.find(filter).sort({ updatedAt: -1 });
+    
+    // Use lean() for better performance and select only needed fields
+    const items = await FNIItem.find(filter)
+      .sort({ updatedAt: -1 })
+      .populate('suppliers', SUPPLIER_FIELDS)
+      .lean() // Convert to plain JavaScript objects for better performance
+      .maxTimeMS(10000); // Set max query time to 10 seconds
+    
     res.json(items);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    console.error('listItems error:', err);
+    
+    // Handle specific MongoDB timeout errors
+    if (err.name === 'MongooseError' && err.message.includes('buffering timed out')) {
+      return res.status(503).json({ message: 'Database connection issue - please try again' });
+    }
+    if (err.name === 'MongooseError' && err.message.includes('maxTimeMS')) {
+      return res.status(504).json({ message: 'Query timeout - database may be slow' });
+    }
+    
+    res.status(500).json({ message: err.message || 'Failed to fetch items' });
   }
 }
 
@@ -42,7 +110,7 @@ async function getItem(req, res) {
   try {
     const { id } = req.params;
     if (!Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'Invalid ID' });
-    const item = await FNIItem.findById(id);
+    const item = await FNIItem.findById(id).populate('suppliers', SUPPLIER_FIELDS);
     if (!item) return res.status(404).json({ message: 'Item not found' });
     res.json(item);
   } catch (err) {
@@ -53,7 +121,7 @@ async function getItem(req, res) {
 async function updateItem(req, res) {
   try {
     const { id } = req.params;
-    const { name, unit, minQty, note } = req.body;
+    const { name, unit, minQty, note, suppliers } = req.body;
     if (!Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'Invalid ID' });
     const item = await FNIItem.findById(id);
     if (!item) return res.status(404).json({ message: 'Item not found' });
@@ -61,10 +129,15 @@ async function updateItem(req, res) {
     item.unit = unit ?? item.unit;
     item.minQty = minQty ?? item.minQty;
     item.note = note ?? item.note;
+    if (suppliers !== undefined) {
+      const supplierIds = await validateSuppliers(suppliers, item.category);
+      item.suppliers = supplierIds;
+    }
     await item.save();
+    await item.populate('suppliers', SUPPLIER_FIELDS);
     res.json(item);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(err.statusCode || 400).json({ message: err.message });
   }
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Download, Printer, UserPlus, UserMinus, Edit3, Trash2, Wrench, CheckCircle, Clock, AlertTriangle, Package } from 'lucide-react';
 import { jsPDF } from 'jspdf';            
 import autoTable from 'jspdf-autotable';
@@ -6,10 +6,11 @@ import { Sweet, Toast } from '../utils/sweet';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../config/api.js';
+import { useTheme } from '../context/ThemeContext';
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 5000,
+  timeout: 15000, // Increased from 5s to 15s for slow connections
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -76,8 +77,11 @@ const ToolsPage = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [noteModal, setNoteModal] = useState({ open: false, note: '' });
   const navigate = useNavigate();
+  const { theme } = useTheme();
+  const isLightTheme = theme === 'tea-light';
 
-  const fetchTools = async () => {
+  const fetchTools = useCallback(async (retryCount = 0) => {
+    const MAX_RETRIES = 2;
     setLoading(true);
     try {
       const params = {};
@@ -87,12 +91,29 @@ const ToolsPage = () => {
       const response = await api.get('/tools', { params });
       setTools(response.data);
     } catch (error) {
+      // Determine if error is retryable
+      const isNetworkError = !error.response || error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK';
+      const shouldRetry = isNetworkError && retryCount < MAX_RETRIES;
+      
+      if (shouldRetry) {
+        console.log(`Retrying tools fetch... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        setLoading(false);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+        return fetchTools(retryCount + 1);
+      }
+      
       console.error('Failed to fetch tools', error);
-      Toast.error('Could not load tools.');
+      let errorMessage = 'Could not load tools.';
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout - server may be slow';
+      } else if (error.code === 'ERR_NETWORK') {
+        errorMessage = 'Network error - check your connection';
+      }
+      Toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, typeFilter, statusFilter]);
 
   const fetchAllTools = async () => {
     try {
@@ -127,7 +148,7 @@ const ToolsPage = () => {
 
   useEffect(() => {
     fetchTools();
-  }, [search, typeFilter, statusFilter]);
+  }, [fetchTools]);
 
   useEffect(() => {
     fetchAllTools();
@@ -360,62 +381,62 @@ const ToolsPage = () => {
         </div>
 
         {/* Tools Summary Section */}
-        <div className="bg-base-100 rounded-lg shadow border border-gray-700/30 p-3 sm:p-4 mb-4">
+        <div className={`rounded-lg shadow p-3 sm:p-4 mb-4 ${isLightTheme ? 'bg-white border border-slate-200' : 'bg-base-100 border border-gray-700/30'}`}>
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h2 className="text-sm sm:text-base font-semibold text-white">Tools Overview</h2>
-              <p className="text-xs text-base-content/60 hidden sm:block">Current inventory statistics</p>
+              <h2 className="text-sm sm:text-base font-semibold text-base-content">Tools Overview</h2>
+              <p className="text-xs text-base-content/70 hidden sm:block">Current inventory statistics</p>
             </div>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-1 sm:gap-2">
-            <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-md p-2 flex items-center gap-2 border border-gray-700/50 hover:shadow-md transition-all duration-200">
-              <div className="bg-blue-500/20 p-1.5 rounded-full flex-shrink-0">
-                <Package className="w-3 h-3 text-blue-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-white border-slate-200 text-slate-700' : 'bg-gradient-to-r from-slate-800 to-slate-900 border-gray-700/50 text-slate-100'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-blue-100 text-blue-600' : 'bg-blue-500/20 text-blue-300'}`}>
+                <Package className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Total Tools</div>
-                <div className="font-bold text-base sm:text-lg text-blue-400">{totalTools}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Total Tools</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-slate-900' : 'text-blue-300'}`}>{totalTools}</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-green-800/20 to-green-900/30 rounded-md p-2 flex items-center gap-2 border border-green-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-green-500/20 p-1.5 rounded-full flex-shrink-0">
-                <CheckCircle className="w-3 h-3 text-green-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-gradient-to-r from-green-800/20 to-green-900/30 border-green-700/30 text-emerald-300'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-emerald-100 text-emerald-600' : 'bg-green-500/20 text-green-200'}`}>
+                <CheckCircle className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Available</div>
-                <div className="font-bold text-base sm:text-lg text-green-400">{availableTools}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Available</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-emerald-700' : 'text-green-200'}`}>{availableTools}</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-amber-800/20 to-amber-900/30 rounded-md p-2 flex items-center gap-2 border border-amber-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-amber-500/20 p-1.5 rounded-full flex-shrink-0">
-                <Clock className="w-3 h-3 text-amber-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-gradient-to-r from-amber-800/20 to-amber-900/30 border-amber-700/30 text-amber-300'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-amber-100 text-amber-600' : 'bg-amber-500/20 text-amber-200'}`}>
+                <Clock className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Assigned</div>
-                <div className="font-bold text-base sm:text-lg text-amber-400">{assignedTools}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Assigned</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-amber-700' : 'text-amber-200'}`}>{assignedTools}</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-red-800/20 to-red-900/30 rounded-md p-2 flex items-center gap-2 border border-red-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-red-500/20 p-1.5 rounded-full flex-shrink-0">
-                <AlertTriangle className="w-3 h-3 text-red-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-gradient-to-r from-red-800/20 to-red-900/30 border-red-700/30 text-rose-200'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-rose-100 text-rose-600' : 'bg-red-500/20 text-red-200'}`}>
+                <AlertTriangle className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Needs Repair</div>
-                <div className="font-bold text-base sm:text-lg text-red-400">{needsRepairTools}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Needs Repair</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-rose-700' : 'text-red-200'}`}>{needsRepairTools}</div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-r from-gray-800/20 to-gray-900/30 rounded-md p-2 flex items-center gap-2 border border-gray-700/30 hover:shadow-md transition-all duration-200">
-              <div className="bg-gray-500/20 p-1.5 rounded-full flex-shrink-0">
-                <Trash2 className="w-3 h-3 text-gray-400" />
+            <div className={`rounded-md p-2 flex items-center gap-2 border hover:shadow-md transition-all duration-200 ${isLightTheme ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-gradient-to-r from-gray-800/20 to-gray-900/30 border-gray-700/30 text-slate-300'}`}>
+              <div className={`p-1.5 rounded-full flex-shrink-0 ${isLightTheme ? 'bg-slate-200 text-slate-600' : 'bg-gray-500/20 text-gray-300'}`}>
+                <Trash2 className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-base-content/60 font-medium truncate">Retired</div>
-                <div className="font-bold text-base sm:text-lg text-gray-400">{retiredTools}</div>
+                <div className="text-xs text-base-content/70 font-medium truncate">Retired</div>
+                <div className={`font-bold text-base sm:text-lg ${isLightTheme ? 'text-slate-700' : 'text-gray-300'}`}>{retiredTools}</div>
               </div>
             </div>
           </div>
@@ -424,6 +445,10 @@ const ToolsPage = () => {
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : tools.length === 0 ? (
+          <div className="bg-base-100 border border-base-content/10 rounded-lg p-8 text-center text-base-content/70">
+            No tools match your current filters. Try adjusting your search criteria.
           </div>
         ) : (
           <>
@@ -482,7 +507,7 @@ const ToolsPage = () => {
                       } else if (!isAssigned) {
                         return (
                           <button
-                            className={`btn btn-xs btn-success flex-1 min-w-0 ${isRepair ? 'btn-disabled opacity-50 cursor-not-allowed' : ''}`}
+                            className={`btn btn-xs btn-success flex-1 min-w-0 ${isRepair ? 'btn-disabled opacity-70 cursor-not-allowed !text-base-content/90' : ''}`}
                             disabled={isRepair}
                             title={isRepair ? 'Disabled: tool needs repair' : 'Assign this tool'}
                             onClick={() => {
@@ -570,7 +595,7 @@ const ToolsPage = () => {
                               } else if (!isAssigned) {
                                 return (
                                   <button
-                                    className={`btn btn-sm btn-success w-full text-xs ${isRepair ? 'btn-disabled opacity-50 cursor-not-allowed' : ''}`}
+                                    className={`btn btn-sm btn-success w-full text-xs ${isRepair ? 'btn-disabled opacity-70 cursor-not-allowed !text-base-content/90' : ''}`}
                                     disabled={isRepair}
                                     title={isRepair ? 'Disabled: tool needs repair' : 'Assign this tool'}
                                     onClick={() => {

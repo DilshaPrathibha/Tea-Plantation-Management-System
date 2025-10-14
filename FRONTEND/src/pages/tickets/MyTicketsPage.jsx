@@ -193,7 +193,7 @@ export default function MyTicketsPage({ title = 'Support Tickets' }) {
       <div className="mx-auto max-w-5xl p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-white">{title}</h1>
+            <h1 className="text-3xl font-bold text-base-content">{title}</h1>
             <p className="text-base-content/70">
               Submit issues to the admin team and track their responses.
             </p>
@@ -321,7 +321,7 @@ export default function MyTicketsPage({ title = 'Support Tickets' }) {
                         <span className="mx-2">|</span>
                         Updated {formatDate(ticket.updatedAt)}
                       </div>
-                      <h3 className="text-lg font-semibold text-white">
+                      <h3 className="text-lg font-semibold text-base-content">
                         {ticket.subject?.trim() || 'Untitled ticket'}
                       </h3>
                       <div className="flex flex-wrap gap-2 text-sm">

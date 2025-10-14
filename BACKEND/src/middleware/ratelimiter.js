@@ -10,7 +10,7 @@ const redis = new Redis({
 
 const ratelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(60, "60 s"), // 60 requests per minute
+  limiter: Ratelimit.slidingWindow(60, "10 s"), // 60 requests per 10 seconds
   analytics: true,
   prefix: "rate-limit",
 });
