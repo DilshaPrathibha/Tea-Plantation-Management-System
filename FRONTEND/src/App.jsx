@@ -70,7 +70,9 @@ import ToolDetailPage from './pages/ToolDetailPage.jsx';
 import FNIPage from './pages/FNIPage.jsx';
 import FNICreate from './pages/FNICreate.jsx';
 import FNIEditPage from './pages/FNIEditPage.jsx';
-import Suppliers from './pages/Suppliers.jsx';
+import SuppliersPage from './pages/supplier/SuppliersPage.jsx';
+import SupplierEditPage from './pages/supplier/SupplierEditPage.jsx';
+import SupplierCreate from './pages/supplier/SupplierCreate.jsx';
 import PrivacyPage from './pages/PrivacyPage.jsx';
 import TermsPage from './pages/TermsPage.jsx';
 import SupportPage from './pages/SupportPage.jsx';
@@ -347,7 +349,9 @@ export default function App() {
           <Route path="fni/:id/edit" element={<FNIEditPage />} />
           
           {/* Suppliers */}
-          <Route path="suppliers" element={<Suppliers />} />
+          <Route path="suppliers" element={<SuppliersPage />} />
+          <Route path="suppliers/create" element={<SupplierCreate />} />
+          <Route path="suppliers/:id/edit" element={<SupplierEditPage />} />
           
           {/* Pest & Disease - View Only */}
           <Route path="pest-disease" element={<PestDiseasePage viewOnly={true} />} />

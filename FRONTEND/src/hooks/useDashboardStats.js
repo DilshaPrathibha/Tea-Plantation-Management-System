@@ -185,10 +185,10 @@ const useDashboardStats = () => {
   useEffect(() => {
     fetchDashboardStats();
     
-    // Temporarily disabled auto-refresh
-    // const interval = setInterval(fetchDashboardStats, 30000);
+    // Auto-refresh Recent Activity every 30 seconds
+    const interval = setInterval(fetchDashboardStats, 30000);
     
-    // return () => clearInterval(interval);
+    return () => clearInterval(interval);
   }, [fetchDashboardStats]);
 
   const refreshStats = () => {

@@ -50,6 +50,36 @@ export default function FNICreate() {
 
   const handleChange = e => {
     const { name, value } = e.target;
+    
+    // Handle numeric fields with validation
+    if (name === 'openingQty' || name === 'minQty' || name === 'cost') {
+      // Prevent negative numbers
+      if (value < 0) return;
+      
+      // Limit to 2 decimal places
+      if (value.includes('.')) {
+        const parts = value.split('.');
+        if (parts[1] && parts[1].length > 2) return;
+      }
+      
+      setForm(f => ({ ...f, [name]: value }));
+      return;
+    }
+    
+    // Handle name field - limit to 100 characters
+    if (name === 'name') {
+      if (value.length > 100) return;
+      setForm(f => ({ ...f, [name]: value }));
+      return;
+    }
+    
+    // Handle note field - limit to 500 characters
+    if (name === 'note') {
+      if (value.length > 500) return;
+      setForm(f => ({ ...f, [name]: value }));
+      return;
+    }
+    
     setForm(f => {
       if (name === 'category') {
         const allowedIds = new Set(
@@ -78,11 +108,18 @@ export default function FNICreate() {
 
   const validate = () => {
     if (!form.name.trim()) return 'Name is required';
+    if (form.name.trim().length < 2) return 'Name must be at least 2 characters';
+    if (form.name.trim().length > 100) return 'Name must not exceed 100 characters';
     if (!form.category) return 'Category is required';
     if (!form.unit) return 'Unit is required';
     if (form.openingQty === '' || Number(form.openingQty) < 0) return 'Opening Qty must be ≥ 0';
+    if (form.openingQty && Number(form.openingQty) > 999999) return 'Opening Qty must not exceed 999,999';
     if (form.minQty !== '' && Number(form.minQty) < 0) return 'Min Qty must be ≥ 0';
+    if (form.minQty && Number(form.minQty) > 999999) return 'Min Qty must not exceed 999,999';
+    if (form.cost && Number(form.cost) < 0) return 'Cost must be ≥ 0';
+    if (form.cost && Number(form.cost) > 999999) return 'Cost must not exceed 999,999';
     if (form.openingQty > 0 && (form.cost === '' || Number(form.cost) < 0)) return 'Cost is required for opening stock';
+    if (form.note && form.note.length > 500) return 'Note must not exceed 500 characters';
     return null;
   };
 
@@ -132,7 +169,13 @@ export default function FNICreate() {
               value={form.name}
               onChange={handleChange}
               required
+              minLength={2}
+              maxLength={100}
+              placeholder="Enter item name (2-100 characters)"
             />
+            <label className="label">
+              <span className="label-text-alt text-base-content/60">{form.name.length}/100 characters</span>
+            </label>
           </div>
           <div>
             <label className="block mb-1 font-semibold">Category <span className="text-error">*</span></label>
@@ -222,39 +265,53 @@ export default function FNICreate() {
             <input
               type="number"
               min="0"
+              max="999999"
               step="0.01"
               className="input input-bordered w-full"
               name="openingQty"
               value={form.openingQty}
               onChange={handleChange}
               required
+              placeholder="0.00"
             />
+            <label className="label">
+              <span className="label-text-alt text-base-content/60">Maximum 2 decimal places, max value 999,999</span>
+            </label>
           </div>
           <div>
             <label className="block mb-1 font-semibold">Min Qty</label>
             <input
               type="number"
               min="0"
+              max="999999"
               step="0.01"
               className="input input-bordered w-full"
               name="minQty"
               value={form.minQty}
               onChange={handleChange}
+              placeholder="0.00"
             />
+            <label className="label">
+              <span className="label-text-alt text-base-content/60">Optional, maximum 2 decimal places</span>
+            </label>
           </div>
           <div>
             <label className="block mb-1 font-semibold">Cost per Unit {form.openingQty > 0 ? <span className="text-error">*</span> : null}</label>
             <input
               type="number"
               min="0"
+              max="999999"
               step="0.01"
               className="input input-bordered w-full"
               name="cost"
               value={form.cost}
               onChange={handleChange}
               required={form.openingQty > 0}
-              placeholder="Enter cost for opening stock"
+              placeholder="0.00"
             />
+            <label className="label">
+              <span className="label-text-alt text-base-content/60">Maximum 2 decimal places, required if opening qty &gt; 0</span>
+            </label>
           </div>
           <div>
             <label className="block mb-1 font-semibold">Note</label>
@@ -264,8 +321,12 @@ export default function FNICreate() {
               rows={3}
               value={form.note}
               onChange={handleChange}
-              placeholder="Optional notes..."
+              placeholder="Optional notes (max 500 characters)"
+              maxLength={500}
             />
+            <label className="label">
+              <span className="label-text-alt text-base-content/60">{form.note.length}/500 characters</span>
+            </label>
           </div>
           <button
             type="submit"

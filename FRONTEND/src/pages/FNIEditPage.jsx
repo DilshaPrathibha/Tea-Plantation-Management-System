@@ -93,7 +93,41 @@ export default function FNIEditPage() {
   }, [item?.category, supplierOptions]);
 
   const handleChange = (e) => {
-    setItem({ ...item, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    // Handle minQty with validation
+    if (name === 'minQty') {
+      // Prevent negative numbers
+      if (value < 0) return;
+      
+      // Limit to 2 decimal places
+      if (value.includes('.')) {
+        const parts = value.split('.');
+        if (parts[1] && parts[1].length > 2) return;
+      }
+      
+      // Max value check
+      if (value && Number(value) > 999999) return;
+      
+      setItem({ ...item, [name]: value });
+      return;
+    }
+    
+    // Handle name field - limit to 100 characters
+    if (name === 'name') {
+      if (value.length > 100) return;
+      setItem({ ...item, [name]: value });
+      return;
+    }
+    
+    // Handle note field - limit to 500 characters
+    if (name === 'note') {
+      if (value.length > 500) return;
+      setItem({ ...item, [name]: value });
+      return;
+    }
+    
+    setItem({ ...item, [name]: value });
   };
 
   const handleSupplierToggle = (supplierId) => {
@@ -109,13 +143,36 @@ export default function FNIEditPage() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (!item.name || item.name.trim().length < 2) {
+      Toast.error('Name must be at least 2 characters');
+      return;
+    }
+    if (item.name.trim().length > 100) {
+      Toast.error('Name must not exceed 100 characters');
+      return;
+    }
+    if (item.minQty !== '' && Number(item.minQty) < 0) {
+      Toast.error('Min Qty must be ≥ 0');
+      return;
+    }
+    if (item.minQty && Number(item.minQty) > 999999) {
+      Toast.error('Min Qty must not exceed 999,999');
+      return;
+    }
+    if (item.note && item.note.length > 500) {
+      Toast.error('Note must not exceed 500 characters');
+      return;
+    }
+    
     setSaving(true);
     try {
       await updateItem(id, {
-        name: item.name,
+        name: item.name.trim(),
         unit: item.unit,
         minQty: Number(item.minQty ?? 0),
-        note: item.note,
+        note: item.note?.trim() || '',
         suppliers: selectedSuppliers
       });
       Toast.success("Item updated successfully");
@@ -150,7 +207,12 @@ export default function FNIEditPage() {
               value={item.name}
               onChange={handleChange}
               required
+              minLength={2}
+              maxLength={100}
             />
+            <label className="label">
+              <span className="label-text-alt text-base-content/60">{item.name.length}/100 characters</span>
+            </label>
           </div>
           <div>
             <label className="block mb-1 font-semibold">Unit</label>
@@ -170,12 +232,17 @@ export default function FNIEditPage() {
             <input
               type="number"
               min="0"
+              max="999999"
               step="0.01"
               className="input input-bordered w-full"
               name="minQty"
               value={item.minQty}
               onChange={handleChange}
+              placeholder="0.00"
             />
+            <label className="label">
+              <span className="label-text-alt text-base-content/60">Maximum 2 decimal places, max value 999,999</span>
+            </label>
           </div>
           <div>
             <label className="block mb-1 font-semibold">Suppliers</label>
@@ -244,8 +311,12 @@ export default function FNIEditPage() {
               rows={3}
               value={item.note || ""}
               onChange={handleChange}
-              placeholder="Optional notes about this item..."
+              placeholder="Optional notes (max 500 characters)"
+              maxLength={500}
             />
+            <label className="label">
+              <span className="label-text-alt text-base-content/60">{(item.note || '').length}/500 characters</span>
+            </label>
           </div>
           <button
             type="submit"

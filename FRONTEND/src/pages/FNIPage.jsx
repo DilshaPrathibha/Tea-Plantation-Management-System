@@ -66,8 +66,7 @@ export default function FNIPage() {
   const [category, setCategory] = useState('');
   const navigate = useNavigate();
 
-  const fetchItems = useCallback(async (retryCount = 0) => {
-    const MAX_RETRIES = 2;
+  const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
@@ -76,25 +75,8 @@ export default function FNIPage() {
       const res = await listItems(params);
       setItems(res.data);
     } catch (err) {
-      // Determine if error is retryable
-      const isNetworkError = !err.response || err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK';
-      const shouldRetry = isNetworkError && retryCount < MAX_RETRIES;
-      
-      if (shouldRetry) {
-        console.log(`Retrying FNI fetch... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
-        setLoading(false);
-        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-        return fetchItems(retryCount + 1);
-      }
-      
       console.error('Failed to load FNI items', err);
-      let errorMessage = 'Failed to load items';
-      if (err.code === 'ECONNABORTED') {
-        errorMessage = 'Request timeout - server may be slow';
-      } else if (err.code === 'ERR_NETWORK') {
-        errorMessage = 'Network error - check your connection';
-      }
-      Toast.error(errorMessage);
+      Toast.error('Failed to load items');
     } finally {
       setLoading(false);
     }
