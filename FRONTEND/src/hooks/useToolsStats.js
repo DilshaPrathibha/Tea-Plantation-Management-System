@@ -275,10 +275,10 @@ const useToolsStats = (shouldLoad = true) => {
     
     fetchTools();
     
-    // Refresh data every 30 seconds for live updates
-    const interval = setInterval(fetchTools, 30000);
+    // Auto-refresh disabled - user can manually refresh using the Refresh button
+    // const interval = setInterval(fetchTools, 30000);
     
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [shouldLoad]);
 
   return {

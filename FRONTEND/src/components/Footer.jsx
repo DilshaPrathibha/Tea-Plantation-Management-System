@@ -211,7 +211,7 @@ const Footer = () => {
               <li>
                 <span className="flex items-start gap-3 text-sm text-base-content/90 font-medium">
                   <MapPin className="w-4 h-4 mt-0.5 text-emerald-500 flex-shrink-0" />
-                  <span>123 Tea Garden Road,<br />Nuwara Eliya,<br />Sri Lanka 22200</span>
+                  <span>123, Tea Garden Road,<br />Awissawella,<br />Sri Lanka 22200</span>
                 </span>
               </li>
               <li>
