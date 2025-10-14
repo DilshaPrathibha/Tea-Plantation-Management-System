@@ -171,7 +171,7 @@ export default function FNICreate() {
               required
               minLength={2}
               maxLength={100}
-              placeholder="Enter item name (2-100 characters)"
+              placeholder="Enter item name "
             />
             <label className="label">
               <span className="label-text-alt text-base-content/60">{form.name.length}/100 characters</span>

@@ -82,10 +82,11 @@ export default function SupplierEditPage() {
       return;
     }
     
-    // Contact Person validation - limit to 100 characters
+    // Contact Person validation - limit to 100 characters and remove digits
     if (name === 'contactPerson') {
-      if (value.length > 100) return;
-      setFormData(prev => ({ ...prev, [name]: value }));
+      const cleaned = value.replace(/[0-9]/g, '');
+      if (cleaned.length > 100) return;
+      setFormData(prev => ({ ...prev, [name]: cleaned }));
       return;
     }
     
@@ -251,7 +252,7 @@ export default function SupplierEditPage() {
                   value={formData.name}
                   onChange={handleInputChange}
                   className="input input-bordered w-full"
-                  placeholder="Supplier name (2-100 characters)"
+                  placeholder="Supplier name "
                   minLength={2}
                   maxLength={100}
                   required
@@ -350,7 +351,7 @@ export default function SupplierEditPage() {
                   value={formData.contactPerson}
                   onChange={handleInputChange}
                   className="input input-bordered w-full"
-                  placeholder="Contact person name (2-100 characters)"
+                  placeholder="Contact person name "
                   minLength={2}
                   maxLength={100}
                 />
