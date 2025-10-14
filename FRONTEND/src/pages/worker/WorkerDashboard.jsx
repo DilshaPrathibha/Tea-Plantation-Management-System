@@ -8,7 +8,8 @@ import {
   Languages,
   Leaf,
   LogOut,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react';
 import { Sweet } from '@/utils/sweet';
 
@@ -38,6 +39,20 @@ const STR = {
     failedLoad: 'Failed to load',
     logoutConfirm: 'Log out?',
     logoutSuccess: 'Signed out',
+    // Incidence Reports
+    incidenceReports: 'Incidence Reports',
+    incidenceDescription: 'Report and track safety incidents, equipment damage, and other issues in the field.',
+    reportNewIncident: 'Report New Incident',
+    viewMyReports: 'View My Reports',
+    viewAllReports: 'View All Reports',
+    // Task Types
+    taskTypes: {
+      weeding: 'weeding',
+      pruning: 'pruning',
+      fertilizing: 'fertilizing',
+      harvesting: 'harvesting',
+      other: 'other'
+    },
   },
   si: {
     title: 'කම්කරු පුවරුව',
@@ -62,6 +77,20 @@ const STR = {
     failedLoad: 'පූරණය අසාර්ථක විය',
     logoutConfirm: 'පිටවීමටද?',
     logoutSuccess: 'පිටවීය',
+    // Incidence Reports
+    incidenceReports: 'අනතුරු වාර්තා',
+    incidenceDescription: 'ක්ෂේත්‍රයේ ආරක්ෂා අනතුරු, උපකරණ හානි සහ වෙනත් ගැටලු වාර්තා කර ගබඩා කරන්න.',
+    reportNewIncident: 'නව අනතුර වාර්තා කරන්න',
+    viewMyReports: 'මගේ වාර්තා බලන්න',
+    viewAllReports: 'සියලුම වාර්තා බලන්න',
+    // Task Types
+    taskTypes: {
+      weeding: 'වල් පිරිසිදු කිරීම',
+      pruning: 'කප්පාදුව',
+      fertilizing: 'පොහොර දැමීම',
+      harvesting: 'කොළ කැපීම',
+      other: 'වෙනත්'
+    },
   },
   ta: {
     title: 'தொழிலாளி கட்டுப்பாடு பலகை',
@@ -86,6 +115,20 @@ const STR = {
     failedLoad: 'ஏற்ற முடியவில்லை',
     logoutConfirm: 'வெளியேறவா?',
     logoutSuccess: 'வெளியேறப்பட்டது',
+    // Incidence Reports
+    incidenceReports: 'விபத்து அறிக்கைகள்',
+    incidenceDescription: 'பாதுகாப்பு விபத்துகள், உபகரண சேதம் மற்றும் பிற பிரச்சினைகளை அறிக்கை செய்து கண்காணிக்கவும்.',
+    reportNewIncident: 'புதிய விபத்து அறிக்கை',
+    viewMyReports: 'எனது அறிக்கைகளைக் காண்க',
+    viewAllReports: 'அனைத்து அறிக்கைகளையும் காண்க',
+    // Task Types
+    taskTypes: {
+      weeding: 'களை நீக்குதல்',
+      pruning: 'கத்தரித்தல்',
+      fertilizing: 'உரமிடுதல்',
+      harvesting: 'அறுவடை',
+      other: 'மற்றவை'
+    },
   },
 };
 
@@ -245,7 +288,7 @@ export default function WorkerDashboard() {
                 {data.tasks.map((t) => (
                   <li key={t._id} className="p-3 rounded-xl border flex items-center justify-between">
                     <div>
-                      <div className="font-semibold text-lg">{t.taskType === 'other' ? (t.customTask || T.taskOther) : t.taskType}</div>
+                      <div className="font-semibold text-lg">{t.taskType === 'other' ? (t.customTask || T.taskOther) : (T.taskTypes[t.taskType] || t.taskType)}</div>
                       <div className="text-sm opacity-70">
                         {t.field ? `${T.taskField}: ${t.field} • ` : ''}{T.taskDue}: {t.dueTime || '-'} • {T.taskPriority}: {formatPriority(t.priority)}
                       </div>
@@ -258,6 +301,40 @@ export default function WorkerDashboard() {
                 ))}
               </ul>
             )}
+          </div>
+        </div>
+
+        {/* Incidence Reports Section */}
+        <div className="mt-6">
+          <div className="rounded-2xl bg-base-100 p-5 border shadow">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-lg font-semibold">
+                <AlertTriangle className="w-5 h-5 text-primary" /> {T.incidenceReports}
+              </div>
+              <button
+                onClick={() => navigate('/worker/incidences')}
+                className="btn btn-sm btn-primary"
+              >
+                {T.viewAllReports}
+              </button>
+            </div>
+            <p className="text-sm opacity-70 mb-4">
+              {T.incidenceDescription}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => navigate('/worker/incidences/add')}
+                className="btn btn-primary btn-sm"
+              >
+                {T.reportNewIncident}
+              </button>
+              <button
+                onClick={() => navigate('/worker/incidences')}
+                className="btn btn-outline btn-sm"
+              >
+                {T.viewMyReports}
+              </button>
+            </div>
           </div>
         </div>
 

@@ -421,27 +421,27 @@ const UpdateIncidencePage = () => {
 
   if (fetching) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 flex items-center justify-center">
+      <div className="min-h-screen bg-base-100 py-8 px-4 flex items-center justify-center">
         <div className="text-center">
-          <Loader className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <div className="text-lg text-gray-600">Loading incidence data...</div>
+          <Loader className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-4" />
+          <div className="text-lg text-emerald-800/80">Loading incidence data...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+    <div className="min-h-screen bg-base-100 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mr-4">
-              <AlertTriangle className="w-8 h-8 text-blue-600" />
+            <div className="w-16 h-16 bg-emerald-100 rounded-2xl shadow-sm flex items-center justify-center mr-4">
+              <AlertTriangle className="w-8 h-8 text-emerald-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Update Incidence Report</h1>
-              <p className="text-gray-600">Update the details about this incident below</p>
+              <h1 className="text-3xl font-bold text-emerald-900 mb-2">Update Incidence Report</h1>
+              <p className="text-emerald-800/80">Update the details about this incident below</p>
             </div>
           </div>
         </div>
@@ -456,14 +456,14 @@ const UpdateIncidencePage = () => {
 
         {/* Upload Progress */}
         {uploadProgress > 0 && uploadProgress < 100 && (
-          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-blue-800 font-medium">Uploading Image...</span>
-              <span className="text-blue-600">{uploadProgress}%</span>
+              <span className="text-emerald-800 font-medium">Uploading Image...</span>
+              <span className="text-emerald-600">{uploadProgress}%</span>
             </div>
-            <div className="w-full bg-blue-200 rounded-full h-2">
+            <div className="w-full bg-emerald-200 rounded-full h-2">
               <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${uploadProgress}%` }}
               ></div>
             </div>
@@ -479,36 +479,36 @@ const UpdateIncidencePage = () => {
         )}
 
         {/* Main Form */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-emerald-50 rounded-2xl shadow-sm border border-emerald-100 p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Reporter Name (Read-only) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                <User className="w-4 h-4 mr-2 text-blue-500" />
+              <label className="block text-sm font-medium text-emerald-900 mb-2 flex items-center">
+                <User className="w-4 h-4 mr-2 text-emerald-500" />
                 Reporter Name
               </label>
               <div className="relative">
                 <input
                   type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-600"
+                  className="w-full px-4 py-3 border border-emerald-200 rounded-xl bg-emerald-50/70 text-emerald-800/80"
                   value={form.reporterName}
                   readOnly
                   disabled
                 />
-                <Shield className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Shield className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-emerald-700/60" />
               </div>
-              <p className="text-xs text-gray-500 mt-1">Reporter name cannot be changed</p>
+              <p className="text-xs text-emerald-800/70 mt-1">Reporter name cannot be changed</p>
             </div>
 
             {/* Incidence Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-emerald-900 mb-2">
                 Incidence Title *
               </label>
               <input
                 type="text"
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                  validationErrors.title ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${
+                  validationErrors.title ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                 }`}
                 placeholder="Brief title describing the incident"
                 value={form.title}
@@ -524,13 +524,13 @@ const UpdateIncidencePage = () => {
 
             {/* Location */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                <MapPin className="w-4 h-4 mr-2 text-blue-500" />
+              <label className="block text-sm font-medium text-emerald-900 mb-2 flex items-center">
+                <MapPin className="w-4 h-4 mr-2 text-emerald-500" />
                 Location *
               </label>
               <select
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                  validationErrors.location ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${
+                  validationErrors.location ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                 }`}
                 value={form.location}
                 onChange={(e) => setForm({ ...form, location: e.target.value })}
@@ -554,15 +554,15 @@ const UpdateIncidencePage = () => {
             {/* Date and Time */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                  <Calendar className="w-4 h-4 mr-2 text-blue-500" />
+                <label className="block text-sm font-medium text-emerald-900 mb-2 flex items-center">
+                  <Calendar className="w-4 h-4 mr-2 text-emerald-500" />
                   Date of Incident *
                 </label>
                 <input
                   type="date"
                   max={currentDate}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                    validationErrors.date ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${
+                    validationErrors.date ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                   }`}
                   value={form.date}
                   onChange={handleDateChange}
@@ -575,15 +575,15 @@ const UpdateIncidencePage = () => {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                  <Clock className="w-4 h-4 mr-2 text-blue-500" />
+                <label className="block text-sm font-medium text-emerald-900 mb-2 flex items-center">
+                  <Clock className="w-4 h-4 mr-2 text-emerald-500" />
                   Time of Incident *
                 </label>
                 <input
                   type="time"
                   max={form.date === currentDate ? currentTime : undefined}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                    validationErrors.time ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${
+                    validationErrors.time ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                   }`}
                   value={form.time}
                   onChange={handleTimeChange}
@@ -601,12 +601,12 @@ const UpdateIncidencePage = () => {
             {/* Type and Severity */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-emerald-900 mb-2">
                   Type of Incident *
                 </label>
                 <select
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                    validationErrors.type ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${
+                    validationErrors.type ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                   }`}
                   value={form.type}
                   onChange={(e) => setForm({ ...form, type: e.target.value })}
@@ -625,12 +625,12 @@ const UpdateIncidencePage = () => {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-emerald-900 mb-2">
                   Severity Level *
                 </label>
                 <select
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                    validationErrors.severity ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${
+                    validationErrors.severity ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                   }`}
                   value={form.severity}
                   onChange={(e) => setForm({ ...form, severity: e.target.value })}
@@ -652,14 +652,14 @@ const UpdateIncidencePage = () => {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                <FileText className="w-4 h-4 mr-2 text-blue-500" />
+              <label className="block text-sm font-medium text-emerald-900 mb-2 flex items-center">
+                <FileText className="w-4 h-4 mr-2 text-emerald-500" />
                 Description of Incident *
               </label>
               <textarea
                 rows={4}
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                  validationErrors.description ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 ${
+                  validationErrors.description ? 'border-red-300 bg-red-50' : 'border-emerald-200'
                 }`}
                 placeholder="Provide detailed information about what happened..."
                 value={form.description}
@@ -675,12 +675,12 @@ const UpdateIncidencePage = () => {
 
             {/* Image Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-emerald-900 mb-2">
                 Update Evidence
                 <span className="text-green-600 ml-2 text-xs">✓ Supabase Storage</span>
               </label>
               <div className={`border-2 border-dashed rounded-xl transition-all duration-200 ${
-                validationErrors.image ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                validationErrors.image ? 'border-red-300 bg-red-50' : 'border-emerald-200'
               }`}>
                 <div className="p-6 text-center">
                   {imagePreview ? (
@@ -698,7 +698,7 @@ const UpdateIncidencePage = () => {
                       >
                         <X size={16} />
                       </button>
-                      <div className="text-xs text-gray-500 mt-2">
+                      <div className="text-xs text-emerald-800/70 mt-2">
                         {imageFile ? 'New image ready to upload' : 'Current evidence image'}
                       </div>
                     </div>
@@ -713,7 +713,7 @@ const UpdateIncidencePage = () => {
                           e.target.nextSibling.style.display = 'block';
                         }}
                       />
-                      <div className="text-center text-gray-500 p-4 hidden">
+                      <div className="text-center text-emerald-800/70 p-4 hidden">
                         <Camera className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                         <p>Image unavailable</p>
                       </div>
@@ -725,11 +725,11 @@ const UpdateIncidencePage = () => {
                       >
                         <X size={16} />
                       </button>
-                      <div className="text-xs text-gray-500 mt-2">Current evidence image</div>
+                      <div className="text-xs text-emerald-800/70 mt-2">Current evidence image</div>
                     </div>
                   ) : (
                     <>
-                      <Camera className="mx-auto w-12 h-12 text-gray-400 mb-3" />
+                      <Camera className="mx-auto w-12 h-12 text-emerald-700/60 mb-3" />
                       <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
                         <label className="cursor-pointer bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center">
                           <Upload className="w-4 h-4 mr-2" />
@@ -741,26 +741,26 @@ const UpdateIncidencePage = () => {
                             onChange={handleImageChange}
                           />
                         </label>
-                        <span className="text-gray-500 text-sm">or drag and drop</span>
+                        <span className="text-emerald-800/70 text-sm">or drag and drop</span>
                       </div>
-                      <p className="text-xs text-gray-400 mt-2">PNG, JPG, GIF up to 5MB</p>
+                      <p className="text-xs text-emerald-700/60 mt-2">PNG, JPG, GIF up to 5MB</p>
                     </>
                   )}
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-emerald-800/70 mt-1">
                 {originalImageUrl ? 'Upload a new image to replace the current evidence' : 'Add evidence image (optional)'}
               </p>
             </div>
 
             {/* Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                <AlertCircle className="w-4 h-4 mr-2 text-blue-500" />
+              <label className="block text-sm font-medium text-emerald-900 mb-2 flex items-center">
+                <AlertCircle className="w-4 h-4 mr-2 text-emerald-500" />
                 Status
               </label>
               <select
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
               >
@@ -772,11 +772,11 @@ const UpdateIncidencePage = () => {
             </div>
 
             {/* Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-emerald-100">
               <button
                 type="button"
                 onClick={() => navigate(`/incidences/${id}`)}
-                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium flex items-center justify-center"
+                className="flex-1 px-6 py-3 border border-emerald-200 text-emerald-900 rounded-xl hover:bg-emerald-50/70 transition-all duration-200 font-medium flex items-center justify-center"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Details
@@ -784,7 +784,7 @@ const UpdateIncidencePage = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center justify-center"
+                className="flex-1 px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center justify-center"
               >
                 {loading ? (
                   <>
@@ -800,12 +800,12 @@ const UpdateIncidencePage = () => {
         </div>
 
         {/* Form Tips */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <h3 className="font-medium text-blue-900 mb-2 flex items-center">
+        <div className="mt-6 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <h3 className="font-medium text-emerald-900 mb-2 flex items-center">
             <AlertCircle className="w-4 h-4 mr-2" />
             Update Guidelines
           </h3>
-          <ul className="text-blue-800 text-sm space-y-1">
+          <ul className="text-emerald-800 text-sm space-y-1">
             <li>• All fields marked with * are required</li>
             <li>• Date and time cannot be set to future dates</li>
             <li>• New images will replace the existing evidence</li>

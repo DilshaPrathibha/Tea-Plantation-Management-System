@@ -1,4 +1,4 @@
-// FRONTEND/src/pages/supervisor/TaskAssign.jsx
+﻿// FRONTEND/src/pages/supervisor/TaskAssign.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
@@ -150,9 +150,9 @@ export default function TaskAssign() {
         }));
         const now = rows[0] || null;
         const avgRain = rows.length ? Math.round(rows.slice(0, 6).reduce((a, b) => a + (b.rainp || 0), 0) / Math.min(6, rows.length)) : 0;
-        let advisory = 'Low rain chance — plucking & fertilizing are fine.';
-        if (avgRain >= 50) advisory = 'High rain chance — prefer pruning/weeding; avoid fertilizing.';
-        else if (avgRain >= 25) advisory = 'Moderate rain chance — schedule critical tasks earlier.';
+        let advisory = 'Low rain chance - plucking & fertilizing are fine.';
+        if (avgRain >= 50) advisory = 'High rain chance - prefer pruning/weeding; avoid fertilizing.';
+        else if (avgRain >= 25) advisory = 'Moderate rain chance - schedule critical tasks earlier.';
         setWx({ loading: false, rows, now, loc: 'Awissawella', advisory });
       } catch {
         setWx({ loading: false, rows: [], now: null, loc: 'Awissawella', advisory: '' });
@@ -258,6 +258,397 @@ export default function TaskAssign() {
 
   const refresh = () => loadLists();
 
+  const exportTaskAssignmentPDF = () => {
+    const w = window.open('', '_blank');
+    if (!w) {
+      Sweet.error('Please allow popups to export.');
+      return;
+    }
+
+    const escapeHTML = (s) =>
+      String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    const style = `
+      <style>
+        * { font-family: Arial, Helvetica, sans-serif; }
+        body { margin: 0; padding: 20px; background: #ffffff; }
+        .header { 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: flex-start; 
+          margin-bottom: 30px; 
+          border-bottom: 3px solid #22C55E;
+          padding-bottom: 20px;
+        }
+        .logo-section { 
+          display: flex; 
+          align-items: center; 
+        }
+        .leaf-icon { 
+          width: 24px; 
+          height: 24px; 
+          margin-right: 10px; 
+          display: inline-block;
+          color: #22C55E;
+        }
+        .company-name { 
+          font-size: 24px; 
+          font-weight: bold; 
+          color: #22C55E; 
+          margin: 0; 
+        }
+        .generation-info { 
+          text-align: right; 
+          font-size: 11px; 
+          color: #666; 
+          line-height: 1.4;
+        }
+        .report-title { 
+          font-size: 20px; 
+          font-weight: bold; 
+          color: #000; 
+          text-align: center; 
+          margin: 30px 0; 
+        }
+        .details-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+          margin-bottom: 30px;
+        }
+        .details-section {
+          background: #f8f9fa;
+          border: 2px solid #e9ecef;
+          border-radius: 8px;
+          padding: 15px;
+        }
+        .details-title {
+          font-size: 16px;
+          font-weight: bold;
+          color: #22C55E;
+          margin-bottom: 10px;
+          border-bottom: 1px solid #dee2e6;
+          padding-bottom: 5px;
+        }
+        .detail-item {
+          margin-bottom: 8px;
+          font-size: 14px;
+        }
+        .detail-label {
+          font-weight: bold;
+          color: #495057;
+        }
+        .detail-value {
+          color: #212529;
+        }
+        .section-title {
+          font-size: 18px;
+          font-weight: bold;
+          color: #22C55E;
+          margin: 30px 0 15px 0;
+          border-bottom: 2px solid #22C55E;
+          padding-bottom: 8px;
+        }
+        table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          font-size: 12px; 
+          margin-bottom: 20px;
+        }
+        th { 
+          background: #22C55E; 
+          color: #fff; 
+          font-weight: bold; 
+          padding: 12px 8px; 
+          text-align: left;
+          border: 1px solid #1a9c4a;
+        }
+        td { 
+          padding: 10px 8px; 
+          border: 1px solid #dee2e6; 
+          background: #fff;
+        }
+        tr:nth-child(even) td {
+          background: #f8f9fa;
+        }
+        .summary-box {
+          background: #fff3cd;
+          border: 2px solid #ffc107;
+          border-radius: 8px;
+          padding: 15px;
+          margin: 20px 0;
+        }
+        .summary-title {
+          font-size: 16px;
+          font-weight: bold;
+          color: #856404;
+          margin-bottom: 10px;
+        }
+        .summary-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr 1fr;
+          gap: 15px;
+        }
+        .summary-item {
+          text-align: center;
+        }
+        .summary-value {
+          font-size: 18px;
+          font-weight: bold;
+          color: #856404;
+        }
+        .summary-label {
+          font-size: 12px;
+          color: #6c757d;
+        }
+        .status-badge {
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: bold;
+          text-transform: uppercase;
+        }
+        .status-assigned { background: #dbeafe; color: #1e40af; }
+        .status-in-progress { background: #fef3c7; color: #92400e; }
+        .status-completed { background: #d1fae5; color: #065f46; }
+        .priority-high { background: #fecaca; color: #991b1b; }
+        .priority-medium { background: #fef3c7; color: #92400e; }
+        .priority-low { background: #d1fae5; color: #065f46; }
+        .footer {
+          margin-top: 40px;
+          padding-top: 20px;
+          border-top: 2px solid #22C55E;
+          text-align: center;
+          font-size: 11px;
+          color: #6c757d;
+        }
+        .footer-company {
+          font-weight: bold;
+          color: #22C55E;
+          margin-bottom: 5px;
+        }
+        .footer-address {
+          margin-bottom: 5px;
+        }
+        .footer-slogan {
+          font-style: italic;
+          margin-bottom: 10px;
+        }
+        .page-number {
+          font-weight: bold;
+        }
+      </style>
+    `;
+
+    const getStatusClass = (status) => {
+      switch(status) {
+        case 'assigned': return 'status-assigned';
+        case 'in-progress': return 'status-in-progress';
+        case 'completed': return 'status-completed';
+        default: return 'status-assigned';
+      }
+    };
+
+    const getPriorityClass = (priority) => {
+      switch(priority) {
+        case 'high': return 'priority-high';
+        case 'medium': return 'priority-medium';
+        case 'low': return 'priority-low';
+        default: return 'priority-medium';
+      }
+    };
+
+    const filteredTasksForPDF = tasks.filter(t => {
+      const matchesSearch = !search || [t.workerId, t.workerName, t.taskType, t.customTask]
+        .some(val => val?.toString().toLowerCase().includes(search.toLowerCase()));
+      const matchesField = !fieldName || t.field === fieldName;
+      return matchesSearch && matchesField;
+    });
+
+    const taskStats = {
+      total: filteredTasksForPDF.length,
+      assigned: filteredTasksForPDF.filter(t => t.status === 'assigned').length,
+      inProgress: filteredTasksForPDF.filter(t => t.status === 'in-progress').length,
+      completed: filteredTasksForPDF.filter(t => t.status === 'completed').length,
+      high: filteredTasksForPDF.filter(t => t.priority === 'high').length,
+      medium: filteredTasksForPDF.filter(t => t.priority === 'medium').length,
+      low: filteredTasksForPDF.filter(t => t.priority === 'low').length
+    };
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Task Assignment Report - ${date}</title>
+        ${style}
+      </head>
+      <body>
+        <!-- Header -->
+        <div class="header">
+          <div class="logo-section">
+            <div class="leaf-icon">🍃</div>
+            <div class="company-name">CeylonLeaf Tea Estate</div>
+          </div>
+          <div class="generation-info">
+            <div><strong>Generated:</strong> ${new Date().toLocaleString()}</div>
+            <div><strong>Report Date:</strong> ${date}</div>
+            <div><strong>Generated By:</strong> Field Supervisor</div>
+          </div>
+        </div>
+
+        <!-- Report Title -->
+        <div class="report-title">TASK ASSIGNMENT REPORT</div>
+
+        <!-- Report Information Grid -->
+        <div class="details-grid">
+          <div class="details-section">
+            <div class="details-title">REPORT INFORMATION</div>
+            <div class="detail-item">
+              <span class="detail-label">Report Date:</span>
+              <span class="detail-value"> ${date}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Field Filter:</span>
+              <span class="detail-value"> ${fieldName || 'All Fields'}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Search Filter:</span>
+              <span class="detail-value"> ${search || 'None'}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Weather Location:</span>
+              <span class="detail-value"> ${wx.loc || 'N/A'}</span>
+            </div>
+          </div>
+          
+          <div class="details-section">
+            <div class="details-title">WEATHER CONDITIONS</div>
+            <div class="detail-item">
+              <span class="detail-label">Current Temperature:</span>
+              <span class="detail-value"> ${wx.temp || 'N/A'}°C</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Rain Probability:</span>
+              <span class="detail-value"> ${wx.rain || 'N/A'}%</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Wind Speed:</span>
+              <span class="detail-value"> ${wx.wind || 'N/A'} km/h</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Last Updated:</span>
+              <span class="detail-value"> ${wx.time || 'N/A'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task Statistics -->
+        <div class="summary-box">
+          <div class="summary-title">TASK STATISTICS</div>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <div class="summary-value">${taskStats.total}</div>
+              <div class="summary-label">Total Tasks</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-value">${taskStats.assigned}</div>
+              <div class="summary-label">Assigned</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-value">${taskStats.inProgress}</div>
+              <div class="summary-label">In Progress</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-value">${taskStats.completed}</div>
+              <div class="summary-label">Completed</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Priority Statistics -->
+        <div class="summary-box">
+          <div class="summary-title">PRIORITY DISTRIBUTION</div>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <div class="summary-value">${taskStats.high}</div>
+              <div class="summary-label">High Priority</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-value">${taskStats.medium}</div>
+              <div class="summary-label">Medium Priority</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-value">${taskStats.low}</div>
+              <div class="summary-label">Low Priority</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-value">${Math.round((taskStats.completed / taskStats.total) * 100) || 0}%</div>
+              <div class="summary-label">Completion Rate</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task Details Table -->
+        <div class="section-title">TASK ASSIGNMENTS (${filteredTasksForPDF.length})</div>
+        
+        ${filteredTasksForPDF.length > 0 ? `
+          <table>
+            <thead>
+              <tr>
+                <th>Worker Name</th>
+                <th>Employee ID</th>
+                <th>Task Description</th>
+                <th>Due Time</th>
+                <th>Priority</th>
+                <th>Field</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredTasksForPDF.map(task => `
+                <tr>
+                  <td>${escapeHTML(task.workerName || 'N/A')}</td>
+                  <td>${escapeHTML(task.workerId || 'N/A')}</td>
+                  <td>${escapeHTML(task.taskType === 'other' ? (task.customTask || 'Other') : task.taskType)}</td>
+                  <td style="text-align: center;">${asTime(task.dueTime)}</td>
+                  <td style="text-align: center;">
+                    <span class="status-badge ${getPriorityClass(task.priority)}">${task.priority || 'medium'}</span>
+                  </td>
+                  <td>${escapeHTML(task.field || 'N/A')}</td>
+                  <td style="text-align: center;">
+                    <span class="status-badge ${getStatusClass(task.status)}">${task.status || 'assigned'}</span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        ` : `
+          <div class="no-data" style="text-align: center; color: #6c757d; font-style: italic; padding: 20px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px;">
+            No tasks found for the selected criteria
+          </div>
+        `}
+
+        <!-- Footer -->
+        <div class="footer">
+          <div class="footer-company">CeylonLeaf Plantations</div>
+          <div class="footer-address">No. 123, Tea Estate Road, Nuwara Eliya, Sri Lanka</div>
+          <div class="footer-slogan">Cultivating excellence in every leaf.</div>
+          <div class="page-number">Page 1</div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    w.document.open(); 
+    w.document.write(html); 
+    w.document.close();
+    w.onload = () => { w.focus(); w.print(); };
+  };
+
   return (
     <div className="min-h-screen bg-base-200">
       <div className="mx-auto max-w-7xl p-6 space-y-4">
@@ -305,7 +696,7 @@ export default function TaskAssign() {
                 )
               }
             >
-              {t.workerName} ({t.workerId}) —{" "}
+              {t.workerName} ({t.workerId}) -{" "}
               {t.taskType === "other" ? t.customTask : t.taskType}
             </li>
           ))}
@@ -324,7 +715,7 @@ export default function TaskAssign() {
 
 {/* Export PDF button */}
 <button
-  className="btn btn-secondary mt-2"
+  className="btn btn-primary mt-2"
   onClick={async () => {
     const doc = new jsPDF();
 
@@ -432,31 +823,30 @@ export default function TaskAssign() {
             </div>
 
             {wx.loading ? (
-              <div className="text-sm opacity-70">Loading weather…</div>
+              <div className="text-sm opacity-70">Loading weather...</div>
             ) : (
               <>
                 {wx.now ? (
                   <>
+                    <div className="rounded-xl border p-3">
+                      <div className="opacity-70">Now</div>
+                      <div className="text-xl font-semibold">{wx.now?.temp ?? 0}&deg;C</div>
+                      <div className="text-xs opacity-70">
+                        <Clock className="w-3 h-3 inline mr-1" />
+                        {nowTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      </div>
+                    </div>
 
-                      <div className="rounded-xl border p-3">
-                        <div className="opacity-70">Now</div>
-                        <div className="text-xl font-semibold">{wx.now?.temp}°C</div>
-                        <div className="text-xs opacity-70">
-                          <Clock className="w-3 h-3 inline mr-1" />
-                          {nowTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                        </div>
-                      </div>
+                    <div className="rounded-xl border p-3">
+                      <div className="opacity-70">Rain</div>
+                      <div className="text-xl font-semibold">{wx.now?.rainp ?? 0}%</div>
+                      <div className="text-xs opacity-70">{wx.now?.rain ?? 0} mm</div>
+                    </div>
+                    <div className="rounded-xl border p-3">
+                      <div className="opacity-70">Wind</div>
+                      <div className="text-xl font-semibold">{wx.now?.wind ?? 0} km/h</div>
+                    </div>
 
-                      <div className="rounded-xl border p-3">
-                        <div className="opacity-70">Rain</div>
-                        <div className="text-xl font-semibold">{wx.now.rainp ?? 0}%</div>
-                        <div className="text-xs opacity-70">{wx.now.rain ?? 0} mm</div>
-                      </div>
-                      <div className="rounded-xl border p-3">
-                        <div className="opacity-70">Wind</div>
-                        <div className="text-xl font-semibold">{wx.now.wind ?? 0} km/h</div>
-                      </div>
-                  
                     {wx.advisory && (
                       <div className="mt-2 text-sm alert alert-info">
                         <span><b>Advisory:</b> {wx.advisory}</span>
@@ -473,9 +863,9 @@ export default function TaskAssign() {
                           {wx.rows.map((r, idx) => (
                             <tr key={`${r.time}-${idx}`}>
                               <td>{r.time}</td>
-                              <td>{r.temp}°C</td>
+                              <td>{r.temp}&deg;C</td>
                               <td>{r.rainp ?? 0}%</td>
-                              <td>{r.rain ?? 0}</td>
+                              <td>{r.rain ?? 0} mm</td>
                               <td>{r.wind ?? 0} km/h</td>
                             </tr>
                           ))}
@@ -498,7 +888,7 @@ export default function TaskAssign() {
             <div className="flex items-center gap-2 font-semibold mb-1">
               <UserCheck className="w-4 h-4" /> Eligible workers
             </div>
-            <div className="text-xs opacity-70 mb-2">Only today’s attendees are listed. Once assigned, a worker is removed.</div>
+            <div className="text-xs opacity-70 mb-2">Only today's attendees are listed. Once assigned, a worker is removed.</div>
             <div className="overflow-x-auto">
               <table className="table">
                 <thead>
@@ -545,7 +935,7 @@ export default function TaskAssign() {
               <div className="space-y-3">
                 <div className="text-sm">
                   <div className="font-medium">
-                    {pickedWorker.workerName || '-'} &nbsp;•&nbsp;
+                    {pickedWorker.workerName || '-'} &nbsp;â€¢&nbsp;
                     <code>{pickedWorker.workerId}</code>
                   </div>
                   <div className="opacity-70">Field: {fieldName || pickedWorker.field || '-'}</div>
@@ -604,7 +994,7 @@ export default function TaskAssign() {
               <div className="space-y-3">
                 <div className="text-sm">
                   <div className="font-medium">
-                    {editing.workerName || '-'} &nbsp;•&nbsp; <code>{editing.workerId}</code>
+                    {editing.workerName || '-'} &nbsp;â€¢&nbsp; <code>{editing.workerId}</code>
                   </div>
                   <div className="opacity-70">Field: {editing.field || '-'}</div>
                 </div>
@@ -666,9 +1056,9 @@ export default function TaskAssign() {
           </div>
         </div>
 
-        {/* Today’s tasks */}
+        {/* Today's tasks */}
         <div className="rounded-2xl bg-base-100 p-4 border">
-          <h3 className="font-semibold mb-2">Today’s tasks</h3>
+          <h3 className="font-semibold mb-2">Today's tasks</h3>
           <div className="overflow-x-auto">
             <table className="table">
               <thead>
@@ -696,8 +1086,8 @@ export default function TaskAssign() {
                     <td className="capitalize">{t.status || 'assigned'}</td>
                     <td className="text-right">
                       <button
-                        className="btn btn-sm mr-2"
-                        style={{ backgroundColor: '#FFC107', color: '#111', borderRadius: '2em', border: 'none', fontWeight: 600, minWidth: 90 }}
+                        className="btn btn-sm mr-2 bg-amber-300 hover:bg-amber-200 border-none text-amber-900 shadow-sm"
+                        
                         onClick={() => startEdit(t)}
                       >
                         <Pencil className="w-4 h-4" /> Edit
@@ -715,3 +1105,6 @@ export default function TaskAssign() {
     </div>
   );
 }
+
+
+

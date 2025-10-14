@@ -18,6 +18,7 @@ import {
   Calendar,
   Shield,
   Package,
+  AlertTriangle,
   Truck,
   User,
   Ticket,
@@ -72,6 +73,7 @@ const getRoleNavLinks = (role) => {
         { label: 'Dashboard', href: '/admin', icon: Home, exact: true },
         { label: 'Users', href: '/admin/users', icon: Users },
         { label: 'Fields', href: '/admin/fields', icon: MapPin },
+        { label: 'Incidences', href: '/admin/incidences', icon: AlertTriangle },
         { label: 'Notifications', href: '/admin/notifications', icon: Mail },
         { label: 'Tickets', href: '/admin/tickets', icon: Ticket },
       ];
@@ -98,11 +100,13 @@ const getRoleNavLinks = (role) => {
         { label: 'Tools', href: '/inventory/tools', icon: Wrench },
         { label: 'FNI', href: '/inventory/fni', icon: FlaskConical },
         { label: 'Suppliers', href: '/inventory/suppliers', icon: Users },
+        { label: 'Pest & Disease', href: '/inventory/pest-disease', icon: Shield },
       ];
     
     case 'worker':
       return [
         { label: 'Dashboard', href: '/worker', icon: Home, exact: true },
+        { label: 'Incidence Reports', href: '/worker/incidences', icon: AlertTriangle },
       ];
     
     default:
@@ -140,6 +144,13 @@ const Navbar = () => {
   const [notifLoading, setNotifLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const { theme, toggleTheme } = useTheme();
+  const isLightTheme = theme === 'tea-light';
+  const dropdownPanelClasses = isLightTheme
+    ? 'bg-white/95 text-emerald-900 border-emerald-200 shadow-xl'
+    : 'bg-base-200/95 text-base-content border-base-content/10 shadow-2xl';
+  const accountMenuClasses = isLightTheme
+    ? 'bg-white text-emerald-900 border-emerald-200 shadow-xl'
+    : 'bg-base-300 text-base-content border-base-content/10 shadow-xl';
   const ackRef = useRef({});
   const userId = user?._id || user?.id;
   const ackStorageKey = useMemo(
@@ -354,17 +365,32 @@ const Navbar = () => {
   }, [fetchNotifications, notifications, computeUnread, ackStorageKey]);
 
   return (
-    <header className="sticky top-0 bg-base-300 border-b border-base-content/10 z-50">
+    <header
+      className={`sticky top-0 z-50 border-b transition-colors duration-300 ${
+        isLightTheme
+          ? 'bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-700 border-emerald-700 text-emerald-50 shadow-lg'
+          : 'bg-base-300 border-base-content/10'
+      }`}
+    >
       <div className="mx-auto max-w-6xl px-4">
         <div className="h-16 flex items-center justify-between relative">
           {/* Brand */}
           <Link to="/" className="flex items-center gap-2 sm:gap-3 group">
             <div className="relative">
-              <div className="absolute -inset-1 rounded-xl bg-emerald-500/20 blur-sm opacity-0 group-hover:opacity-100 transition" />
-              <Leaf className="relative w-6 h-6 sm:w-8 sm:h-8 text-emerald-400 group-hover:text-emerald-300 transition" />
+              <div
+                className={`absolute -inset-1 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition ${
+                  isLightTheme ? 'bg-emerald-400/30' : 'bg-emerald-500/20'
+                }`}
+              />
+              <Leaf
+                className={`relative w-6 h-6 sm:w-8 sm:h-8 transition ${
+                  isLightTheme ? 'text-emerald-100 group-hover:text-emerald-50' : 'text-emerald-400 group-hover:text-emerald-300'
+                }`}
+              />
             </div>
             <span className="text-lg sm:text-2xl font-extrabold tracking-tight">
-              <span className="text-emerald-400">Ceylon</span><span className="text-emerald-400">Leaf</span>
+              <span className={isLightTheme ? 'text-emerald-100 drop-shadow-sm' : 'text-emerald-400'}>Ceylon</span>
+              <span className={isLightTheme ? 'text-white drop-shadow-sm' : 'text-emerald-400'}>Leaf</span>
             </span>
           </Link>
 
@@ -379,9 +405,15 @@ const Navbar = () => {
                     to={link.href} 
                     end={link.exact}
                     className={({ isActive }) => {
-                      const stateClass = isActive ? 'bg-primary/20 text-primary' : 'hover:bg-base-content/10';
                       const layoutClass = hasIcon ? 'inline-flex items-center gap-1' : 'inline-flex items-center gap-0';
-                      return `btn btn-ghost btn-sm ${layoutClass} ${stateClass}`;
+                      const paletteClass = isLightTheme
+                        ? (isActive
+                          ? 'bg-white/15 text-white shadow-sm'
+                          : 'text-emerald-50 hover:text-white hover:bg-white/10')
+                        : (isActive
+                          ? 'bg-primary/20 text-primary'
+                          : 'text-base-content hover:bg-base-content/10');
+                      return `btn btn-ghost btn-sm transition-colors ${layoutClass} ${paletteClass}`;
                     }}
                   >
                     {hasIcon ? <link.icon size={18} /> : null}
@@ -400,7 +432,9 @@ const Navbar = () => {
                 <button
                   onClick={handleMenuButtonClick}
                   onTouchStart={handleMenuButtonTouch}
-                  className="btn btn-ghost btn-sm p-3 min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation select-none relative"
+                  className={`btn btn-ghost btn-sm p-3 min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation select-none relative ${
+                    isLightTheme ? 'text-emerald-50 hover:bg-white/10 focus-visible:ring-white/40' : ''
+                  }`}
                   style={{ 
                     WebkitTapHighlightColor: 'transparent',
                     touchAction: 'manipulation'
@@ -431,7 +465,11 @@ const Navbar = () => {
                   <div
                     tabIndex={0}
                     role="button"
-                    className="relative flex h-11 w-11 items-center justify-center rounded-full border border-base-content/10 bg-base-content/5 transition hover:bg-base-content/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                    className={`relative flex h-11 w-11 items-center justify-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 ${
+                      isLightTheme
+                        ? 'border-white/30 bg-white/10 text-emerald-50 hover:bg-white/20 focus-visible:ring-white/40'
+                        : 'border-base-content/10 bg-base-content/5 hover:bg-base-content/10 focus-visible:ring-primary/60'
+                    }`}
                     aria-label="Notifications"
                     onClick={handleNotificationsOpen}
                   >
@@ -444,14 +482,20 @@ const Navbar = () => {
                   </div>
                   <div
                     tabIndex={0}
-                    className="dropdown-content mt-3 w-[20rem] max-h-96 space-y-2 overflow-hidden rounded-2xl border border-base-content/10 bg-base-200/95 shadow-2xl backdrop-blur"
+                    className={`dropdown-content mt-3 w-[20rem] max-h-96 space-y-2 overflow-hidden rounded-2xl border backdrop-blur ${dropdownPanelClasses}`}
                   >
                     <div className="flex items-center justify-between px-4 pt-3">
-                      <span className="text-sm font-semibold tracking-wide text-base-content/80">
+                      <span
+                        className={`text-sm font-semibold tracking-wide ${
+                          isLightTheme ? 'text-emerald-800' : 'text-base-content/80'
+                        }`}
+                      >
                         Notifications
                       </span>
                       <button
-                        className="btn btn-ghost btn-xs"
+                        className={`btn btn-ghost btn-xs ${
+                          isLightTheme ? 'text-emerald-700 hover:bg-emerald-50' : ''
+                        }`}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -510,31 +554,46 @@ const Navbar = () => {
                   <div
                     tabIndex={0}
                     role="button"
-                    className="flex items-center gap-2 rounded-full px-2 sm:px-3 py-1.5 transition cursor-pointer bg-base-content/5 border border-base-content/10 hover:bg-base-content/10"
+                    className={`flex items-center gap-2 rounded-full px-2 sm:px-3 py-1.5 transition cursor-pointer border ${
+                      isLightTheme
+                        ? 'border-white/20 bg-white/10 text-emerald-50 hover:bg-white/20'
+                        : 'bg-base-content/5 border-base-content/10 hover:bg-base-content/10'
+                    }`}
                   >
                     <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 grid place-items-center text-white font-bold">
                       <span className="text-xs sm:text-sm leading-none">{initialsOf(user)}</span>
                       <div className="absolute -inset-0.5 rounded-full ring-1 ring-white/10"></div>
                     </div>
                     <div className="hidden sm:flex flex-col leading-tight">
-                      <span className="text-sm font-semibold text-base-content">
+                      <span className={`text-sm font-semibold ${isLightTheme ? 'text-emerald-50' : 'text-base-content'}`}>
                         {user?.name || user?.email || 'User'}
                       </span>
-                      <span className="text-xs sm:truncate max-w-[180px] text-base-content/60">
+                      <span className={`text-xs sm:truncate max-w-[180px] ${isLightTheme ? 'text-emerald-100/80' : 'text-base-content/60'}`}>
                         {getRoleTitle(user?.role)}
                       </span>
                     </div>
                   </div>
                   {/* Dropdown menu for actions */}
-                  <ul tabIndex={0} className="dropdown-content menu bg-base-300 rounded-box z-[9999] w-52 p-2 shadow-xl border border-base-content/10 mt-2">
+                  <ul
+                    tabIndex={0}
+                    className={`dropdown-content menu rounded-box z-[9999] w-52 p-2 border mt-2 ${accountMenuClasses}`}
+                  >
                     <li className="menu-title">
-                      <span className="text-xs">Account Info</span>
+                      <span className={`text-xs ${isLightTheme ? 'text-emerald-600' : ''}`}>Account Info</span>
                     </li>
                     <li>
                       <div className="flex flex-col items-start p-2 cursor-default hover:bg-transparent">
-                        <span className="font-semibold text-sm">{user?.name || 'User'}</span>
-                        <span className="text-xs opacity-70">{user?.email || 'No email'}</span>
-                        <span className="text-xs text-primary mt-1 uppercase tracking-wide">
+                        <span className={`font-semibold text-sm ${isLightTheme ? 'text-emerald-900' : ''}`}>
+                          {user?.name || 'User'}
+                        </span>
+                        <span className={`text-xs ${isLightTheme ? 'text-emerald-700/80' : 'opacity-70'}`}>
+                          {user?.email || 'No email'}
+                        </span>
+                        <span
+                          className={`text-xs mt-1 uppercase tracking-wide ${
+                            isLightTheme ? 'text-emerald-600' : 'text-primary'
+                          }`}
+                        >
                           {getRoleTitle(user?.role)}
                         </span>
                       </div>
@@ -546,7 +605,9 @@ const Navbar = () => {
                           toggleTheme();
                           document.activeElement?.blur();
                         }}
-                        className="flex items-center gap-2 w-full"
+                        className={`flex items-center gap-2 w-full ${
+                          isLightTheme ? 'text-emerald-700 hover:bg-emerald-50' : ''
+                        }`}
                       >
                         {theme === 'tea-dark' ? (
                           <Sun className="w-4 h-4" />
@@ -565,7 +626,9 @@ const Navbar = () => {
                             navigate(roleHome(user?.role));
                             document.activeElement?.blur();
                           }}
-                          className="flex items-center gap-2 w-full"
+                          className={`flex items-center gap-2 w-full ${
+                            isLightTheme ? 'text-emerald-700 hover:bg-emerald-50' : ''
+                          }`}
                         >
                           <Home className="w-4 h-4" />
                           Dashboard
@@ -578,7 +641,11 @@ const Navbar = () => {
                           handleLogout();
                           document.activeElement?.blur();
                         }}
-                        className="flex items-center gap-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 w-full"
+                        className={`flex items-center gap-2 w-full ${
+                          isLightTheme
+                            ? 'text-red-600 hover:bg-red-100'
+                            : 'text-red-400 hover:text-red-300 hover:bg-red-900/20'
+                        }`}
                       >
                         <LogOut className="w-4 h-4" />
                         Sign out
@@ -592,7 +659,13 @@ const Navbar = () => {
 
           {/* Mobile Navigation Menu */}
           {authed && user?.role && mobileMenuOpen && (
-            <div className="md:hidden absolute top-16 left-0 right-0 bg-base-300 border-b border-base-content/10 shadow-lg mobile-menu-dropdown">
+            <div
+              className={`md:hidden absolute top-16 left-0 right-0 border-b shadow-lg mobile-menu-dropdown ${
+                isLightTheme
+                  ? 'bg-emerald-700/95 border-emerald-600 text-emerald-50 backdrop-blur'
+                  : 'bg-base-300 border-base-content/10'
+              }`}
+            >
               <nav className="px-4 py-3 space-y-2">
                 {getRoleNavLinks(user.role).map((link) => {
                   const hasIcon = Boolean(link.icon);
@@ -613,7 +686,11 @@ const Navbar = () => {
                         closeMobileMenu();
                         setTimeout(() => navigate(link.href), 100);
                       }}
-                      className={`flex items-center ${hasIcon ? 'gap-3' : 'gap-1'} px-3 py-3 rounded-lg transition mobile-menu-item cursor-pointer hover:bg-base-content/10 text-base-content active:bg-base-content/20`}
+                      className={`flex items-center ${hasIcon ? 'gap-3' : 'gap-1'} px-3 py-3 rounded-lg transition mobile-menu-item cursor-pointer ${
+                        isLightTheme
+                          ? 'text-emerald-50 hover:bg-white/10 active:bg-white/20'
+                          : 'text-base-content hover:bg-base-content/10 active:bg-base-content/20'
+                      }`}
                       style={{ 
                         WebkitTapHighlightColor: 'transparent',
                         touchAction: 'manipulation'

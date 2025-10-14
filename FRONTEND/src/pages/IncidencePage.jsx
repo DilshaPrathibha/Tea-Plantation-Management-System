@@ -464,15 +464,27 @@ const IncidencePage = () => {
 
   // Permission checks
   const canEditIncidence = (incidence) => {
-    return currentUser && 
-           currentUser._id === incidence.reportedBy && 
-           incidence.status !== 'Resolved';
+    if (!currentUser) return false;
+    
+    // Admin, supervisor, and worker can edit their own reports
+    const isOwnReport = currentUser._id === incidence.reportedBy;
+    const isAdmin = currentUser.role === 'admin';
+    const isSupervisor = currentUser.role === 'field_supervisor';
+    const isWorker = currentUser.role === 'worker';
+    
+    return (isOwnReport && (isAdmin || isSupervisor || isWorker)) && incidence.status !== 'Resolved';
   };
 
   const canDeleteIncidence = (incidence) => {
-    return currentUser && 
-           currentUser._id === incidence.reportedBy && 
-           incidence.status === 'Resolved';
+    if (!currentUser) return false;
+    
+    // Admin, supervisor, and worker can delete their own reports
+    const isOwnReport = currentUser._id === incidence.reportedBy;
+    const isAdmin = currentUser.role === 'admin';
+    const isSupervisor = currentUser.role === 'field_supervisor';
+    const isWorker = currentUser.role === 'worker';
+    
+    return (isOwnReport && (isAdmin || isSupervisor || isWorker)) && incidence.status === 'Resolved';
   };
 
   const handleAddNew = () => {
@@ -627,9 +639,17 @@ const IncidencePage = () => {
         )}
 
         {infoMessage && (
-          <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center">
-            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 mr-3" />
-            <span className="text-amber-700 dark:text-amber-300">{infoMessage}</span>
+          <div
+            className="mb-6 p-4 rounded-xl flex items-center shadow"
+            style={{ background: '#fff3c4', border: '1px solid #f59e0b' }}
+          >
+            <div
+              className="w-10 h-10 mr-3 rounded-lg flex items-center justify-center"
+              style={{ background: '#fde68a', border: '1px solid #f59e0b' }}
+            >
+              <AlertCircle className="w-5 h-5" style={{ color: '#b45309' }} />
+            </div>
+            <span className="text-base font-semibold" style={{ color: '#7c2d12' }}>{infoMessage}</span>
           </div>
         )}
 
@@ -965,7 +985,7 @@ const IncidencePage = () => {
                         onClick={(e) => handleEdit(incidence._id, incidence.status, incidence, e)}
                         className={`p-2 rounded-lg transition-colors duration-200 ${
                           canEdit 
-                            ? 'text-primary hover:bg-primary/10' 
+                            ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-100/60' 
                             : 'text-base-content/40 cursor-not-allowed'
                         }`}
                         title={canEdit ? "Edit report" : isResolved ? "Resolved reports cannot be edited" : "Only the reporter can edit"}

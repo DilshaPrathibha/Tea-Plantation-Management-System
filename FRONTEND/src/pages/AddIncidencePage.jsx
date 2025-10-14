@@ -24,6 +24,7 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 const AddIncidencePage = () => {
   const navigate = useNavigate();
   const [fields, setFields] = useState([]);
+  const [fieldsLoading, setFieldsLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -55,13 +56,37 @@ const AddIncidencePage = () => {
 
   const fetchFields = async () => {
     try {
+      setFieldsLoading(true);
       const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No authentication token found');
+        setFieldsLoading(false);
+        return;
+      }
+      
+      console.log('Fetching fields from:', `${API}/api/fields`);
       const response = await axios.get(`${API}/api/fields`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      console.log('Fields response:', response.data);
       setFields(response.data.items || []);
     } catch (error) {
       console.error('Error fetching fields:', error);
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+      }
+      
+      // Show user-friendly error message
+      Swal.fire({
+        icon: 'warning',
+        title: 'Unable to Load Fields',
+        text: 'Could not load field locations. You can still select "Full Estate" or contact your supervisor.',
+        confirmButtonColor: '#3b82f6'
+      });
+    } finally {
+      setFieldsLoading(false);
     }
   };
 
@@ -339,13 +364,22 @@ const AddIncidencePage = () => {
                 }`}
                 value={form.location}
                 onChange={(e) => setForm({ ...form, location: e.target.value })}
+                disabled={fieldsLoading}
               >
-                <option value="">Select a location</option>
+                <option value="">
+                  {fieldsLoading ? 'Loading fields...' : 'Select a location'}
+                </option>
                 <option value="full_estate">Full Estate</option>
                 {fields.map(field => (
                   <option key={field._id} value={field.name}>{field.name}</option>
                 ))}
               </select>
+              {fieldsLoading && (
+                <p className="text-blue-600 text-sm mt-1 flex items-center">
+                  <Loader className="w-4 h-4 mr-1 animate-spin" />
+                  Loading field locations...
+                </p>
+              )}
               {validationErrors.location && (
                 <p className="text-red-600 text-sm mt-1 flex items-center">
                   <AlertCircle className="w-4 h-4 mr-1" />
