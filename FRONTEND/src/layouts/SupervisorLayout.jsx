@@ -9,7 +9,7 @@ const LABELS = {
   new: "New",
   tasks: "Task Assignment",
   incidences: "Incidents",
-  "pestdisease": "Pest & Disease",
+  "pest-disease": "Pest & Disease",
   "plucking-records": "Plucking Records",
   tickets: "Tickets",
 };
