@@ -25,7 +25,7 @@ const ticketSchema = new mongoose.Schema(
 
     description: { type: String, trim: true, required: true },
 
-    field: { type: mongoose.Schema.Types.ObjectId, ref: 'Field', required: true },
+    field: { type: mongoose.Schema.Types.ObjectId, ref: 'Field', default: null },
     fieldName: { type: String, trim: true, default: '' },
 
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
