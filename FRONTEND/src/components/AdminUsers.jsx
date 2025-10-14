@@ -266,8 +266,37 @@ export default function AdminUsers() {
   const totalPages = Math.max(Math.ceil(total / limit), 1);
 
   const exportPdf = async () => {
-    if (!users.length) return;
     try {
+      const fetchLimit = 200;
+      let aggregatedUsers = [];
+      let totalAvailable = 0;
+      let exportPage = 1;
+
+      while (true) {
+        const params = new URLSearchParams();
+        params.set('page', String(exportPage));
+        params.set('limit', String(fetchLimit));
+        if (q.trim()) params.set('q', q.trim());
+        if (sortBy) params.set('sortBy', sortBy);
+        if (sortDir) params.set('sortDir', sortDir);
+
+        const res = await axios.get(`${API}/api/admin/users?${params.toString()}`, { headers: authHeader });
+        const items = Array.isArray(res.data?.items) ? res.data.items : [];
+        aggregatedUsers = aggregatedUsers.concat(items);
+        totalAvailable = res.data?.total ?? aggregatedUsers.length;
+
+        if (items.length < fetchLimit || aggregatedUsers.length >= totalAvailable) {
+          break;
+        }
+        exportPage += 1;
+        if (exportPage > 500) break;
+      }
+
+      if (!aggregatedUsers.length) {
+        Toast.error('No users to export');
+        return;
+      }
+
       const doc = new jsPDF({ unit: 'pt', format: 'a4' });
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
@@ -276,6 +305,7 @@ export default function AdminUsers() {
 
       const logoDataUrl = await svgToPngDataUrl(CEYLONLEAF_SVG, 30);
       const generatedAt = new Date();
+      const totalUsersCount = totalAvailable || aggregatedUsers.length;
 
       const renderHeader = () => {
         const brandBaseline = marginY + 18;
@@ -292,7 +322,7 @@ export default function AdminUsers() {
         doc.setFontSize(10);
         doc.setTextColor(71, 85, 105);
         doc.text(`Generated on ${generatedAt.toLocaleString()}`, pageWidth - marginX, marginY, { align: 'right' });
-        doc.text(`Page ${page} • Showing ${users.length} of ${total || users.length}`, pageWidth - marginX, marginY + 12, { align: 'right' });
+        doc.text(`Exported ${aggregatedUsers.length} of ${totalUsersCount} users`, pageWidth - marginX, marginY + 12, { align: 'right' });
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);
@@ -323,14 +353,31 @@ export default function AdminUsers() {
 
       renderHeader();
 
+      const pdfRoleBreakdown = aggregatedUsers.reduce(
+        (acc, user) => {
+          const key = (user.role || 'other').toLowerCase();
+          if (acc[key] === undefined) acc.other += 1;
+          else acc[key] += 1;
+          return acc;
+        },
+        {
+          admin: 0,
+          field_supervisor: 0,
+          production_manager: 0,
+          inventory_manager: 0,
+          worker: 0,
+          other: 0,
+        }
+      );
+
       autoTable(doc, {
         body: [[
           { content: `Total Users: ${totalUsersCount}`, styles: { textColor: [30, 41, 59], fontStyle: 'bold' } },
-          { content: `Admins: ${roleBreakdown.admin}`, styles: { textColor: [59, 130, 246], fontStyle: 'bold' } },
-          { content: `Supervisors: ${roleBreakdown.field_supervisor}`, styles: { textColor: [249, 115, 22], fontStyle: 'bold' } },
-          { content: `Inventory: ${roleBreakdown.inventory_manager}`, styles: { textColor: [16, 185, 129], fontStyle: 'bold' } },
-          { content: `Production: ${roleBreakdown.production_manager}`, styles: { textColor: [107, 114, 128], fontStyle: 'bold' } },
-          { content: `Workers: ${roleBreakdown.worker}`, styles: { textColor: [34, 197, 94], fontStyle: 'bold' } }
+          { content: `Admins: ${pdfRoleBreakdown.admin}`, styles: { textColor: [59, 130, 246], fontStyle: 'bold' } },
+          { content: `Supervisors: ${pdfRoleBreakdown.field_supervisor}`, styles: { textColor: [249, 115, 22], fontStyle: 'bold' } },
+          { content: `Inventory: ${pdfRoleBreakdown.inventory_manager}`, styles: { textColor: [16, 185, 129], fontStyle: 'bold' } },
+          { content: `Production: ${pdfRoleBreakdown.production_manager}`, styles: { textColor: [107, 114, 128], fontStyle: 'bold' } },
+          { content: `Workers: ${pdfRoleBreakdown.worker}`, styles: { textColor: [34, 197, 94], fontStyle: 'bold' } }
         ]],
         theme: 'plain',
         styles: { fontSize: 11 },
@@ -343,13 +390,12 @@ export default function AdminUsers() {
       const activeFilters = [];
       if (q) activeFilters.push(`Search: "${q}"`);
       activeFilters.push(`Sort: ${SORT_FIELDS.find((s) => s.value === sortBy)?.label || 'Created'} (${sortDir.toUpperCase()})`);
-      activeFilters.push(`Page ${page}`);
 
       if (activeFilters.length) {
         doc.setFont('helvetica', 'italic');
         doc.setFontSize(10);
         doc.setTextColor(94, 104, 118);
-        doc.text(`Filters • ${activeFilters.join(' | ')}`, marginX, tableStartY);
+        doc.text(`Filters - ${activeFilters.join(' | ')}`, marginX, tableStartY);
         tableStartY += 16;
       }
 
@@ -361,7 +407,7 @@ export default function AdminUsers() {
         worker: [34, 197, 94],
       };
 
-      const body = users.map((u) => {
+      const body = aggregatedUsers.map((u) => {
         const roleKey = (u.role || 'other').toLowerCase();
         return [
           u.name || '-',
