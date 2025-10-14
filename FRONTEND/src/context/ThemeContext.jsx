@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 const STORAGE_KEY = 'tea-theme';
-const DEFAULT_THEME = 'tea-dark';
+const DEFAULT_THEME = 'tea-light';
 
 const ThemeContext = createContext({
   theme: DEFAULT_THEME,
@@ -25,10 +25,9 @@ export const ThemeProvider = ({ children }) => {
       applyThemeToDocument(stored);
       return stored;
     }
-    const prefersLight = window.matchMedia?.('(prefers-color-scheme: light)').matches;
-    const initial = prefersLight ? 'tea-light' : DEFAULT_THEME;
-    applyThemeToDocument(initial);
-    return initial;
+    // Always default to dark theme (tea-dark) instead of checking system preference
+    applyThemeToDocument(DEFAULT_THEME);
+    return DEFAULT_THEME;
   });
 
   useEffect(() => {
@@ -40,10 +39,11 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const handler = (event) => {
-      const prefersLight = event.matches;
+      // Keep current theme even if system preference changes
+      // Only use DEFAULT_THEME if no stored preference exists
       setThemeState((current) => {
         if (localStorage.getItem(STORAGE_KEY)) return current;
-        return prefersLight ? 'tea-light' : DEFAULT_THEME;
+        return DEFAULT_THEME; // Always default to tea-dark
       });
     };
     const media = window.matchMedia('(prefers-color-scheme: light)');

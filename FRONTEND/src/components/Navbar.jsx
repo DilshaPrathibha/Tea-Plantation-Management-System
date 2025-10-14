@@ -514,21 +514,17 @@ const Navbar = () => {
                   <div
                     tabIndex={0}
                     role="button"
-                    className={`flex items-center gap-2 rounded-full px-2 sm:px-3 py-1.5 transition cursor-pointer ${
-                      theme === 'tea-light'
-                        ? 'bg-white border border-slate-200 shadow-sm hover:bg-emerald-50 text-base-content'
-                        : 'bg-base-content/5 border border-base-content/10 hover:bg-base-content/10 text-white'
-                    }`}
+                    className="flex items-center gap-2 rounded-full px-2 sm:px-3 py-1.5 transition cursor-pointer bg-base-content/5 border border-base-content/10 hover:bg-base-content/10"
                   >
                     <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 grid place-items-center text-white font-bold">
                       <span className="text-xs sm:text-sm leading-none">{initialsOf(user)}</span>
                       <div className="absolute -inset-0.5 rounded-full ring-1 ring-white/10"></div>
                     </div>
                     <div className="hidden sm:flex flex-col leading-tight">
-                      <span className={`text-sm font-semibold ${theme === 'tea-light' ? 'text-base-content' : 'text-white'}`}>
+                      <span className="text-sm font-semibold text-base-content">
                         {user?.name || user?.email || 'User'}
                       </span>
-                      <span className={`text-xs sm:truncate max-w-[180px] ${theme === 'tea-light' ? 'text-base-content/60' : 'text-white/70'}`}>
+                      <span className="text-xs sm:truncate max-w-[180px] text-base-content/60">
                         {getRoleTitle(user?.role)}
                       </span>
                     </div>
