@@ -7,7 +7,6 @@ import {
   LogIn,
   Home,
   User2,
-  BarChart2,
   Wrench,
   FlaskConical,
   Menu,
@@ -18,10 +17,8 @@ import {
   Bell,
   Calendar,
   Shield,
-  FileText,
   Package,
   Truck,
-  User,
   Ticket
 } from 'lucide-react';
 import { Sweet } from '../utils/sweet';
@@ -80,9 +77,7 @@ const getRoleNavLinks = (role) => {
         { label: 'Dashboard', href: '/supervisor', icon: Home, exact: true },
         { label: 'Attendance', href: '/supervisor/attendance', icon: Calendar },
         { label: 'Tasks', href: '/supervisor/tasks', icon: Users },
-        { label: 'Pest & Disease', href: '/supervisor/pestdisease', icon: Shield },
-        { label: 'Tickets', href: '/supervisor/tickets', icon: Ticket },
-        { label: 'Reports', href: '/reports', icon: FileText },
+        { label: 'Pest & Disease', href: '/supervisor/pest-disease', icon: Shield },
       ];
     
     case 'production_manager':
@@ -91,8 +86,6 @@ const getRoleNavLinks = (role) => {
         { label: 'Batches', href: '/production-batches', icon: Package },
         { label: 'Tracking', href: '/vehicle-tracking', icon: Truck },
         { label: 'Transport', href: '/transports', icon: Truck },
-        { label: 'Tickets', href: '/production/tickets', icon: Ticket },
-        { label: 'Reports', href: '/reports', icon: FileText },
       ];
     
     case 'inventory_manager':
@@ -101,14 +94,11 @@ const getRoleNavLinks = (role) => {
         { label: 'Tools', href: '/inventory/tools', icon: Wrench },
         { label: 'FNI', href: '/inventory/fni', icon: FlaskConical },
         { label: 'Suppliers', href: '/inventory/suppliers', icon: Users },
-        { label: 'Tickets', href: '/inventory/tickets', icon: Ticket },
-        { label: 'Reports', href: '/inventory/reports', icon: BarChart2 },
       ];
     
     case 'worker':
       return [
         { label: 'Dashboard', href: '/worker', icon: Home, exact: true },
-        { label: 'Profile', href: '/profile', icon: User },
       ];
     
     default:
@@ -376,19 +366,24 @@ const Navbar = () => {
           {/* Desktop Navigation for All Authenticated Users */}
           {authed && user?.role && (
             <nav className="hidden md:flex gap-1">
-              {getRoleNavLinks(user.role).map((link) => (
-                <NavLink 
-                  key={link.href}
-                  to={link.href} 
-                  end={link.exact}
-                  className={({ isActive }) =>
-                    `btn btn-ghost btn-sm flex items-center gap-1 ${isActive ? 'bg-primary/20 text-primary' : 'hover:bg-base-content/10'}`
-                  }
-                >
-                  <link.icon size={18} />
-                  <span className="hidden lg:inline">{link.label}</span>
-                </NavLink>
-              ))}
+              {getRoleNavLinks(user.role).map((link) => {
+                const hasIcon = Boolean(link.icon);
+                return (
+                  <NavLink 
+                    key={link.href}
+                    to={link.href} 
+                    end={link.exact}
+                    className={({ isActive }) => {
+                      const stateClass = isActive ? 'bg-primary/20 text-primary' : 'hover:bg-base-content/10';
+                      const layoutClass = hasIcon ? 'inline-flex items-center gap-1' : 'inline-flex items-center gap-0';
+                      return `btn btn-ghost btn-sm ${layoutClass} ${stateClass}`;
+                    }}
+                  >
+                    {hasIcon ? <link.icon size={18} /> : null}
+                    <span className={hasIcon ? 'hidden lg:inline' : 'leading-none'}>{link.label}</span>
+                  </NavLink>
+                );
+              })}
             </nav>
           )}
 
@@ -573,33 +568,36 @@ const Navbar = () => {
           {authed && user?.role && mobileMenuOpen && (
             <div className="md:hidden absolute top-16 left-0 right-0 bg-base-300 border-b border-base-content/10 shadow-lg mobile-menu-dropdown">
               <nav className="px-4 py-3 space-y-2">
-                {getRoleNavLinks(user.role).map((link) => (
-                  <div
-                    key={link.href}
-                    onTouchStart={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      // Handle touch navigation
-                      closeMobileMenu();
-                      setTimeout(() => navigate(link.href), 100);
-                    }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      // Handle click navigation (desktop responsive mode)
-                      closeMobileMenu();
-                      setTimeout(() => navigate(link.href), 100);
-                    }}
-                    className="flex items-center gap-3 px-3 py-3 rounded-lg transition mobile-menu-item cursor-pointer hover:bg-base-content/10 text-base-content active:bg-base-content/20"
-                    style={{ 
-                      WebkitTapHighlightColor: 'transparent',
-                      touchAction: 'manipulation'
-                    }}
-                  >
-                    <link.icon size={20} />
-                    <span className="font-medium">{link.label}</span>
-                  </div>
-                ))}
+                {getRoleNavLinks(user.role).map((link) => {
+                  const hasIcon = Boolean(link.icon);
+                  return (
+                    <div
+                      key={link.href}
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Handle touch navigation
+                        closeMobileMenu();
+                        setTimeout(() => navigate(link.href), 100);
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Handle click navigation (desktop responsive mode)
+                        closeMobileMenu();
+                        setTimeout(() => navigate(link.href), 100);
+                      }}
+                      className={`flex items-center ${hasIcon ? 'gap-3' : 'gap-1'} px-3 py-3 rounded-lg transition mobile-menu-item cursor-pointer hover:bg-base-content/10 text-base-content active:bg-base-content/20`}
+                      style={{ 
+                        WebkitTapHighlightColor: 'transparent',
+                        touchAction: 'manipulation'
+                      }}
+                    >
+                      {hasIcon ? <link.icon size={20} /> : null}
+                      <span className="font-medium">{link.label}</span>
+                    </div>
+                  );
+                })}
               </nav>
             </div>
           )}

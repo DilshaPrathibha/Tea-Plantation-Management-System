@@ -19,8 +19,7 @@ import {
   Calendar,
   Shield,
   Truck,
-  FileText,
-  User
+  FileText
 } from 'lucide-react';
 
 /* Read auth state from localStorage safely */
@@ -62,7 +61,7 @@ const Footer = () => {
           { label: 'Dashboard', href: '/supervisor', icon: Home },
           { label: 'Attendance', href: '/supervisor/attendance', icon: Calendar },
           { label: 'Task Assignment', href: '/supervisor/tasks', icon: Users },
-          { label: 'Pest & Disease', href: '/supervisor/pestdisease', icon: Shield },
+          { label: 'Pest & Disease', href: '/supervisor/pest-disease', icon: Shield },
           { label: 'Reports', href: '/reports', icon: FileText },
         ];
       
@@ -86,7 +85,6 @@ const Footer = () => {
       case 'worker':
         return [
           { label: 'Dashboard', href: '/worker', icon: Home },
-          { label: 'Profile', href: '/profile', icon: User },
         ];
       
       default:
@@ -153,17 +151,21 @@ const Footer = () => {
               {authed && user?.role ? 'Quick Access' : 'Quick Links'}
             </h3>
             <ul className="space-y-2">
-              {roleLinks.map((link, index) => (
-                <li key={index}>
-                  <Link 
-                    to={link.href}
-                    className="flex items-center gap-2 text-sm text-base-content/90 hover:text-emerald-500 transition group font-medium"
-                  >
-                    <link.icon className="w-4 h-4 opacity-70 group-hover:opacity-100 transition" />
-                    <span>{link.label}</span>
-                  </Link>
-                </li>
-              ))}
+              {roleLinks.map((link, index) => {
+                const hasIcon = Boolean(link.icon);
+                const Icon = link.icon;
+                return (
+                  <li key={index}>
+                    <Link 
+                      to={link.href}
+                      className={`flex items-center ${hasIcon ? 'gap-2' : 'gap-0'} text-sm text-base-content/90 hover:text-emerald-500 transition group font-medium`}
+                    >
+                      {hasIcon ? <Icon className="w-4 h-4 opacity-70 group-hover:opacity-100 transition" /> : null}
+                      <span className={hasIcon ? '' : 'leading-none'}>{link.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 

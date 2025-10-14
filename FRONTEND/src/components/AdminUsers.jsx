@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
   UserPlus, Users, Copy, Check, RefreshCw, Trash2, Hash,
   Pencil, Save, X as XIcon, Plus, Search, Download, ArrowUpAZ, ArrowDownAZ
@@ -7,6 +9,38 @@ import {
 import { Sweet, Toast } from '@/utils/sweet';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+const CEYLONLEAF_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+     fill="none" stroke="#22C55E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+  <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+</svg>
+`;
+
+const svgToPngDataUrl = (svgMarkup, targetPx = 28) =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => {
+      const scale = targetPx / (img.width || 28);
+      const w = Math.max(1, Math.round((img.width || 28) * scale));
+      const h = Math.max(1, Math.round((img.height || 28) * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      try {
+        resolve(canvas.toDataURL('image/png'));
+      } catch (err) {
+        reject(err);
+      }
+    };
+    img.onerror = reject;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
+  });
 
 const defaultCreate = {
   name: '', email: '', role: 'worker', password: '', empId: '',
@@ -57,6 +91,30 @@ export default function AdminUsers() {
 
   // errors
   const [error, setError] = useState('');
+
+  const formatRole = (role = '') =>
+    role
+      .toString()
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (ch) => ch.toUpperCase());
+
+  const roleBreakdown = users.reduce(
+    (acc, user) => {
+      const key = (user.role || 'other').toLowerCase();
+      if (acc[key] === undefined) acc.other += 1;
+      else acc[key] += 1;
+      return acc;
+    },
+    {
+      admin: 0,
+      field_supervisor: 0,
+      production_manager: 0,
+      inventory_manager: 0,
+      worker: 0,
+      other: 0,
+    }
+  );
+  const totalUsersCount = users.length;
 
   // -------- data ----------
   const fetchUsers = async () => {
@@ -207,76 +265,145 @@ export default function AdminUsers() {
 
   const totalPages = Math.max(Math.ceil(total / limit), 1);
 
-  // -------- PDF (no dependency) ----------
-  const exportPdf = () => {
-    const w = window.open('', '_blank');
-    if (!w) return Sweet.error('Please allow popups to export.');
+  const exportPdf = async () => {
+    if (!users.length) return;
+    try {
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const marginX = 48;
+      const marginY = 42;
 
-    const escapeHTML = (s) =>
-      String(s || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+      const logoDataUrl = await svgToPngDataUrl(CEYLONLEAF_SVG, 30);
+      const generatedAt = new Date();
 
-    const style = `
-      <style>
-        * { font-family: Arial, Helvetica, sans-serif; }
-        .header { display:flex; justify-content:space-between; align-items:center; }
-        .title { font-size:20px; font-weight:bold; margin:0; }
-        .meta { font-size:12px; color:#444; text-align:right; }
-        .hr { border:0; border-top:1px solid #ddd; margin:12px 0; }
-        table { width:100%; border-collapse:collapse; font-size:12px; }
-        th, td { border:1px solid #ddd; padding:6px 8px; }
-        th { background:#f3f3f3; text-align:left; }
-      </style>
-    `;
+      const renderHeader = () => {
+        const brandBaseline = marginY + 18;
+        const logoSize = 28;
+        if (logoDataUrl) {
+          doc.addImage(logoDataUrl, 'PNG', marginX, marginY - 6, logoSize, logoSize);
+        }
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(20);
+        doc.setTextColor(34, 197, 94);
+        doc.text('CeylonLeaf', marginX + logoSize + 8, brandBaseline);
 
-    const now = new Date();
-    const rowsHtml = users.map(u => `
-      <tr>
-        <td>${escapeHTML(u.name)}</td>
-        <td>${escapeHTML(u.empId || '-')}</td>
-        <td>${escapeHTML(u.email)}</td>
-        <td>${escapeHTML((u.role || '').replace('_', ' '))}</td>
-        <td>${escapeHTML(u.phone || '-')}</td>
-        <td>${u.createdAt ? escapeHTML(new Date(u.createdAt).toLocaleString()) : '-'}</td>
-      </tr>
-    `).join('');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(71, 85, 105);
+        doc.text(`Generated on ${generatedAt.toLocaleString()}`, pageWidth - marginX, marginY, { align: 'right' });
+        doc.text(`Page ${page} • Showing ${users.length} of ${total || users.length}`, pageWidth - marginX, marginY + 12, { align: 'right' });
 
-    const html = `
-      <!doctype html><html><head><meta charset="utf-8">${style}</head><body>
-        <div class="header">
-          <div>
-            <h1 class="title">CeylonLeaf</h1>
-            <div class="meta">Users Report</div>
-          </div>
-          <div class="meta">
-            Generated: ${now.toLocaleString()}<br/>
-            ${q ? `Search: "${escapeHTML(q)}"<br/>` : ''}
-            Sort: ${escapeHTML(SORT_FIELDS.find(s => s.value === sortBy)?.label || 'Created')} (${escapeHTML(sortDir)})
-            &nbsp;|&nbsp; Page ${page} of ${totalPages}
-          </div>
-        </div>
-        <hr class="hr"/>
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Emp ID</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Phone</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml || `<tr><td colspan="6" style="text-align:center;color:#666;">No data</td></tr>`}
-          </tbody>
-        </table>
-      </body></html>
-    `;
-    w.document.open(); w.document.write(html); w.document.close();
-    w.onload = () => { w.focus(); w.print(); };
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(17, 24, 39);
+        doc.text('User Directory', pageWidth / 2, marginY + 32, { align: 'center' });
+      };
+
+      const renderFooter = (pageNumber) => {
+        const footerTop = pageHeight - 72;
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.5);
+        doc.line(marginX, footerTop, pageWidth - marginX, footerTop);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(34, 197, 94);
+        doc.text('CeylonLeaf Plantations', pageWidth / 2, footerTop + 18, { align: 'center' });
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(100, 116, 139);
+        doc.text('No. 123, Tea Estate Road, Nuwara Eliya, Sri Lanka', pageWidth / 2, footerTop + 32, { align: 'center' });
+        doc.text('Cultivating excellence in every leaf.', pageWidth / 2, footerTop + 46, { align: 'center' });
+
+        doc.setFontSize(8);
+        doc.text(`Page ${pageNumber}`, pageWidth - marginX, footerTop + 46, { align: 'right' });
+      };
+
+      renderHeader();
+
+      autoTable(doc, {
+        body: [[
+          { content: `Total Users: ${totalUsersCount}`, styles: { textColor: [30, 41, 59], fontStyle: 'bold' } },
+          { content: `Admins: ${roleBreakdown.admin}`, styles: { textColor: [59, 130, 246], fontStyle: 'bold' } },
+          { content: `Supervisors: ${roleBreakdown.field_supervisor}`, styles: { textColor: [249, 115, 22], fontStyle: 'bold' } },
+          { content: `Inventory: ${roleBreakdown.inventory_manager}`, styles: { textColor: [16, 185, 129], fontStyle: 'bold' } },
+          { content: `Production: ${roleBreakdown.production_manager}`, styles: { textColor: [107, 114, 128], fontStyle: 'bold' } },
+          { content: `Workers: ${roleBreakdown.worker}`, styles: { textColor: [34, 197, 94], fontStyle: 'bold' } }
+        ]],
+        theme: 'plain',
+        styles: { fontSize: 11 },
+        margin: { left: marginX, right: marginX },
+        startY: marginY + 46,
+      });
+
+      let tableStartY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 20 : marginY + 66;
+
+      const activeFilters = [];
+      if (q) activeFilters.push(`Search: "${q}"`);
+      activeFilters.push(`Sort: ${SORT_FIELDS.find((s) => s.value === sortBy)?.label || 'Created'} (${sortDir.toUpperCase()})`);
+      activeFilters.push(`Page ${page}`);
+
+      if (activeFilters.length) {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(10);
+        doc.setTextColor(94, 104, 118);
+        doc.text(`Filters • ${activeFilters.join(' | ')}`, marginX, tableStartY);
+        tableStartY += 16;
+      }
+
+      const roleColors = {
+        admin: [59, 130, 246],
+        field_supervisor: [249, 115, 22],
+        production_manager: [107, 114, 128],
+        inventory_manager: [16, 185, 129],
+        worker: [34, 197, 94],
+      };
+
+      const body = users.map((u) => {
+        const roleKey = (u.role || 'other').toLowerCase();
+        return [
+          u.name || '-',
+          u.empId || '-',
+          u.email || '-',
+          { content: formatRole(u.role || '-'), roleKey },
+          u.phone || '-',
+          u.createdAt ? new Date(u.createdAt).toLocaleString() : '-',
+        ];
+      });
+
+      autoTable(doc, {
+        head: [['Name', 'Employee ID', 'Email', 'Role', 'Phone', 'Created']],
+        body: body.length ? body : [['-', '-', '-', { content: '-', roleKey: 'other' }, '-', '-']],
+        startY: tableStartY,
+        margin: { top: marginY + 60, left: marginX, right: marginX, bottom: 90 },
+        styles: { fontSize: 10, cellPadding: 6, lineWidth: 0.2, lineColor: [226, 232, 240] },
+        headStyles: { fillColor: [34, 197, 94], textColor: [17, 24, 39], fontSize: 11, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 2: { cellWidth: 190 } },
+        didParseCell: (data) => {
+          if (data.section === 'body' && data.column.index === 3) {
+            const roleKey = typeof data.cell.raw === 'object' ? data.cell.raw.roleKey : 'other';
+            const color = roleColors[roleKey] || [30, 41, 59];
+            data.cell.styles.textColor = color;
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.text = [typeof data.cell.raw === 'object' ? data.cell.raw.content : data.cell.raw];
+          }
+        },
+        didDrawPage: (data) => {
+          renderHeader();
+          renderFooter(data.pageNumber);
+        },
+      });
+
+      const blobUrl = doc.output('bloburl');
+      window.open(blobUrl, '_blank');
+      Toast.success('User report ready');
+    } catch (error) {
+      console.error('[users pdf] error', error);
+      Toast.error('Failed to generate PDF');
+    }
   };
 
   return (
