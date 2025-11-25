@@ -2,27 +2,6 @@
 
 A web-based management system for tea plantation operations, built as part of our ITP coursework. The system helps manage different aspects of tea plantation operations from field supervision to production and inventory management.
 
-## 🌐 Network Access (NEW!)
-
-This application now supports **LAN hosting** - access from any device on your network!
-
-### Quick Start
-```bash
-# Check your network URLs
-node network-info.js
-
-# Or use the setup script
-setup-lan.bat
-```
-
-### Access from Other Devices
-- **Phones, Tablets, Other PCs** - all supported!
-- Connect to same WiFi network
-- Use the network URLs shown by `network-info.js`
-- Example: `http://192.168.1.100:5173`
-
-📖 **Full Documentation**: See [LAN-HOSTING.md](LAN-HOSTING.md) for complete setup guide.
-
 ---
 
 ## What This System Does
@@ -138,18 +117,5 @@ FRONTEND/        - React application
 3. Login and create other user types
 4. Test different role functionalities
 5. Try mobile access using network URLs
-
-## Known Issues
-
-- GPS tracking requires HTTPS in production
-- Some features need proper MongoDB setup
-- Mobile UI works best on newer devices
-
-## Future Improvements
-
-- Add more detailed analytics
-- Implement push notifications
-- Add data export features
-- Improve mobile GPS accuracy
 
 This system demonstrates full-stack web development skills including database design, API development, user authentication, and responsive UI design.
