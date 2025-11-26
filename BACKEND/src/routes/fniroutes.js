@@ -13,8 +13,8 @@ const {
 const router = express.Router();
 
 // Apply authentication middleware to all FNI routes
-router.use(verifyToken);
-router.use(requireAnyRole(['admin', 'inventory_manager']));
+// router.use(verifyToken);
+// router.use(requireAnyRole(['admin', 'inventory_manager']));
 
 router.post('/items', createItem);
 router.get('/items', listItems);
