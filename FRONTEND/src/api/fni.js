@@ -2,12 +2,12 @@ import axios from 'axios';
 import { API_URL } from '../config/api.js';
 
 const api = axios.create({
-  baseURL: `${API_URL}/fni`,
+  baseURL: `${API_URL}/api/fni`,
   timeout: 5000,
   headers: { 'Content-Type': 'application/json' }
 });
 
-// Add token to requests
+// Add token to requests (optional since auth is disabled)
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
