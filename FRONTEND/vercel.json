@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "tea-plantation-frontend",
   "builds": [
     {
       "src": "package.json",
