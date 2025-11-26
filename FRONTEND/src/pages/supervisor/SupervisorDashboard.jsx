@@ -24,7 +24,7 @@ const Tile = ({ icon, title, desc, onClick }) => (
     </div>
     <p className="mt-2 text-base-content/70">{desc}</p>
     <div className="mt-4 text-sm text-primary opacity-0 group-hover:opacity-100 transition">
-      Open ->
+      Open →
     </div>
   </button>
 );
