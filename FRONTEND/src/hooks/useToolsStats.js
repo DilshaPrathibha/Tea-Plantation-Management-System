@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';            
 import autoTable from 'jspdf-autotable';
+import { API_URL } from '../config/api.js';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5001/api',
+  baseURL: `${API_URL}/api`,
   timeout: 15000, // Increased from 5s to 15s for slow connections
   headers: { 'Content-Type': 'application/json' }
 });

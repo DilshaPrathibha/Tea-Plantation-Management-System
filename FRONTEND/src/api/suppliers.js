@@ -2,7 +2,7 @@ import axios from 'axios';
 import { API_URL } from '../config/api.js';
 
 const api = axios.create({
-  baseURL: `${API_URL}/suppliers`,
+  baseURL: `${API_URL}/api/suppliers`,
   timeout: 15000, // Increased from 5s to 15s for slow connections
   headers: { 'Content-Type': 'application/json' }
 });
