@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: tea-plantation-backend
+    env: node
+    region: oregon # or your preferred region
+    plan: free # you can upgrade later
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000 # Render uses port 10000 by default
+      - key: MONGO_URI
+        sync: false # This will be set via Render dashboard for security
+      - key: JWT_SECRET
+        sync: false # This will be set via Render dashboard for security
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-pro
+      - key: CLIENT_ORIGIN
+        value: https://your-frontend-url.vercel.app # Update this after Vercel deployment

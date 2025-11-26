@@ -1,0 +1,75 @@
+@echo off
+echo 🚀 Tea Plantation Management System - Deployment Helper
+echo =======================================================
+
+REM Check if we're in the right directory
+if not exist "render.yaml" (
+    echo ❌ Error: render.yaml not found. Please run this script from the project root.
+    exit /b 1
+)
+
+echo 📋 Pre-deployment Checklist:
+echo 1. ✅ MongoDB Atlas database ready
+echo 2. ✅ Upstash Redis configured
+echo 3. ✅ Google Gemini API key available
+echo 4. ✅ GitHub repository up to date
+echo.
+
+REM Check if backend dependencies are installed
+echo 🔍 Checking backend dependencies...
+cd BACKEND
+if not exist "node_modules" (
+    echo 📦 Installing backend dependencies...
+    call npm install
+) else (
+    echo ✅ Backend dependencies already installed
+)
+
+cd ..
+
+REM Check if frontend dependencies are installed
+echo 🔍 Checking frontend dependencies...
+cd FRONTEND
+if not exist "node_modules" (
+    echo 📦 Installing frontend dependencies...
+    call npm install
+) else (
+    echo ✅ Frontend dependencies already installed
+)
+
+REM Test frontend build
+echo 🔨 Testing frontend build...
+call npm run build
+if %errorlevel% equ 0 (
+    echo ✅ Frontend builds successfully
+    rmdir /s /q dist 2>nul
+) else (
+    echo ❌ Frontend build failed. Please fix build errors before deploying.
+    cd ..
+    exit /b 1
+)
+
+cd ..
+
+echo.
+echo ✅ Pre-deployment checks completed successfully!
+echo.
+echo 🚀 Next Steps:
+echo 1. Push your code to GitHub if not already done
+echo 2. Deploy backend to Render:
+echo    - Go to https://dashboard.render.com
+echo    - Create new Web Service from your GitHub repo
+echo    - Set Root Directory to 'BACKEND'
+echo    - Configure environment variables
+echo.
+echo 3. Deploy frontend to Vercel:
+echo    - Run: cd FRONTEND ^&^& vercel --prod
+echo    - Or use Vercel dashboard with Root Directory 'FRONTEND'
+echo.
+echo 📖 For detailed instructions, see DEPLOYMENT.md
+echo.
+echo 🔗 Useful Commands:
+echo Frontend deployment: cd FRONTEND ^&^& vercel --prod
+echo Check backend health: curl https://your-render-url.onrender.com/health
+echo.
+pause

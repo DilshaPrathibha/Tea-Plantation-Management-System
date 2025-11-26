@@ -23,7 +23,7 @@ const port = process.env.PORT || 5001;
 // 2) middleware
 app.use(express.json());
 
-// CORS configuration for LAN hosting
+// CORS configuration for LAN hosting and production
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, Postman, etc.)
@@ -42,6 +42,16 @@ const corsOptions = {
     
     // Allow ngrok domains
     if (origin && origin.includes('.ngrok-free.app')) {
+      return callback(null, true);
+    }
+    
+    // Allow Vercel domains
+    if (origin && origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    // Allow Netlify domains (alternative deployment)
+    if (origin && origin.includes('.netlify.app')) {
       return callback(null, true);
     }
     
@@ -136,23 +146,26 @@ app.use((err, req, res, next) => {
 // 6) start - Listen on all network interfaces for LAN access
 const server = app.listen(port, '0.0.0.0', () => {
   console.log(`🚀 Server started on PORT ${port}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   
-  // Display network information for LAN access
-  const os = require('os');
-  const networkInterfaces = os.networkInterfaces();
-  
-  console.log('\n📡 Network Access URLs:');
-  console.log(`   Local: http://localhost:${port}`);
-  console.log(`   Local: http://127.0.0.1:${port}`);
-  
-  Object.keys(networkInterfaces).forEach((interfaceName) => {
-    const interfaces = networkInterfaces[interfaceName];
-    interfaces.forEach((interface) => {
-      if (interface.family === 'IPv4' && !interface.internal) {
-        console.log(`   Network: http://${interface.address}:${port}`);
-      }
+  // Only display network information in development
+  if (process.env.NODE_ENV !== 'production') {
+    const os = require('os');
+    const networkInterfaces = os.networkInterfaces();
+    
+    console.log('\n📡 Network Access URLs:');
+    console.log(`   Local: http://localhost:${port}`);
+    console.log(`   Local: http://127.0.0.1:${port}`);
+    
+    Object.keys(networkInterfaces).forEach((interfaceName) => {
+      const interfaces = networkInterfaces[interfaceName];
+      interfaces.forEach((interface) => {
+        if (interface.family === 'IPv4' && !interface.internal) {
+          console.log(`   Network: http://${interface.address}:${port}`);
+        }
+      });
     });
-  });
+  }
   console.log('');
 });
 

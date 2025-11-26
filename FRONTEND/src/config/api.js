@@ -1,6 +1,14 @@
-// API configuration that adapts to network access
+// API configuration that adapts to network access and production
 export function getApiBaseUrl() {
-  // Get current host information
+  // First, check if we have a production API URL configured
+  const productionApiUrl = import.meta.env.VITE_API_URL;
+  
+  // If in production or if VITE_API_URL is set, use it
+  if (productionApiUrl && (import.meta.env.PROD || productionApiUrl.includes('onrender.com'))) {
+    return productionApiUrl;
+  }
+  
+  // Get current host information for development
   const { protocol, hostname } = window.location;
   
   // If accessing via localhost or 127.0.0.1, always use localhost for backend
@@ -9,9 +17,8 @@ export function getApiBaseUrl() {
   }
   
   // Check if we have a configured API URL for network access
-  const configuredUrl = import.meta.env.VITE_API_URL;
-  if (configuredUrl) {
-    return configuredUrl;
+  if (productionApiUrl) {
+    return productionApiUrl;
   }
   
   // If accessing via network IP, use the same IP for backend
@@ -22,4 +29,4 @@ export function getApiBaseUrl() {
 export const API_BASE_URL = getApiBaseUrl();
 
 // Complete API URL (with /api prefix)
-export const API_URL = `${API_BASE_URL}/api`;
+export const API_URL = getApiBaseUrl();
