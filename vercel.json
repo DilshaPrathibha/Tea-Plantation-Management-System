@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd FRONTEND && npm run build",
+  "outputDirectory": "FRONTEND/dist",
+  "installCommand": "cd FRONTEND && npm install",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
