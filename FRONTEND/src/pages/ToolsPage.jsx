@@ -9,7 +9,7 @@ import { API_URL } from '../config/api.js';
 import { useTheme } from '../context/ThemeContext';
 
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_URL,
   timeout: 15000, // Increased from 5s to 15s for slow connections
   headers: { 'Content-Type': 'application/json' }
 });
@@ -88,7 +88,7 @@ const ToolsPage = () => {
       if (search) params.q = search;
       if (typeFilter) params.type = typeFilter;
       if (statusFilter) params.status = statusFilter;
-      const response = await api.get('/tools', { params });
+      const response = await api.get('/api/tools', { params });
       setTools(response.data);
     } catch (error) {
       // Determine if error is retryable
@@ -119,8 +119,8 @@ const ToolsPage = () => {
     try {
       // Fetch both active and retired tools separately and combine them
       const [activeResponse, retiredResponse] = await Promise.all([
-        api.get('/tools'),
-        api.get('/tools', { params: { status: 'retired' } })
+        api.get('/api/tools'),
+        api.get('/api/tools', { params: { status: 'retired' } })
       ]);
       setAllTools([...activeResponse.data, ...retiredResponse.data]);
     } catch (error) {
@@ -132,7 +132,7 @@ const ToolsPage = () => {
 
   const fetchWorkers = async () => {
     try {
-      const res = await api.get('/admin/workers');
+      const res = await api.get('/api/admin/workers');
       setWorkers(res.data);
     } catch (error) {
       console.error('Workers fetch error:', error.response || error);
@@ -290,7 +290,7 @@ const ToolsPage = () => {
     if (!ok) return;
     setActionLoading(true);
     try {
-      await api.delete(`/tools/${id}`);
+      await api.delete(`/api/tools/${id}`);
       Toast.success('Tool retired successfully');
       fetchTools();
     } catch {
@@ -310,7 +310,7 @@ const ToolsPage = () => {
     if (!assignWorkerId) return Toast.error('Select a worker');
     setActionLoading(true);
     try {
-      await api.post(`/tools/${assignModal.tool._id}/assign`, { workerId: assignWorkerId });
+      await api.post(`/api/tools/${assignModal.tool._id}/assign`, { workerId: assignWorkerId });
       Toast.success('Tool assigned');
       setAssignModal({ open: false, tool: null });
       fetchTools();
@@ -323,7 +323,7 @@ const ToolsPage = () => {
   const unassignTool = async tool => {
     setActionLoading(true);
     try {
-      await api.post(`/tools/${tool._id}/unassign`);
+      await api.post(`/api/tools/${tool._id}/unassign`);
       Toast.success('Tool unassigned');
       fetchTools();
     } catch {

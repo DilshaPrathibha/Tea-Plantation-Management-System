@@ -5,7 +5,7 @@ import { Sweet, Toast } from '@/utils/sweet';
 import { API_URL } from '../config/api.js';
 
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_URL,
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',

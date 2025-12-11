@@ -5,7 +5,7 @@ import axios from 'axios';
 import { API_URL } from '../config/api.js';
 
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_URL,
   timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
@@ -37,7 +37,7 @@ const CreateToolPage = () => {
     
     setLoading(true);
     try {
-      const res = await api.post("/tools", { toolType, condition, note: note.trim() });
+      const res = await api.post("/api/tools", { toolType, condition, note: note.trim() });
       const created = res.data;
       Toast.success(`Tool created: ${created.tool?.toolId || 'Successfully'}`);
       navigate("/inventory/tools");

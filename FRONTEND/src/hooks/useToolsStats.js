@@ -76,8 +76,8 @@ const useToolsStats = (shouldLoad = true) => {
       
       // Fetch both active and retired tools separately and combine them
       const [activeResponse, retiredResponse] = await Promise.all([
-        api.get('/tools'),
-        api.get('/tools', { params: { status: 'retired' } })
+        api.get('/api/tools'),
+        api.get('/api/tools', { params: { status: 'retired' } })
       ]);
       
       const activeTools = activeResponse.data || [];

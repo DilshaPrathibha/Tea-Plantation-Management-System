@@ -35,12 +35,12 @@ const useDashboardStats = () => {
     try {
       const [fniResponse, toolsResponse] = await Promise.all([
         listItems(),
-        api.get('/tools')
+        api.get('/api/tools')
       ]);
 
       let adjustments = [];
       try {
-        const adjustmentsResponse = await api.get('/fni/adjustments');
+        const adjustmentsResponse = await api.get('/api/fni/adjustments');
         adjustments = adjustmentsResponse.data || [];
       } catch (adjError) {
         console.warn('FNI adjustments endpoint not available:', adjError.message);

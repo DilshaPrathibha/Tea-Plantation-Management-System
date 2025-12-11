@@ -5,7 +5,7 @@ import axios from "axios";
 import { API_URL } from "../config/api.js";
 
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_URL,
   timeout: 5000,
   headers: { "Content-Type": "application/json" },
 });
@@ -23,7 +23,7 @@ const ToolDetailPage = () => {
     async function fetchTool() {
       setLoading(true);
       try {
-        const res = await api.get(`/tools/${id}`);
+        const res = await api.get(`/api/tools/${id}`);
         setTool(res.data);
         setNoteCharCount(res.data.note ? res.data.note.length : 0);
       } catch (err) {
@@ -57,7 +57,7 @@ const ToolDetailPage = () => {
     setSaving(true);
     setError("");
     try {
-      await api.put(`/tools/${id}`, {
+      await api.put(`/api/tools/${id}`, {
         condition: tool.condition,
         note: tool.note?.trim() || '',
       });
@@ -80,7 +80,7 @@ const ToolDetailPage = () => {
     setSaving(true);
     setError("");
     try {
-      await api.delete(`/tools/${id}`);
+      await api.delete(`/api/tools/${id}`);
       Toast.success("Tool retired successfully");
       navigate("/inventory/tools");
     } catch (err) {
