@@ -9,7 +9,7 @@ import { API_URL } from '../config/api.js';
 import { useTheme } from '../context/ThemeContext';
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: `${API_URL}/api`,
   timeout: 15000, // Increased from 5s to 15s for slow connections
   headers: { 'Content-Type': 'application/json' }
 });
