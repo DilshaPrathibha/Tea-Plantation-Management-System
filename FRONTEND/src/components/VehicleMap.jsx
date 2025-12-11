@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Truck, MapPin, Clock, Wifi, WifiOff } from 'lucide-react';
+import { API_URL } from '../config/api.js';
 
 // Fix default marker icon paths
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -62,7 +63,7 @@ const VehicleMap = () => {
   useEffect(() => {
     const fetchVehicleLocation = async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/vehicle-location');
+        const response = await fetch(`${API_URL}/api/vehicle-location`);
         
         if (response.ok) {
           const data = await response.json();
