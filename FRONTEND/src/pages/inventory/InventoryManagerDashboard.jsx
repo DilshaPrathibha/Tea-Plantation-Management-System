@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 // Removed: InventoryManagerNavbar and global Navbar (provided by RootLayout)
-import { Truck, BarChart2, AlertTriangle, Clock, TrendingUp, Wrench, FlaskConical, Download, Printer, RefreshCw, Ticket, Users, Bug } from 'lucide-react';
+import { Truck, BarChart2, AlertTriangle, Clock, TrendingUp, Wrench, FlaskConical, Download, Printer, RefreshCw, Ticket, Users, Bug, Package } from 'lucide-react';
 import useToolsStats from '../../hooks/useToolsStats';
 import useFNIStats from '../../hooks/useFNIStats';
 import useDashboardStats from '../../hooks/useDashboardStats';
