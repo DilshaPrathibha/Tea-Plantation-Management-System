@@ -139,7 +139,7 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`btn btn-primary w-full mt-2 ${loading ? 'btn-disabled' : ''}`}
+              className={`inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 bg-emerald-500/90 hover:bg-emerald-500 text-white shadow-lg hover:shadow-xl transition w-full mt-2 font-semibold ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               {loading ? (
                 <>

@@ -90,11 +90,11 @@ const HomePage = () => {
 
           <div className="flex items-center gap-3 mt-10 animate-fade-in-slow">
             <button
-              className="btn btn-primary px-7"
+              className="inline-flex items-center gap-2 rounded-full px-7 py-3 bg-emerald-500/90 hover:bg-emerald-500 text-white shadow-lg hover:shadow-xl transition"
               onClick={() => navigate('/login')}
             >
               Login
-              <ChevronRight className="w-4 h-4 ml-1" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </section>
