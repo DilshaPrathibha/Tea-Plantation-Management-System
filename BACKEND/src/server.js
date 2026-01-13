@@ -133,8 +133,34 @@ app.use('/api/production-batch-records', productionBatchRecordRoutes);
 app.use('/api/transport-reports', transportReportRoutes);
 app.use('/api', vehicleLocationRoutes);
 
-// 4) health
+// 4) health & warmup endpoints
 app.get('/health', (req, res) => res.json({ ok: true }));
+
+// Warmup endpoint - checks if DB is ready
+app.get('/api/warmup', async (req, res) => {
+  try {
+    // Check if mongoose is connected
+    if (mongoose.connection.readyState === 1) {
+      return res.json({ 
+        status: 'ready', 
+        database: 'connected',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      return res.status(503).json({ 
+        status: 'warming', 
+        database: 'connecting',
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    return res.status(503).json({ 
+      status: 'error', 
+      database: 'disconnected',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
 // 5) 404 + error
 app.use((req, res) => res.status(404).send('Not found'));

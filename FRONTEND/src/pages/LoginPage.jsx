@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ChevronRight, Leaf } from 'lucide-react';
 import { Sweet, Toast } from '@/utils/sweet';
 import LoginFooter from '@/components/LoginFooter';
 import { API_BASE_URL } from '../config/api.js';
+import { warmupBackend, makeApiCallWithWarmup } from '../utils/apiWarmup.js';
+import { keepAliveService } from '../services/keepAlive.js';
 
 const API = API_BASE_URL;
 
@@ -25,15 +27,32 @@ const LoginPage = () => {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [warmupStatus, setWarmupStatus] = useState(''); // 'warming', 'ready', ''
   const navigate = useNavigate();
+
+  // Warmup backend when component mounts (optional - for better UX)
+  useEffect(() => {
+    const doWarmup = async () => {
+      setWarmupStatus('warming');
+      const result = await warmupBackend();
+      setWarmupStatus(result.ready ? 'ready' : '');
+    };
+    doWarmup();
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    
     try {
       const payload = { email: email.trim().toLowerCase(), password: password.trim() };
-      const res = await axios.post(`${API}/api/auth/login`, payload, { timeout: 10000 });
+      
+      // Use warmup wrapper for login API call
+      const res = await makeApiCallWithWarmup(
+        () => axios.post(`${API}/api/auth/login`, payload, { timeout: 15000 }),
+        { maxRetries: 3, retryDelay: 3000 }
+      );
 
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
@@ -41,11 +60,14 @@ const LoginPage = () => {
       // notify the whole app (Navbar listens to this)
       window.dispatchEvent(new Event('auth-changed'));
 
+      // Start keep-alive service to prevent backend from sleeping
+      keepAliveService.start();
+
       Toast.fire({ icon: 'success', title: 'Signed in successfully' });
       navigate(roleHome(res.data.user.role), { replace: true });
     } catch (err) {
       console.error('Login error:', err?.response?.status, err?.response?.data);
-      const msg = err?.response?.data?.message || 'Invalid credentials';
+      const msg = err?.response?.data?.message || 'Invalid credentials. Please try again.';
       setError(msg);
       Sweet.fire({ icon: 'error', title: 'Sign in failed', text: msg });
     } finally {
@@ -79,6 +101,20 @@ const LoginPage = () => {
           <p className="text-center text-white/80 mb-6">
             Sign in to manage fields, workers, and factory handovers.
           </p>
+
+          {/* Warmup status indicator */}
+          {warmupStatus === 'warming' && (
+            <div className="alert alert-info mb-4 py-2 text-sm bg-blue-500/20 border-blue-400/30 text-white">
+              <span className="loading loading-spinner loading-sm"></span>
+              <span>Connecting to server...</span>
+            </div>
+          )}
+          
+          {warmupStatus === 'ready' && (
+            <div className="alert alert-success mb-4 py-2 text-sm bg-green-500/20 border-green-400/30 text-white">
+              <span>✓ Server ready</span>
+            </div>
+          )}
 
           {error && (
             <div className="alert alert-error mb-4 py-2 text-sm">

@@ -1,6 +1,7 @@
 // FRONTEND/src/App.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { startKeepAliveIfAuthenticated } from './services/keepAlive.js';
 
 import RootLayout from './layouts/RootLayout.jsx';
 import SupervisorLayout from './layouts/SupervisorLayout.jsx';
@@ -80,6 +81,11 @@ import MyTicketsPage from './pages/tickets/MyTicketsPage.jsx';
 import AdminTicketsPage from './pages/tickets/AdminTicketsPage.jsx';
 
 export default function App() {
+  // Start keep-alive service if user is already logged in
+  useEffect(() => {
+    startKeepAliveIfAuthenticated();
+  }, []);
+
   return (
     <Routes>
       {/* No-navbar route */}

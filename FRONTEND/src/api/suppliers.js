@@ -3,7 +3,7 @@ import { API_URL } from '../config/api.js';
 
 const api = axios.create({
   baseURL: `${API_URL}/api/suppliers`,
-  timeout: 15000, // Increased from 5s to 15s for slow connections
+  timeout: 20000, // Increased from 15s to 20s for cold starts
   headers: { 'Content-Type': 'application/json' }
 });
 
